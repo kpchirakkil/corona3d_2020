@@ -1,0 +1,7 @@
+&SIM_PARAM
+
+dt        = 0.05                  ! time step                     [s]
+nstep     = 1000000
+r_t       = 1d8                ! top of simulation
+
+&END
