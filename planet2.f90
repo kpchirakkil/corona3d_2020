@@ -27,7 +27,7 @@ module planet2
                                                 	/)
 !  double precision, parameter :: xsect(nbgsp)	= (/6.4d-19 &		! O cross-section               [m-2]
 !                                                	/)
-  double precision :: m         = 15.9994d0*amu				! escaping species mass         [kg]
+  double precision :: m         = 1.00794d0*amu				! escaping species mass         [kg]
   double precision :: O_sigma   = 6.4d-19				! O cross section               [m^2]
   double precision :: CO_sigma  = 1.85d-18				! CO cross section              [m^2]
   double precision :: N2_sigma  = 1.85d-18				! N2 cross section              [m^2]

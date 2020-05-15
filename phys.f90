@@ -1,7 +1,7 @@
 module phys
 
   use const
-  use planet
+  use planet2
   use omp_lib
 
   implicit none

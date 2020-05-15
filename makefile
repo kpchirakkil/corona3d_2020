@@ -4,7 +4,7 @@ FC = gfortran
 
 FLAGS = -O2
 
-MC_OBJ = const.o planet.o phys.o collider2.o main.o
+MC_OBJ = const.o planet2.o phys.o collider2.o main.o
 
 mc : $(MC_OBJ)
 	$(FC) $(MC_OBJ) $(FLAGS) -o mc
