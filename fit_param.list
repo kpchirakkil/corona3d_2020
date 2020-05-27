@@ -1,4 +1,0 @@
-&FIT_PARAM
-DR160 = 600d6 ! rate of O2+ dissociative recombination [m-3/s]
-H_DR  = 19d3 ! scale height of O2+ dissociative recombination [m]
-&END
