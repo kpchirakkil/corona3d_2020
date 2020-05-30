@@ -13,6 +13,7 @@
 
 void initPlanet(Planet plnt);
 void initParticles(Planet plnt, Particle parts[], int n);
+void stepParticles(Particle parts[], double dt, int n, double k_g);
 double getRand();
 
 #endif /* PHYS_H_ */

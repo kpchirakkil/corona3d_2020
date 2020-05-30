@@ -6,9 +6,11 @@
  */
 
 #include "Planet.h"
+#include "constants.h"
 
 Planet::Planet(double m, double r)
 {
 	mass = m;
 	radius = r;
+	k_g = -(m * G);
 }

@@ -13,6 +13,7 @@ public:
 	Planet(double m, double r);
 	double mass;
 	double radius;
+	double k_g;
 };
 
 #endif /* PLANET_H_ */
