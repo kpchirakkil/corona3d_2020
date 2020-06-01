@@ -30,6 +30,20 @@ void initParticles(Planet plnt, Particle parts[], int n)
 		parts[i].position[0] = r*sqrt(1-(u*u))*cos(phi);
 		parts[i].position[1] = r*sqrt(1-(u*u))*sin(phi);
 		parts[i].position[2] = r*u;
+
+		double randnum1 = getRand();
+		double randnum2 = getRand();
+		double randnum3 = getRand();
+		double randnum4 = getRand();
+
+		randnum1 = 300.0*sqrt(-2.0*log(1.0-randnum1));
+		randnum2 = twopi*randnum2;
+		randnum3 = 300.0*sqrt(-2.0*log(1.0-randnum3));
+		randnum4 = twopi*randnum4;
+
+		parts[i].velocity[0] = randnum1*cos(randnum2);
+		parts[i].velocity[1] = randnum1*sin(randnum2);
+		parts[i].velocity[2] = randnum3*cos(randnum4);
 	}
 }
 
