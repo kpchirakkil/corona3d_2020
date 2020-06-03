@@ -19,7 +19,7 @@ void initPlanet(Planet plnt)
 
 void initParticles(Planet plnt, Particle parts[], int n)
 {
-	double scaleHeight = 20e3; // should calc/assign in planet class eventually
+	double scaleHeight = 20e3; // should calc and assign in planet class eventually
 	for (int i=0; i<n; i++)
 	{
 		double r = plnt.radius + 160e3 - log(getRand())*scaleHeight;
@@ -35,10 +35,11 @@ void initParticles(Planet plnt, Particle parts[], int n)
 		double randnum2 = getRand();
 		double randnum3 = getRand();
 		double randnum4 = getRand();
+		double v_avg = sqrt(k_b*plnt.T_bg / plnt.particle_m);
 
-		randnum1 = 300.0*sqrt(-2.0*log(1.0-randnum1));
+		randnum1 = v_avg*sqrt(-2.0*log(1.0-randnum1));
 		randnum2 = twopi*randnum2;
-		randnum3 = 300.0*sqrt(-2.0*log(1.0-randnum3));
+		randnum3 = v_avg*sqrt(-2.0*log(1.0-randnum3));
 		randnum4 = twopi*randnum4;
 
 		parts[i].velocity[0] = randnum1*cos(randnum2);
@@ -50,7 +51,7 @@ void initParticles(Planet plnt, Particle parts[], int n)
 // Iterate Equation of Motion using Velocity-Verlet Algorithm
 void stepParticles(Particle parts[], double dt, int n, double k_g)
 {
-	double a[3] = {0.0, 0.0, 0.0};
+	double a[3] = {0.0, 0.0, 0.0}; // particle acceleration vector
 	for (int i=0; i<n; i++)
 	{
 		if (parts[i].active == false)
@@ -86,6 +87,7 @@ void stepParticles(Particle parts[], double dt, int n, double k_g)
 	}
 }
 
+// returns uniformly distributed random number between 0 and 1
 double getRand()
 {
 	return ((double)rand() / RAND_MAX);
