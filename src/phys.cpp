@@ -19,10 +19,10 @@ void initPlanet(Planet plnt)
 
 void initParticles(Planet plnt, Particle parts[], int n)
 {
-	double scaleHeight = 20e3; // should calc and assign in planet class eventually
+	double scaleHeight = 10e3; // should calc and assign in planet class eventually
 	for (int i=0; i<n; i++)
 	{
-		double r = plnt.radius + 160e3 - log(getRand())*scaleHeight;
+		double r = plnt.radius + 160e3; // - log(getRand())*scaleHeight;
 		double phi = twopi*(getRand());
 		double u = 2.0*getRand() - 1;
 		parts[i].radius = r;

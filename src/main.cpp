@@ -29,15 +29,17 @@ void output_positions(Particle parts[], int n, string datapath)
 	outFile.close();
 }
 
+
+// writes single-column output file of velocity bin counts in parts[]
 void output_velocity_distro(Particle parts[], int n, string datapath)
 {
 	ofstream outFile;
 	outFile.open(datapath);
-	double v = 0.0;
-	double dv = 100.0;
-	int nvb = 0;
-	int nbins = 100;
-	int vbins[nbins] = {0};
+	double v = 0.0;          // velocity magnitude [m/s]
+	double dv = 100.0;       // bin width [m/s]
+	int nvb = 0;             // bin number
+	int nbins = 100;         // number of bins
+	int vbins[nbins] = {0};  // array of velocity bin counts
 
 	for (int i=0; i<n; i++)
 	{
