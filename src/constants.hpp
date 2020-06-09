@@ -1,12 +1,12 @@
 /*
- * constants.h
+ * constants.hpp
  *
  *  Created on: May 27, 2020
  *      Author: rodney
  */
 
-#ifndef CONSTANTS_H_
-#define CONSTANTS_H_
+#ifndef CONSTANTS_HPP_
+#define CONSTANTS_HPP_
 
 #include <cmath>
 
@@ -20,4 +20,4 @@ const double m_e 	= 9.10938215e-31;   // Electron Mass [kg]
 const double q_e 	= 1.602176487e-19;  // Elementary Charge [C]
 const double jev 	= q_e;              // Joules/Electron Volt [unitless]
 
-#endif /* CONSTANTS_H_ */
+#endif /* CONSTANTS_HPP_ */
