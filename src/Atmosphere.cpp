@@ -13,6 +13,7 @@
 #include "constants.hpp"
 using namespace std;
 
+// default constructor (makes 10K MB-distributed H atoms 160km above Venus)
 Atmosphere::Atmosphere()
 {
 	srand(time(NULL));
@@ -32,7 +33,8 @@ Atmosphere::Atmosphere()
 	}
 }
 
-Atmosphere::Atmosphere(double planet_mass, double planet_radius, double model_b, double T, double particle_m, int n)
+// construct atmosphere using specific parameters
+Atmosphere::Atmosphere(int n, double planet_mass, double planet_radius, double particle_m, double T, double model_b)
 {
 	srand(time(NULL));
 	N = n;
@@ -51,7 +53,13 @@ Atmosphere::Atmosphere(double planet_mass, double planet_radius, double model_b,
 	}
 }
 
-// Iterate Equation of Motion using Velocity-Verlet Algorithm
+// perform collision on a particle and update velocity vector
+void Atmosphere::doCollision(int paticle_idx, double m2)
+{
+
+}
+
+// iterate equation of motion for all particles using velocity Verlet algorithm
 void Atmosphere::doTimestep(double dt)
 {
 	double a[3] = {0.0, 0.0, 0.0}; // particle acceleration vector

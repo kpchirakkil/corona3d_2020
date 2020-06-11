@@ -14,7 +14,8 @@
 class Atmosphere {
 public:
 	Atmosphere(); // initialize with defaults (10K MB-distributed H atoms 160km above Venus)
-	Atmosphere(double planet_mass, double planet_radius, double model_b, double T, double particle_m, int N);
+	Atmosphere(int n, double planet_mass, double planet_radius, double particle_m, double T, double model_b);
+	void doCollision(int paticle_idx, double m2);
 	void doTimestep(double dt);
 	void output_positions(std::string datapath);
 	void output_velocity_distro(double bin_width, int num_bins, std::string datapath);
