@@ -8,25 +8,27 @@
 #ifndef ATMOSPHERE_HPP_
 #define ATMOSPHERE_HPP_
 
+#include <vector>
 #include "Planet.hpp"
-#include "Particle.hpp"
+#include "Particle_H.hpp"
 
 class Atmosphere {
 public:
 	Atmosphere(); // initialize with defaults (10K MB-distributed H atoms 160km above Venus)
-	Atmosphere(int n, double planet_mass, double planet_radius, double particle_m, double T, double model_b);
-	void doCollision(int paticle_idx, double m2);
-	void doTimestep(double dt);
+	Atmosphere(int n, Planet p, double T, double model_b);
+	virtual ~Atmosphere();
+	void do_collision(int particle_idx, double m2);
+	void do_timestep(double dt);
 	void output_positions(std::string datapath);
 	void output_velocity_distro(double bin_width, int num_bins, std::string datapath);
-	void runSimulation(double dt, int numSteps);
+	void run_simulation(double dt, int numSteps);
 
-	int N;                  // number of particles to track
-	Planet *myPlanet;       // contains planet mass and radius
-	Particle *myParticles;  // array of particles to be tracked
-	double particleMass;    // [kg] mass of particle being tracked
-	double T_bg;            // [K] background temp where simulation starts
-	double model_bottom;    // [m] altitude above planet surface of model bottom
+private:
+	int N;                        // number of particles to track
+	Planet myPlanet;              // contains planet mass and radius
+	std::vector<Particle_H> myH;  // array of H atoms to be tracked
+	double T_bg;                  // [K] background temp where simulation starts
+	double model_bottom;          // [m] altitude above planet surface of model bottom
 };
 
 #endif /* ATMOSPHERE_HPP_ */

@@ -8,9 +8,10 @@
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
-
 #include "constants.hpp"
+#include "Planet.hpp"
 #include "Atmosphere.hpp"
+#include "Particle_H.hpp"
 using namespace std;
 
 int main(int argc, char* argv[])
@@ -24,7 +25,7 @@ int main(int argc, char* argv[])
 	for (int i=0; i<timesteps; i++)
 	{
 		myAtmosphere.output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i) + ".out");
-		myAtmosphere.doTimestep(dt);
+		myAtmosphere.do_timestep(dt);
 	}
 
 	myAtmosphere.output_velocity_distro(100.0, 150, "/home/rodney/Documents/coronaTest/vdist2.out");
