@@ -18,7 +18,7 @@ public:
 	virtual ~Particle();
 	virtual double get_mass() = 0;  //must be implemented in derived classes
 
-	void do_collision();
+	void do_collision(std::string targ_type, double targ_temp, double theta);
 	void do_timestep(double dt, double k_g);
 	bool get_active();
 	double get_radius();
@@ -30,6 +30,7 @@ public:
 	double get_vy();
 	double get_vz();
 	void init_particle_MB(double r, double v_avg); // init particle from MB distribution
+	void init_particle_vonly_MB(double v_avg);     // init with velocity only for collision partners
 
 protected:
 	bool active;                    // flag for whether particle is active, i.e. should still be considered in the simulation
