@@ -54,12 +54,6 @@ Atmosphere::~Atmosphere() {
 
 }
 
-// perform collision on a particle and update velocity vector
-void Atmosphere::do_collision(int particle_idx, double m2)
-{
-
-}
-
 // iterate equation of motion for each active particle being tracked
 void Atmosphere::do_timestep(double dt)
 {

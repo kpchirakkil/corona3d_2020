@@ -22,6 +22,12 @@ Particle::~Particle()
 
 }
 
+// perform collision on a particle and update velocity vector
+void Particle::do_collision()
+{
+
+}
+
 void Particle::do_timestep(double dt, double k_g)
 {
 	Array<double, 3, 1> a = {0.0, 0.0, 0.0}; // particle acceleration vector

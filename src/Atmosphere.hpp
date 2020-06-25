@@ -17,7 +17,7 @@ public:
 	Atmosphere(); // initialize with defaults (10K MB-distributed H atoms 160km above Venus)
 	Atmosphere(int n, Planet p, double T, double model_b);
 	virtual ~Atmosphere();
-	void do_collision(int particle_idx, double m2);
+
 	void do_timestep(double dt);
 	void output_positions(std::string datapath);
 	void output_velocity_distro(double bin_width, int num_bins, std::string datapath);

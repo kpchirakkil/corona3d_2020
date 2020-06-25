@@ -16,9 +16,11 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-	int timesteps = 100;
+	int timesteps = 1000;
 	double dt = 0.5;
-	Atmosphere myAtmosphere;
+	Planet venus;
+	venus.init();
+	Atmosphere myAtmosphere(20000, venus, 350.0, 160e3);
 
 	myAtmosphere.output_velocity_distro(100.0, 150, "/home/rodney/Documents/coronaTest/vdist.out");
 

@@ -17,3 +17,7 @@ Particle_H::Particle_H() {
 Particle_H::~Particle_H() {
 }
 
+double Particle_H::get_mass()
+{
+	return mass;
+}

@@ -16,6 +16,9 @@ class Particle {
 public:
 	Particle();
 	virtual ~Particle();
+	virtual double get_mass() = 0;  //must be implemented in derived classes
+
+	void do_collision();
 	void do_timestep(double dt, double k_g);
 	bool get_active();
 	double get_radius();
