@@ -28,14 +28,14 @@ Particle::~Particle()
 }
 
 // perform collision on a particle and update velocity vector
-void Particle::do_collision(std::string targ_type, double targ_temp, double theta)
+void Particle::do_collision(double targ_mass, double targ_vx, double targ_vy, double targ_vz, double theta)
 {
 	double my_mass = get_mass();
-	double targ_mass;
-	Matrix<double, 3, 1> targ_v;
+	Matrix<double, 3, 1> targ_v = {targ_vx, targ_vy, targ_vz};
 	Matrix<double, 3, 1> vcm;
 	Matrix<double, 3, 3> Rrg;
 
+/*
 	if (targ_type == "CO")
 	{
 		Particle_CO target;
@@ -71,12 +71,13 @@ void Particle::do_collision(std::string targ_type, double targ_temp, double thet
 	   	target.init_particle_vonly_MB(sqrt(constants::k_b*targ_temp/targ_mass));
 	   	targ_v = target.velocity;
 	}
+*/
 
 	vcm = (my_mass*velocity.array() + targ_mass * targ_v.array()) / (my_mass + targ_mass);
 	Matrix<double, 3, 1> v1v = velocity.array() - vcm.array();        // particle 1 c-o-m velocity
-	Matrix<double, 3, 1> v2v = targ_v.array() - vcm.array();          // particle 2 c-o-m velocity
+	// Matrix<double, 3, 1> v2v = targ_v.array() - vcm.array();          // particle 2 c-o-m velocity
 	double v1 = sqrt(v1v[0]*v1v[0] + v1v[1]*v1v[1] + v1v[2]*v1v[2]);  // particle 1 c-o-m scalar velocity
-	double v2 = sqrt(v2v[0]*v2v[0] + v2v[1]*v2v[1] + v2v[2]*v2v[2]);  // particle 2 c-o-m scalar velocity
+	// double v2 = sqrt(v2v[0]*v2v[0] + v2v[1]*v2v[1] + v2v[2]*v2v[2]);  // particle 2 c-o-m scalar velocity
 
 	// unit vector parallel to particle 1 velocity
 	Matrix<double, 3, 1> r = velocity.array() / sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1] + velocity[2]*velocity[2]);
@@ -94,7 +95,25 @@ void Particle::do_collision(std::string targ_type, double targ_temp, double thet
 	double Sg = sin(gamma);
 	double Vg = 1.0-Cg;
 
+	Rrg(0, 0) = r[0]*r[0]*Vg+Cg;
+	Rrg(0, 1) = r[0]*r[1]*Vg+r[2]*Sg;
+	Rrg(0, 2) = r[0]*r[2]*Vg-r[1]*Sg;
 
+	Rrg(1, 0) = r[0]*r[1]*Vg-r[2]*Sg;
+	Rrg(1, 1) = r[1]*r[1]*Vg+Cg;
+	Rrg(1, 2) = r[1]*r[2]*Vg+r[0]*Sg;
+
+	Rrg(2, 0) = r[0]*r[2]*Vg+r[1]*Sg;
+	Rrg(2, 1) = r[1]*r[2]*Vg-r[0]*Sg;
+	Rrg(2, 2) = r[2]*r[2]*Vg+Cg;
+
+	Matrix<double, 3, 1> vrel1 = Rrg * vp;
+
+	// update post-collision velocity
+	velocity = vcm.array() + vrel1.array();
+
+	// in case you need the updated collision partner velocity for something
+	// targ_v = vcm.array() - ((my_mass / targ_mass) * vrel1.array());
 }
 
 void Particle::do_timestep(double dt, double k_g)
@@ -121,6 +140,16 @@ void Particle::do_timestep(double dt, double k_g)
 bool Particle::get_active()
 {
 	return active;
+}
+
+double Particle::get_radius()
+{
+	return radius;
+}
+
+double Particle::get_inverse_radius()
+{
+	return inverse_radius;
 }
 
 double Particle::get_x()
@@ -151,6 +180,11 @@ double Particle::get_vy()
 double Particle::get_vz()
 {
 	return velocity[2];
+}
+
+double Particle::get_total_v()
+{
+	return sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1] + velocity[2]*velocity[2]);
 }
 
 // initialize a single particle at given radius using Maxwell-Boltzmann avg v

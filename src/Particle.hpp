@@ -18,7 +18,7 @@ public:
 	virtual ~Particle();
 	virtual double get_mass() = 0;  //must be implemented in derived classes
 
-	void do_collision(std::string targ_type, double targ_temp, double theta);
+	void do_collision(double targ_mass, double targ_vx, double targ_vy, double targ_vz, double theta);
 	void do_timestep(double dt, double k_g);
 	bool get_active();
 	double get_radius();
@@ -29,6 +29,7 @@ public:
 	double get_vx();
 	double get_vy();
 	double get_vz();
+	double get_total_v();
 	void init_particle_MB(double r, double v_avg); // init particle from MB distribution
 	void init_particle_vonly_MB(double v_avg);     // init with velocity only for collision partners
 
