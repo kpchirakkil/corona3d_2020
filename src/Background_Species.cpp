@@ -11,30 +11,36 @@
 
 Background_Species::Background_Species() {
 	num_collisions = 0;
-	CO_density = 0.0;
-	CO_sigma = 0.0;
-	CO_scaleheight = 0.0;
-	CO_vavg = 0.0;
-	CO2_density = 0.0;
-	CO2_sigma = 0.0;
-	CO2_scaleheight = 0.0;
-	CO2_vavg = 0.0;
-	H_density = 0.0;
-	H_sigma = 0.0;
-	H_scaleheight = 0.0;
-	H_vavg = 0.0;
-	N2_density = 0.0;
-	N2_sigma = 0.0;
-	N2_scaleheight = 0.0;
-	N2_vavg = 0.0;
-	O_density = 0.0;
-	O_sigma = 0.0;
-	O_scaleheight = 0.0;
-	O_vavg = 0.0;
-	targ_mass = 0.0;
-	targ_vx = 0.0;
-	targ_vy = 0.0;
-	targ_vz = 0.0;
+	num_species = 0;
+	ref_temp = 0.0;
+	ref_height = 0.0;
+	ref_g = 0.0;
+	collision_target = -1;
+	collision_theta = 0.0;
+}
+
+Background_Species::Background_Species(int n, Planet p, double T, double h, Particle* bg_p[], double bg_d[], double bg_s[]) {
+	num_collisions = 0;
+	num_species = n;
+	my_planet = p;
+	ref_temp = T;
+	ref_height = h;
+	ref_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+ref_height, 2.0));
+
+	bg_parts.resize(num_species);
+	bg_densities.resize(num_species);
+	bg_sigmas.resize(num_species);
+	bg_scaleheights.resize(num_species);
+	bg_avg_v.resize(num_species);
+	for (int i=0; i<num_species; i++)
+	{
+		bg_parts[i] = bg_p[i];
+		bg_densities[i] = bg_d[i];
+		bg_sigmas[i] = bg_s[i];
+		bg_scaleheights[i] = constants::k_b*ref_temp/(bg_parts[i]->get_mass()*ref_g);
+		bg_avg_v[i] = sqrt(constants::k_b*ref_temp/bg_parts[i]->get_mass());
+	}
+	collision_target = -1;
 	collision_theta = 0.0;
 }
 
@@ -47,68 +53,55 @@ double Background_Species::calc_new_density(double ref_density, double scale_hei
 	return ref_density*exp(r_moved/scale_height);
 }
 
-// check to see if a collision occurred and set targ values if so
-bool Background_Species::check_collision(double r, double r_ref, double v, double dt)
+// check to see if a collision occurred and set target particle if so
+bool Background_Species::check_collision(double r, double v, double dt)
 {
 	// get densities at current location
-	double r_moved = r_ref - r;
-	double CO_temp_density = calc_new_density(CO_density, CO_scaleheight, r_moved);
-	double CO2_temp_density = calc_new_density(CO2_density, CO2_scaleheight, r_moved);
-	double H_temp_density = calc_new_density(H_density, H_scaleheight, r_moved);
-	double N2_temp_density = calc_new_density(N2_density, N2_scaleheight, r_moved);
-	double O_temp_density = calc_new_density(O_density, O_scaleheight, r_moved);
+	double r_moved = my_planet.get_radius() + ref_height - r;
+	std::vector<double> temp_dens;
+	temp_dens.resize(num_species);
+	for (int i=0; i<num_species; i++)
+	{
+		temp_dens[i] = calc_new_density(bg_densities[i], bg_scaleheights[i], r_moved);
+	}
 
 	// determine if test particle collided
 	double u = get_rand();
-	double tau = v*dt*(O_sigma*O_temp_density +
-			           CO_sigma*CO_temp_density +
-					   N2_sigma*N2_temp_density +
-					   CO2_sigma*CO2_temp_density +
-					   H_sigma*H_temp_density);
-
+	double tau = 0.0;
+	for (int i=0; i<num_species; i++)
+	{
+		tau += 	v*dt*bg_sigmas[i]*temp_dens[i];
+	}
 	if (u > exp(-tau))
 	{
 		num_collisions++;
 
-		// pick target species mass, set targ values
+		// pick target species for collision
 		u = get_rand();
-		if (u < O_temp_density/(O_temp_density+CO_temp_density+N2_temp_density+CO2_temp_density))
+		double total_dens = 0.0;
+		for (int i=0; i<num_species; i++)
 		{
-			targ_mass = bg_O.get_mass();  // collision with O
-			bg_O.init_particle_vonly_MB(O_vavg);
-			targ_vx = bg_O.get_vx();
-			targ_vy = bg_O.get_vy();
-			targ_vz = bg_O.get_vz();
+			total_dens += temp_dens[i];
 		}
-		else if (u < (O_temp_density+N2_temp_density)/(O_temp_density+CO_temp_density+N2_temp_density+CO2_temp_density))
+		double frac = 0.0;
+		collision_target = 0;
+
+		do
 		{
-			targ_mass = bg_N2.get_mass();  //collision with N2
-			bg_N2.init_particle_vonly_MB(N2_vavg);
-			targ_vx = bg_N2.get_vx();
-			targ_vy = bg_N2.get_vy();
-			targ_vz = bg_N2.get_vz();
+			frac += temp_dens[collision_target] / total_dens;
+			collision_target++;
 		}
-		else if (u < (O_temp_density+CO_temp_density+N2_temp_density)/(O_temp_density+CO_temp_density+N2_temp_density+CO2_temp_density))
-		{
-			targ_mass = bg_CO.get_mass();     // collision with CO
-			bg_CO.init_particle_vonly_MB(CO_vavg);
-			targ_vx = bg_CO.get_vx();
-			targ_vy = bg_CO.get_vy();
-			targ_vz = bg_CO.get_vz();
-		}
-		else
-		{
-			targ_mass = bg_CO2.get_mass();    // collision with CO2
-			bg_CO2.init_particle_vonly_MB(CO2_vavg);
-			targ_vx = bg_CO2.get_vx();
-			targ_vy = bg_CO2.get_vy();
-			targ_vz = bg_CO2.get_vz();
-		}
+		while (u > frac && collision_target < num_species);
+
+		// subtract the extra added integer, and initialize collision target
+		collision_target--;
+		bg_parts[collision_target]->init_particle_vonly_MB(bg_avg_v[collision_target]);
 
 		return true;
 	}
 	else
 	{
+		collision_target = -1;
 		return false;
 	}
 }
@@ -118,52 +111,12 @@ int Background_Species::get_num_collisions()
 	return num_collisions;
 }
 
-double Background_Species::get_targ_mass()
+Particle* Background_Species::get_collision_target()
 {
-	return targ_mass;
-}
-
-double Background_Species::get_targ_vx()
-{
-	return targ_vx;
-}
-
-double Background_Species::get_targ_vy()
-{
-	return targ_vy;
-}
-
-double Background_Species::get_targ_vz()
-{
-	return targ_vz;
+	return bg_parts[collision_target];
 }
 
 double Background_Species::get_collision_theta()
 {
 	return collision_theta;
-}
-
-void Background_Species::init(double T_bg)
-{
-	num_collisions = 0;
-	CO_density = 1.0e13;
-	CO_sigma = 1.85e-18;
-	CO_scaleheight = constants::k_b*T_bg/(bg_CO.get_mass()*3.31);
-	CO_vavg = sqrt(constants::k_b*T_bg/bg_CO.get_mass());
-	CO2_density = 6.68e13;
-	CO2_sigma = 2.0e-18;
-	CO2_scaleheight = constants::k_b*T_bg/(bg_CO2.get_mass()*3.31);
-	CO2_vavg = sqrt(constants::k_b*T_bg/bg_CO2.get_mass());
-	H_density = 0.0;
-	H_sigma = 0.0;
-	H_scaleheight = constants::k_b*T_bg/(bg_H.get_mass()*3.31);
-	H_vavg = sqrt(constants::k_b*T_bg/bg_H.get_mass());
-	N2_density = 3.1e13;
-	N2_sigma = 1.85e-18;
-	N2_scaleheight = constants::k_b*T_bg/(bg_N2.get_mass()*3.31);
-	N2_vavg = sqrt(constants::k_b*T_bg/bg_N2.get_mass());
-	O_density = 2.64e13;
-	O_sigma = 6.4e-19;
-	O_scaleheight = constants::k_b*T_bg/(bg_O.get_mass()*3.31);
-	O_vavg = sqrt(constants::k_b*T_bg/bg_O.get_mass());
 }

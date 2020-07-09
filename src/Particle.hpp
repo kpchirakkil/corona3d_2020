@@ -18,7 +18,7 @@ public:
 	virtual ~Particle();
 	virtual double get_mass() = 0;  //must be implemented in derived classes
 
-	void do_collision(double targ_mass, double targ_vx, double targ_vy, double targ_vz, double theta);
+	virtual void do_collision(Particle* target, double theta);
 	void do_timestep(double dt, double k_g);
 	bool get_active();
 	double get_radius();
@@ -41,7 +41,7 @@ protected:
 	Matrix<double, 3, 1> velocity;  // velocity vector [m/s,m/s,m/s]
 
 	// returns uniformly distributed random number between 0 and 1
-	double get_rand() {return ((double)rand() / RAND_MAX);}
+	double get_rand() {return ((double)rand() / (double)RAND_MAX);}
 };
 
 #endif /* PARTICLE_HPP_ */

@@ -11,26 +11,33 @@
 #include "constants.hpp"
 #include "Planet.hpp"
 #include "Atmosphere.hpp"
-#include "Particle_H.hpp"
 using namespace std;
 
 int main(int argc, char* argv[])
 {
-	int timesteps = 500;
+	int num_testparts = 10000;
+	int timesteps = 1;
 	double dt = 0.5;
+	double ref_alt = 200e3;
+	double bg_temp = 277.6;
+	double planet_mass = 6.4185e23;
+	double planet_radius = 3.397e6;
 	Planet mars;
-	mars.init(6.4185e23, 3.397e6);
-	Atmosphere myAtmosphere(10000, mars, 277.6, 200e3);
+	mars.init(planet_mass, planet_radius);
+	int num_bgparts = 4;
+	Particle* bg_parts[] = {new Particle_O(),
+							new Particle_N2(),
+							new Particle_CO(),
+							new Particle_CO2()};
+	double bg_dens[] = {2.64e13, 1.0e13, 3.1e13, 6.68e13};
+	double bg_sigs[] = {6.4e-19, 1.85e-18, 1.85e-18, 2.0e-18};
+	Background_Species bg_spec(num_bgparts, mars, bg_temp, ref_alt, bg_parts, bg_dens, bg_sigs);
 
-	myAtmosphere.output_velocity_distro(100.0, 150, "/home/rodney/Documents/coronaTest/vdist.out");
+	Atmosphere my_atmosphere(num_testparts, mars, bg_spec, bg_temp, ref_alt);
 
-	for (int i=0; i<timesteps; i++)
-	{
-		myAtmosphere.output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i) + ".out");
-		myAtmosphere.run_simulation(dt, timesteps);
-	}
-
-	myAtmosphere.output_velocity_distro(100.0, 150, "/home/rodney/Documents/coronaTest/vdist2.out");
+	my_atmosphere.output_velocity_distro(100.0, 150, "/home/rodney/Documents/coronaTest/vdist.out");
+	my_atmosphere.run_simulation(dt, timesteps);
+	my_atmosphere.output_velocity_distro(100.0, 150, "/home/rodney/Documents/coronaTest/vdist2.out");
 
 	return 0;
 }

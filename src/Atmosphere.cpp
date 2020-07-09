@@ -13,38 +13,19 @@
 #include "constants.hpp"
 using namespace std;
 
-// default constructor (makes 10K MB-distributed H atoms 200km above Venus)
-Atmosphere::Atmosphere()
-{
-	srand((unsigned)time(NULL));
-	N = 10000;             // number of test particles to track
-	T_bg = 350.0;          // [K] background temp where simulation starts
-	model_bottom = 200e3;  // [m] default altitude for bottom of model
-	my_planet.init();
-	bg_species.init(T_bg);
-	my_parts.resize(N);
-
-	double particle_r = my_planet.get_radius() + model_bottom;
-	double particle_vavg = sqrt(constants::k_b*T_bg/my_parts[0].mass);
-	for (int i=0; i<N; i++)
-	{
-		my_parts[i].init_particle_MB(particle_r, particle_vavg);
-	}
-}
-
 // construct atmosphere using specific parameters
-Atmosphere::Atmosphere(int n, Planet p, double T, double model_b)
+Atmosphere::Atmosphere(int n, Planet p, Background_Species bg, double T, double ref_h)
 {
 	srand((unsigned)time(NULL));
-	N = n;
+	N = n;                      // number of test particles to track
 	my_planet = p;
 	my_parts.resize(N);
-	T_bg = T;
-	model_bottom = model_b;
-	bg_species.init(T_bg);
+	T_bg = T;                   // [K] background temp where simulation starts
+	ref_height = ref_h;         // [m] altitude for bottom of model
+	bg_species = bg;
 
-	double particle_r = my_planet.get_radius() + model_bottom;
-	double particle_vavg = sqrt(constants::k_b*T_bg/my_parts[0].mass);
+	double particle_r = my_planet.get_radius() + ref_height;
+	double particle_vavg = sqrt(constants::k_b*T_bg/my_parts[0].get_mass());
 	for (int i=0; i<N; i++)
 	{
 		my_parts[i].init_particle_MB(particle_r, particle_vavg);
@@ -81,9 +62,7 @@ void Atmosphere::output_velocity_distro(double bin_width, int num_bins, string d
 
 	for (int i=0; i<N; i++)
 	{
-		v = sqrt(my_parts[i].get_vx()*my_parts[i].get_vx() +
-				 my_parts[i].get_vy()*my_parts[i].get_vy() +
-				 my_parts[i].get_vz()*my_parts[i].get_vz());
+		v = my_parts[i].get_total_v();
 		nvb = (int)(v / bin_width);
 		vbins[nvb]++;
 	}
@@ -98,24 +77,31 @@ void Atmosphere::output_velocity_distro(double bin_width, int num_bins, string d
 void Atmosphere::run_simulation(double dt, int num_steps)
 {
 	double k = my_planet.get_k_g();
-	for (int i=0; i<N; i++)
+
+	for (int i=0; i<num_steps; i++)
 	{
-		if (my_parts[i].get_active() == false)
+		output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i) + ".out");
+
+		for (int j=0; j<N; j++)
 		{
-			continue;
-		}
-		else
-		{
-			my_parts[i].do_timestep(dt, k);
-			if (my_parts[i].get_active() == false)
+			if (my_parts[j].get_active() == false)
 			{
 				continue;
 			}
-			else if (bg_species.check_collision(my_parts[i].get_radius(), (my_planet.get_radius()+model_bottom), my_parts[i].get_total_v(), dt))
+			else
 			{
-				my_parts[i].do_collision(bg_species.get_targ_mass(), bg_species.get_targ_vx(), bg_species.get_targ_vy(), bg_species.get_targ_vz(), bg_species.get_collision_theta());
+				my_parts[j].do_timestep(dt, k);
+				if (my_parts[j].get_active() == false)
+				{
+					continue;
+				}
+				else if (bg_species.check_collision(my_parts[j].get_radius(), my_parts[j].get_total_v(), dt))
+				{
+					my_parts[j].do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta());
+				}
 			}
 		}
 	}
+
 	std::cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;
 }
