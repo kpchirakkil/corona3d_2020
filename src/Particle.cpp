@@ -86,6 +86,7 @@ void Particle::do_collision(Particle* target, double theta)
 	std::cout << "After:\nmv1x = " << my_mass*get_vx() << "\t mv1y = " << my_mass*get_vy() << "\t mv1z = " << my_mass*get_vz() << "\n";
 	std::cout << "mv2x = " << targ_mass*targ_v[0] << "\t mv2y = " << targ_mass*targ_v[1] << "\t mv2z = " << targ_mass*targ_v[2] << "\n";
 	std::cout << "mvx = " << targ_mass*targ_v[0]+my_mass*get_vx() << "\t mvy = " << targ_mass*targ_v[1]+my_mass*get_vy() << "\t mvz = " << targ_mass*targ_v[2]+my_mass*get_vz() << "\n";
+
 }
 
 void Particle::do_timestep(double dt, double k_g)

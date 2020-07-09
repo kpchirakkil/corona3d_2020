@@ -6,7 +6,6 @@
  */
 
 #include "Planet.hpp"
-#include "constants.hpp"
 
 Planet::Planet()
 {

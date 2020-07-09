@@ -6,8 +6,6 @@
  */
 
 #include "Background_Species.hpp"
-#include "constants.hpp"
-#include <iostream>
 
 Background_Species::Background_Species() {
 	num_collisions = 0;
@@ -42,12 +40,15 @@ Background_Species::Background_Species(int n, Planet p, double T, double h, Part
 	}
 	collision_target = -1;
 	collision_theta = 0.0;
+
+	import_CDF("/home/rodney/Documents/coronaTest/KHARCHENKOCDF.TXT");
 }
 
 Background_Species::~Background_Species() {
 
 }
 
+// calculates new density of background particle based on radial position and scale height
 double Background_Species::calc_new_density(double ref_density, double scale_height, double r_moved)
 {
 	return ref_density*exp(r_moved/scale_height);
@@ -96,6 +97,7 @@ bool Background_Species::check_collision(double r, double v, double dt)
 		// subtract the extra added integer, and initialize collision target
 		collision_target--;
 		bg_parts[collision_target]->init_particle_vonly_MB(bg_avg_v[collision_target]);
+		collision_theta = find_new_theta();
 
 		return true;
 	}
@@ -104,6 +106,18 @@ bool Background_Species::check_collision(double r, double v, double dt)
 		collision_target = -1;
 		return false;
 	}
+}
+
+// scans imported differential scattering CDF for new collision theta
+double Background_Species::find_new_theta()
+{
+	double u = get_rand();
+	int k = 0;
+	while (cdf(k, 0) < u)
+	{
+		k++;
+	}
+	return acos(cdf(k, 1));
 }
 
 int Background_Species::get_num_collisions()
@@ -119,4 +133,23 @@ Particle* Background_Species::get_collision_target()
 double Background_Species::get_collision_theta()
 {
 	return collision_theta;
+}
+
+void Background_Species::import_CDF(string filename)
+{
+	ifstream infile;
+	infile.open(filename);
+	string line;
+
+	for (int i=0; i<180; i++)
+	{
+		getline(infile, line);
+		stringstream str(line);
+
+		for (int j=0; j<2; j++)
+		{
+			str >> cdf(i, j);
+		}
+	}
+	infile.close();
 }

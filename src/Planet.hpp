@@ -8,6 +8,8 @@
 #ifndef PLANET_HPP_
 #define PLANET_HPP_
 
+#include "constants.hpp"
+
 class Planet {
 public:
 	Planet();
