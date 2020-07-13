@@ -32,4 +32,4 @@ Planet.o: Planet.cpp
 	g++ -c Planet.cpp
 	
 clean:
-	rm *.p corona3d_2020
+	rm *.o corona3d_2020
