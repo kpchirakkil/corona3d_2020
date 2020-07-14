@@ -1,7 +1,7 @@
 module phys
 
   use const
-  use planet2
+  use planet
   use omp_lib
 
   implicit none
@@ -68,7 +68,18 @@ subroutine init_parts()
 
        ! write(*,*) parts(i)%r, phi, theta
        ! write(*,*) parts(i)%x(1), parts(i)%x(i,2), parts(i)%x(i,3)
-    enddo   
+    enddo
+    
+    ! // output distribution of positions and velocities to file
+    open(unit = 55, file='positions.out')
+    open(unit = 56, file='velocities.out')
+	do j = 1 , n_part_max
+       write(55,*) parts(j)%x(1), parts(j)%x(2), parts(j)%x(3)
+       write(56,*) parts(j)%v(1), parts(j)%v(2), parts(j)%v(3)
+	enddo
+	close(unit=55)
+	close(unit=56)
+    
   end subroutine init_parts
 
 ! /////   Subroutine to Create a New Particle   \\\\\

@@ -1,5 +1,5 @@
 pure function bg_density(n_ref,h,r)
-	use planet2
+	use planet
 	double precision bg_density
 	double precision, intent(in) :: n_ref,h,r
 	bg_density = n_ref*exp((r_ref-r)/h)
@@ -9,7 +9,7 @@ end function
 program main
 
 	use const
-	use planet2
+	use planet
 	use phys
 
 	implicit none

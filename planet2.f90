@@ -1,4 +1,4 @@
-! Contains Venus parameter
+! Contains Venus parameters
 ! Plan to eventually change to pull all planet-specific parameters from sim_param.list
 module planet2
 
