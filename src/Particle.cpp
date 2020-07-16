@@ -28,6 +28,12 @@ Particle::~Particle()
 
 }
 
+// deactivate this particle
+void Particle::deactivate()
+{
+	active = false;
+}
+
 // perform collision on a particle and update velocity vector
 void Particle::do_collision(Particle* target, double theta)
 {
@@ -36,10 +42,6 @@ void Particle::do_collision(Particle* target, double theta)
 	Matrix<double, 3, 1> targ_v = {target->get_vx(), target->get_vy(), target->get_vz()};
 	Matrix<double, 3, 1> vcm;
 	Matrix<double, 3, 3> Rrg;
-
-	std::cout << "\nBefore:\nmv1x = " << my_mass*get_vx() << "\t mv1y = " << my_mass*get_vy() << "\t mv1z = " << my_mass*get_vz() << "\n";
-	std::cout << "mv2x = " << targ_mass*targ_v[0] << "\t mv2y = " << targ_mass*targ_v[1] << "\t mv2z = " << targ_mass*targ_v[2] << "\n";
-	std::cout << "mvx = " << targ_mass*targ_v[0]+my_mass*get_vx() << "\t mvy = " << targ_mass*targ_v[1]+my_mass*get_vy() << "\t mvz = " << targ_mass*targ_v[2]+my_mass*get_vz() << "\n";
 
 	vcm = (my_mass*velocity.array() + targ_mass * targ_v.array()) / (my_mass + targ_mass);
 	Matrix<double, 3, 1> v1v = velocity.array() - vcm.array();        // particle 1 c-o-m velocity
@@ -81,12 +83,7 @@ void Particle::do_collision(Particle* target, double theta)
 	velocity = vcm.array() + vrel1.array();
 
 	// in case you need the updated collision partner velocity for something
-	targ_v = vcm.array() - ((my_mass / targ_mass) * vrel1.array());
-
-	std::cout << "After:\nmv1x = " << my_mass*get_vx() << "\t mv1y = " << my_mass*get_vy() << "\t mv1z = " << my_mass*get_vz() << "\n";
-	std::cout << "mv2x = " << targ_mass*targ_v[0] << "\t mv2y = " << targ_mass*targ_v[1] << "\t mv2z = " << targ_mass*targ_v[2] << "\n";
-	std::cout << "mvx = " << targ_mass*targ_v[0]+my_mass*get_vx() << "\t mvy = " << targ_mass*targ_v[1]+my_mass*get_vy() << "\t mvz = " << targ_mass*targ_v[2]+my_mass*get_vz() << "\n";
-
+	// targ_v = vcm.array() - ((my_mass / targ_mass) * vrel1.array());
 }
 
 void Particle::do_timestep(double dt, double k_g)
@@ -160,6 +157,19 @@ double Particle::get_total_v()
 	return sqrt(velocity[0]*velocity[0] +
 			    velocity[1]*velocity[1] +
 				velocity[2]*velocity[2]);
+}
+
+// initialize particle using custom position and velocity
+void Particle::init_particle_custom(double x, double y, double z, double vx, double vy, double vz)
+{
+	radius = sqrt(x*x + y*y + z*z);
+	inverse_radius = 1.0/radius;
+	position[0] = x;
+	position[1] = y;
+	position[2] = z;
+	velocity[0] = vx;
+	velocity[1] = vy;
+	velocity[2] = vz;
 }
 
 // initialize a single particle at given radius using Maxwell-Boltzmann avg v

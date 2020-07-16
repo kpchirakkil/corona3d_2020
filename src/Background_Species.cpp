@@ -92,7 +92,7 @@ bool Background_Species::check_collision(double r, double v, double dt)
 			frac += temp_dens[collision_target] / total_dens;
 			collision_target++;
 		}
-		while (u > frac && collision_target < num_species);
+		while (u >= frac && collision_target < num_species);
 
 		// subtract the extra added integer, and initialize collision target
 		collision_target--;

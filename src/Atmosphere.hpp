@@ -9,6 +9,7 @@
 #define ATMOSPHERE_HPP_
 
 #include <vector>
+#include <iomanip>
 #include "Background_Species.hpp"
 
 class Atmosphere {
@@ -21,7 +22,8 @@ public:
 	void run_simulation(double dt, int num_steps);
 
 private:
-	int N;                              // number of particles to track
+	int N;                              // number of particles initially spawned
+	int active_parts;                   // number of active particles
 	Planet my_planet;                   // contains planet mass and radius
 	std::vector<Particle_O> my_parts;   // array of atoms to be tracked
 	Background_Species bg_species;      // background species used for collisions
