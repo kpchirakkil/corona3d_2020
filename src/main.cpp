@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
 {
 	// simulation parameters
 	int num_testparts = 10000;
-	int timesteps = 1000;
+	int timesteps = 1000000;
 	double dt = 0.05;
 	double ref_alt = 200e3;
 	double bg_temp = 277.6;

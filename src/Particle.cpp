@@ -92,7 +92,7 @@ void Particle::do_timestep(double dt, double k_g)
 
 	// calculate acceleration at current position
 	double inv_r_cube = inverse_radius*inverse_radius*inverse_radius;
-	a = k_g*position*inv_r_cube;
+	a = k_g*position.array()*inv_r_cube;
 
 	// calculate next position and update particle
 	position.array() = position.array() + (velocity.array()*dt) + (0.5*a*dt*dt);
@@ -101,7 +101,7 @@ void Particle::do_timestep(double dt, double k_g)
 
 	// calculate acceleration at next position
 	inv_r_cube = inverse_radius*inverse_radius*inverse_radius;
-	a = k_g*position.array()*inv_r_cube;
+	a = a + k_g*position.array()*inv_r_cube;
 
 	// calculate next velocity using acceleration at next position and update particle
 	velocity.array() = velocity.array() + 0.5*a*dt;

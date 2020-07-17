@@ -20,18 +20,19 @@ Atmosphere::Atmosphere(int n, Planet p, Background_Species bg, double T, double 
 	ref_height = ref_h;         // [m] altitude for bottom of model
 	bg_species = bg;
 
+	/*
 	double particle_r = my_planet.get_radius() + ref_height;
 	double particle_vavg = sqrt(constants::k_b*T_bg/my_parts[0].get_mass());
 	for (int i=0; i<N; i++)
 	{
 		my_parts[i].init_particle_MB(particle_r, particle_vavg);
 	}
+	*/
 
 	// everything below should eventually be incorporated into a Distribution class
-	/*
 	ifstream pos_file, vel_file;
-	pos_file.open("/home/rodney/Documents/research/software/Deighan/corona3d_2020/positions2.out");
-	vel_file.open("/home/rodney/Documents/research/software/Deighan/corona3d_2020/velocities2.out");
+	pos_file.open("/home/rodney/Documents/research/software/Deighan/corona3d_2020/positions.out");
+	vel_file.open("/home/rodney/Documents/research/software/Deighan/corona3d_2020/velocities.out");
 	string pos_line, vel_line;
 	double x, y, z, vx, vy, vz;
 
@@ -47,7 +48,6 @@ Atmosphere::Atmosphere(int n, Planet p, Background_Species bg, double T, double 
 	}
 	pos_file.close();
 	vel_file.close();
-	*/
 }
 
 Atmosphere::~Atmosphere() {
@@ -80,7 +80,7 @@ void Atmosphere::output_velocity_distro(double bin_width, int num_bins, string d
 
 	for (int i=0; i<N; i++)
 	{
-		if (my_parts[i].get_active())
+		//if (my_parts[i].get_active())
 		{
 			v = my_parts[i].get_total_v();
 			nvb = (int)(v / bin_width);
