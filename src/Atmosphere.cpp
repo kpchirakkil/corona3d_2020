@@ -6,19 +6,24 @@
  */
 
 #include "Atmosphere.hpp"
-using namespace std;
 
 // construct atmosphere using specific parameters
-Atmosphere::Atmosphere(int n, Planet p, Background_Species bg, double T, double ref_h)
+Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h)
 {
 	srand((unsigned)time(NULL));
 	N = n;                      // number of test particles to track
 	active_parts = N;
 	my_planet = p;
+	my_dist = dist;
 	my_parts.resize(N);
 	T_bg = T;                   // [K] background temp where simulation starts
 	ref_height = ref_h;         // [m] altitude for bottom of model
 	bg_species = bg;
+
+	for (int i=0; i<N; i++)
+	{
+		my_parts[i] = parts[i];
+	}
 
 	/*
 	double particle_r = my_planet.get_radius() + ref_height;
@@ -29,25 +34,10 @@ Atmosphere::Atmosphere(int n, Planet p, Background_Species bg, double T, double 
 	}
 	*/
 
-	// everything below should eventually be incorporated into a Distribution class
-	ifstream pos_file, vel_file;
-	pos_file.open("/home/rodney/Documents/research/software/Deighan/corona3d_2020/positions.out");
-	vel_file.open("/home/rodney/Documents/research/software/Deighan/corona3d_2020/velocities.out");
-	string pos_line, vel_line;
-	double x, y, z, vx, vy, vz;
-
 	for (int i=0; i<N; i++)
 	{
-		getline(pos_file, pos_line);
-		getline(vel_file, vel_line);
-		stringstream str_pos(pos_line);
-		stringstream str_vel(vel_line);
-		str_pos >> x >> y >> z;
-		str_vel >> vx >> vy >> vz;
-		my_parts[i].init_particle_custom(x, y, z, vx, vy, vz);
+		dist->init(my_parts[i]);
 	}
-	pos_file.close();
-	vel_file.close();
 }
 
 Atmosphere::~Atmosphere() {
@@ -62,9 +52,9 @@ void Atmosphere::output_positions(string datapath)
 	outfile.open(datapath);
 	for (int i=0; i<N; i++)
 	{
-		outfile << setprecision(10) << my_parts[i].get_x() << '\t';
-		outfile << setprecision(10) << my_parts[i].get_y() << '\t';
-		outfile << setprecision(10) << my_parts[i].get_z() << '\n';
+		outfile << setprecision(10) << my_parts[i]->get_x() << '\t';
+		outfile << setprecision(10) << my_parts[i]->get_y() << '\t';
+		outfile << setprecision(10) << my_parts[i]->get_z() << '\n';
 	}
 	outfile.close();
 }
@@ -82,7 +72,7 @@ void Atmosphere::output_velocity_distro(double bin_width, int num_bins, string d
 	{
 		//if (my_parts[i].get_active())
 		{
-			v = my_parts[i].get_total_v();
+			v = my_parts[i]->get_total_v();
 			nvb = (int)(v / bin_width);
 			vbins[nvb]++;
 		}
@@ -99,32 +89,36 @@ void Atmosphere::output_velocity_distro(double bin_width, int num_bins, string d
 void Atmosphere::run_simulation(double dt, int num_steps)
 {
 	double k = my_planet.get_k_g();
-	double v_Obg = sqrt(8.0*constants::k_b*T_bg / (constants::pi*my_parts[0].get_mass()));
+	double v_Obg = sqrt(8.0*constants::k_b*T_bg / (constants::pi*my_parts[0]->get_mass()));
 	//double v_Obg = 0;
 	//double thresh_v = sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[0].get_inverse_radius()-1.0/(my_planet.get_radius()+900e3)));
 
 	for (int i=0; i<num_steps; i++)
 	{
-		//output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i) + ".out");
+		if ((i+1) % 10000 == 0)
+		{
+			cout << i+1 << "\t" << active_parts << endl;
+			output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i+1) + ".out");
+		}
 
 		for (int j=0; j<N; j++)
 		{
-			if (my_parts[j].get_active())
+			if (my_parts[j]->get_active())
 			{
-				my_parts[j].do_timestep(dt, k);
-				if (bg_species.check_collision(my_parts[j].get_radius(), my_parts[j].get_total_v(), dt))
+				my_parts[j]->do_timestep(dt, k);
+				if (bg_species.check_collision(my_parts[j]->get_radius(), my_parts[j]->get_total_v(), dt))
 				{
-					my_parts[j].do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta());
+					my_parts[j]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta());
 				}
-				if (my_parts[j].get_radius() < (my_planet.get_radius() + 900e3) && (my_parts[j].get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[j].get_inverse_radius()-1.0/(my_planet.get_radius()+900e3))))
+				if (my_parts[j]->get_radius() < (my_planet.get_radius() + 900e3) && (my_parts[j]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[j]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e3))))
 				{
-					my_parts[j].deactivate();
+					my_parts[j]->deactivate();
 					active_parts--;
 				}
 			}
 		}
 	}
 
-	std::cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;
-	std::cout << "Active particles remaining: " << active_parts << endl;
+	cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;
+	cout << "Active particles remaining: " << active_parts << endl;
 }

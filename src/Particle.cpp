@@ -160,7 +160,7 @@ double Particle::get_total_v()
 }
 
 // initialize particle using custom position and velocity
-void Particle::init_particle_custom(double x, double y, double z, double vx, double vy, double vz)
+void Particle::init_particle(double x, double y, double z, double vx, double vy, double vz)
 {
 	radius = sqrt(x*x + y*y + z*z);
 	inverse_radius = 1.0/radius;

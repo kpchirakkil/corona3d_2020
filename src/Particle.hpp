@@ -31,7 +31,7 @@ public:
 	double get_vy();
 	double get_vz();
 	double get_total_v();
-	void init_particle_custom(double x, double y, double z, double vx, double vy, double vz);
+	void init_particle(double x, double y, double z, double vx, double vy, double vz);
 	void init_particle_MB(double r, double v_avg); // init particle from MB distribution
 	void init_particle_vonly_MB(double v_avg);     // init with velocity only for collision partners
 

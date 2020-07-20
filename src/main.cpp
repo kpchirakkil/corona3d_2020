@@ -26,6 +26,13 @@ int main(int argc, char* argv[])
 	Planet mars;
 	mars.init(planet_mass, planet_radius);
 
+	vector<Particle*> parts;
+	parts.resize(num_testparts);
+	for (int i=0; i<num_testparts; i++)
+	{
+		parts[i] = new Particle_O();
+	}
+
 	// initialize background species
 	int num_bgparts = 4;
 	Particle* bg_parts[] = {new Particle_O(),
@@ -34,10 +41,11 @@ int main(int argc, char* argv[])
 							new Particle_CO2()};
 	double bg_dens[] = {2.64e13, 1.0e13, 3.1e13, 6.68e13};
 	double bg_sigs[] = {6.4e-19, 1.85e-18, 1.85e-18, 2.0e-18};
+	Distribution* dist = new Distribution_Import();
 	Background_Species bg_spec(num_bgparts, mars, bg_temp, ref_alt, bg_parts, bg_dens, bg_sigs);
 
 	// initialize atmosphere and run simulation
-	Atmosphere my_atmosphere(num_testparts, mars, bg_spec, bg_temp, ref_alt);
+	Atmosphere my_atmosphere(num_testparts, mars, parts, dist, bg_spec, bg_temp, ref_alt);
 	my_atmosphere.output_velocity_distro(100.0, 150, "/home/rodney/Documents/coronaTest/vdist.out");
 	my_atmosphere.run_simulation(dt, timesteps);
 	my_atmosphere.output_velocity_distro(100.0, 150, "/home/rodney/Documents/coronaTest/vdist2.out");

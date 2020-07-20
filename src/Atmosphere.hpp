@@ -11,10 +11,12 @@
 #include <vector>
 #include <iomanip>
 #include "Background_Species.hpp"
+#include "Distribution_Import.hpp"
+using namespace std;
 
 class Atmosphere {
 public:
-	Atmosphere(int n, Planet p, Background_Species bg, double T, double ref_h);
+	Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h);
 	virtual ~Atmosphere();
 
 	void output_positions(std::string datapath);
@@ -25,7 +27,8 @@ private:
 	int N;                              // number of particles initially spawned
 	int active_parts;                   // number of active particles
 	Planet my_planet;                   // contains planet mass and radius
-	std::vector<Particle_O> my_parts;   // array of atoms to be tracked
+	vector<Particle*> my_parts;         // array of particles to be tracked
+	Distribution* my_dist;              // distribution class to initialize particles
 	Background_Species bg_species;      // background species used for collisions
 	double T_bg;                        // [K] background temp where simulation starts
 	double ref_height;                  // [m] altitude above planet surface of model bottom
