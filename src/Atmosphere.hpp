@@ -12,6 +12,7 @@
 #include <iomanip>
 #include "Background_Species.hpp"
 #include "Distribution_Import.hpp"
+#include "Distribution_MB.hpp"
 using namespace std;
 
 class Atmosphere {
@@ -24,7 +25,7 @@ public:
 	void run_simulation(double dt, int num_steps);
 
 private:
-	int N;                              // number of particles initially spawned
+	int num_parts;                      // number of particles initially spawned
 	int active_parts;                   // number of active particles
 	Planet my_planet;                   // contains planet mass and radius
 	vector<Particle*> my_parts;         // array of particles to be tracked

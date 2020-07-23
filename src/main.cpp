@@ -9,7 +9,6 @@
 #include <fstream>
 #include <iomanip>
 #include "constants.hpp"
-#include "Planet.hpp"
 #include "Atmosphere.hpp"
 using namespace std;
 
@@ -19,19 +18,21 @@ int main(int argc, char* argv[])
 	int num_testparts = 10000;
 	int timesteps = 1000000;
 	double dt = 0.05;
-	double ref_alt = 200e3;
+	double ref_height = 200e3;
 	double bg_temp = 277.6;
 	double planet_mass = 6.4185e23;
 	double planet_radius = 3.397e6;
 	Planet mars;
 	mars.init(planet_mass, planet_radius);
 
+	// particle array and distribution to be used for simulation
 	vector<Particle*> parts;
 	parts.resize(num_testparts);
 	for (int i=0; i<num_testparts; i++)
 	{
 		parts[i] = new Particle_O();
 	}
+	Distribution* dist = new Distribution_Import(mars, ref_height, bg_temp);
 
 	// initialize background species
 	int num_bgparts = 4;
@@ -41,11 +42,11 @@ int main(int argc, char* argv[])
 							new Particle_CO2()};
 	double bg_dens[] = {2.64e13, 1.0e13, 3.1e13, 6.68e13};
 	double bg_sigs[] = {6.4e-19, 1.85e-18, 1.85e-18, 2.0e-18};
-	Distribution* dist = new Distribution_Import();
-	Background_Species bg_spec(num_bgparts, mars, bg_temp, ref_alt, bg_parts, bg_dens, bg_sigs);
+	Distribution_MB* bg_dist = new Distribution_MB(mars, ref_height, bg_temp);
+	Background_Species bg_spec(num_bgparts, mars, bg_temp, ref_height, bg_dist, bg_parts, bg_dens, bg_sigs);
 
 	// initialize atmosphere and run simulation
-	Atmosphere my_atmosphere(num_testparts, mars, parts, dist, bg_spec, bg_temp, ref_alt);
+	Atmosphere my_atmosphere(num_testparts, mars, parts, dist, bg_spec, bg_temp, ref_height);
 	my_atmosphere.output_velocity_distro(100.0, 150, "/home/rodney/Documents/coronaTest/vdist.out");
 	my_atmosphere.run_simulation(dt, timesteps);
 	my_atmosphere.output_velocity_distro(100.0, 150, "/home/rodney/Documents/coronaTest/vdist2.out");

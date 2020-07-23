@@ -11,18 +11,19 @@
 Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h)
 {
 	srand((unsigned)time(NULL));
-	N = n;                      // number of test particles to track
-	active_parts = N;
+	num_parts = n;              // number of test particles to track
+	active_parts = num_parts;
 	my_planet = p;
 	my_dist = dist;
-	my_parts.resize(N);
+	my_parts.resize(num_parts);
 	T_bg = T;                   // [K] background temp where simulation starts
 	ref_height = ref_h;         // [m] altitude for bottom of model
 	bg_species = bg;
 
-	for (int i=0; i<N; i++)
+	for (int i=0; i<num_parts; i++)
 	{
 		my_parts[i] = parts[i];
+		dist->init(my_parts[i]);
 	}
 
 	/*
@@ -33,11 +34,6 @@ Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* d
 		my_parts[i].init_particle_MB(particle_r, particle_vavg);
 	}
 	*/
-
-	for (int i=0; i<N; i++)
-	{
-		dist->init(my_parts[i]);
-	}
 }
 
 Atmosphere::~Atmosphere() {
@@ -50,7 +46,7 @@ void Atmosphere::output_positions(string datapath)
 {
 	ofstream outfile;
 	outfile.open(datapath);
-	for (int i=0; i<N; i++)
+	for (int i=0; i<num_parts; i++)
 	{
 		outfile << setprecision(10) << my_parts[i]->get_x() << '\t';
 		outfile << setprecision(10) << my_parts[i]->get_y() << '\t';
@@ -68,9 +64,9 @@ void Atmosphere::output_velocity_distro(double bin_width, int num_bins, string d
 	int nvb = 0;                // bin number
 	int vbins[num_bins] = {0};  // array of velocity bin counts
 
-	for (int i=0; i<N; i++)
+	for (int i=0; i<num_parts; i++)
 	{
-		//if (my_parts[i].get_active())
+		if (my_parts[i]->get_active())
 		{
 			v = my_parts[i]->get_total_v();
 			nvb = (int)(v / bin_width);
@@ -98,10 +94,10 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 		if ((i+1) % 10000 == 0)
 		{
 			cout << i+1 << "\t" << active_parts << endl;
-			output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i+1) + ".out");
+			//output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i+1) + ".out");
 		}
 
-		for (int j=0; j<N; j++)
+		for (int j=0; j<num_parts; j++)
 		{
 			if (my_parts[j]->get_active())
 			{

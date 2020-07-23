@@ -7,7 +7,8 @@
 
 #include "Distribution_Import.hpp"
 
-Distribution_Import::Distribution_Import() {
+Distribution_Import::Distribution_Import(Planet my_p, double ref_h, double ref_T)
+	: Distribution(my_p, ref_h, ref_T) {
 	num_particles = 0;
 	next_index = 0;
 

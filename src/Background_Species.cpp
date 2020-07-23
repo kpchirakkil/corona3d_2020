@@ -15,12 +15,14 @@ Background_Species::Background_Species() {
 	ref_g = 0.0;
 	collision_target = -1;
 	collision_theta = 0.0;
+	my_dist = NULL;
 }
 
-Background_Species::Background_Species(int n, Planet p, double T, double h, Particle* bg_p[], double bg_d[], double bg_s[]) {
+Background_Species::Background_Species(int n, Planet p, double T, double h, Distribution_MB* dist, Particle* bg_p[], double bg_d[], double bg_s[]) {
 	num_collisions = 0;
 	num_species = n;
 	my_planet = p;
+	my_dist = dist;
 	ref_temp = T;
 	ref_height = h;
 	ref_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+ref_height, 2.0));
@@ -96,7 +98,7 @@ bool Background_Species::check_collision(double r, double v, double dt)
 
 		// subtract the extra added integer, and initialize collision target
 		collision_target--;
-		bg_parts[collision_target]->init_particle_vonly_MB(bg_avg_v[collision_target]);
+		my_dist->init_vonly(bg_parts[collision_target], bg_avg_v[collision_target]);
 		collision_theta = find_new_theta();
 
 		return true;

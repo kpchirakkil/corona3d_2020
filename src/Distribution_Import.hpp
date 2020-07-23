@@ -16,7 +16,7 @@ using namespace std;
 
 class Distribution_Import: public Distribution {
 public:
-	Distribution_Import();
+	Distribution_Import(Planet my_p, double ref_h, double ref_T);
 	virtual ~Distribution_Import();
 	void init(Particle* p);
 

@@ -17,13 +17,14 @@
 #include "Particle_H.hpp"
 #include "Particle_N2.hpp"
 #include "Particle_O.hpp"
+#include "Distribution_MB.hpp"
 #include "Planet.hpp"
 using namespace std;
 
 class Background_Species {
 public:
 	Background_Species();
-	Background_Species(int n, Planet p, double T, double h, Particle* bg_p[], double bg_d[], double bg_s[]);
+	Background_Species(int n, Planet p, double T, double h, Distribution_MB* dist, Particle* bg_p[], double bg_d[], double bg_s[]);
 	virtual ~Background_Species();
 	bool check_collision(double r, double v, double dt);
 	int get_num_collisions();
@@ -32,14 +33,15 @@ public:
 	void import_CDF(string filename);
 
 private:
-	int num_species;         // number of background species in atmosphere
-	int num_collisions;      // tracks total number of collisions during simulation
-	int collision_target;    // index of particle in bg_parts to be used for next collision
-	Planet my_planet;        // contains planet mass, radius, and gravitational constant
-	double collision_theta;  // angle (in radians) to be used for next collision
-	double ref_temp;         // temperature (in Kelvin) at reference height
-	double ref_height;       // height (in meters above planet surface) where simulation starts
-	double ref_g;            // acceleration due to gravity (G*M/r^2) at reference height
+	int num_species;           // number of background species in atmosphere
+	int num_collisions;        // tracks total number of collisions during simulation
+	int collision_target;      // index of particle in bg_parts to be used for next collision
+	Planet my_planet;          // contains planet mass, radius, and gravitational constant
+	double collision_theta;    // angle (in radians) to be used for next collision
+	double ref_temp;           // temperature (in Kelvin) at reference height
+	double ref_height;         // height (in meters above planet surface) where simulation starts
+	double ref_g;              // acceleration due to gravity (G*M/r^2) at reference height
+	Distribution_MB* my_dist;  // distribution to be used for initialization of bg particles
 	vector<Particle*> bg_parts;      // array of pointers to child particle classes
 	vector<double> bg_densities;     // array of densities for each particle in bg_parts
 	vector<double> bg_sigmas;        // array of total cross sections for each particle

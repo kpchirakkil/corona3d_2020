@@ -159,7 +159,7 @@ double Particle::get_total_v()
 				velocity[2]*velocity[2]);
 }
 
-// initialize particle using custom position and velocity
+// initialize particle using given position and velocity
 void Particle::init_particle(double x, double y, double z, double vx, double vy, double vz)
 {
 	radius = sqrt(x*x + y*y + z*z);
@@ -167,6 +167,14 @@ void Particle::init_particle(double x, double y, double z, double vx, double vy,
 	position[0] = x;
 	position[1] = y;
 	position[2] = z;
+	velocity[0] = vx;
+	velocity[1] = vy;
+	velocity[2] = vz;
+}
+
+// initialize particle with velocity only to be used for collisions
+void Particle::init_particle_vonly(double vx, double vy, double vz)
+{
 	velocity[0] = vx;
 	velocity[1] = vy;
 	velocity[2] = vz;
