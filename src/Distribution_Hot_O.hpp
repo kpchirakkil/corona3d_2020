@@ -22,6 +22,9 @@ private:
 	double T_ion;  // [K] ion temperature
 	double T_e;    // [K] electron temperature
 	double m_ion;  // [kg] O2+ ion mass
+
+	double E_rot(double B, double T);
+	void gen_mb(double vavg, double v[]);
 };
 
 #endif /* DISTRIBUTION_HOT_O_HPP_ */

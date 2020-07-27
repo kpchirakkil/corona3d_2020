@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
 	{
 		parts[i] = new Particle_O();
 	}
-	Distribution* dist = new Distribution_Import(mars, ref_height, bg_temp);
+	Distribution* dist = new Distribution_Hot_O(mars, ref_height, bg_temp);
 
 	// initialize background species
 	int num_bgparts = 4;

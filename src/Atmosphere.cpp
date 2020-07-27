@@ -23,7 +23,7 @@ Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* d
 	for (int i=0; i<num_parts; i++)
 	{
 		my_parts[i] = parts[i];
-		dist->init(my_parts[i]);
+		my_dist->init(my_parts[i]);
 	}
 
 	/*

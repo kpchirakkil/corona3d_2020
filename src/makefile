@@ -1,11 +1,23 @@
-corona3d_2020: Atmosphere.o Background_Species.o main.o Particle_CO.o Particle_CO2.o Particle_H.o Particle_N2.o Particle_O.o Particle.o Planet.o
-	g++ Atmosphere.o Background_Species.o main.o Particle_CO.o Particle_CO2.o Particle_H.o Particle_N2.o Particle_O.o Particle.o Planet.o -o corona3d_2020
+corona3d_2020: Atmosphere.o Background_Species.o Distribution_Hot_O.o Distribution_Import.o Distribution_MB.o Distribution.o main.o Particle_CO.o Particle_CO2.o Particle_H.o Particle_N2.o Particle_O.o Particle.o Planet.o
+	g++ Atmosphere.o Background_Species.o Distribution_Hot_O.o Distribution_Import.o Distribution_MB.o Distribution.o main.o Particle_CO.o Particle_CO2.o Particle_H.o Particle_N2.o Particle_O.o Particle.o Planet.o -o corona3d_2020
 	
 Atmosphere.o: Atmosphere.cpp
 	g++ -O2 -c Atmosphere.cpp
 	
 Background_Species.o: Background_Species.cpp
 	g++ -O2 -c Background_Species.cpp
+	
+Distribution_Hot_O.o: Distribution_Hot_O.cpp
+	g++ -O2 -c Distribution_Hot_O.cpp
+
+Distribution_Import.o: Distribution_Import.cpp
+	g++ -O2 -c Distribution_Import.cpp
+
+Distribution_MB.o: Distribution_MB.cpp
+	g++ -O2 -c Distribution_MB.cpp
+
+Distribution.o: Distribution.cpp
+	g++ -O2 -c Distribution.cpp
 	
 main.o: main.cpp
 	g++ -O2 -c main.cpp
@@ -32,4 +44,5 @@ Planet.o: Planet.cpp
 	g++ -O2 -c Planet.cpp
 	
 clean:
-	rm *.o corona3d_2020
+	rm *.o
+	rm corona3d_2020
