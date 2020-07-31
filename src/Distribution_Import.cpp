@@ -7,17 +7,17 @@
 
 #include "Distribution_Import.hpp"
 
-Distribution_Import::Distribution_Import(Planet my_p, double ref_h, double ref_T)
+Distribution_Import::Distribution_Import(Planet my_p, double ref_h, double ref_T, string pos_file, string vel_file)
 	: Distribution(my_p, ref_h, ref_T) {
 	num_particles = 0;
 	next_index = 0;
 
-	ifstream pos_file, vel_file;
-	pos_file.open("/home/rodney/Documents/research/software/Deighan/corona3d_2020/positions.out");
-	vel_file.open("/home/rodney/Documents/research/software/Deighan/corona3d_2020/velocities.out");
+	ifstream pos_input, vel_input;
+	pos_input.open(pos_file);
+	vel_input.open(vel_file);
 	string pos_line, vel_line;
 
-	while (getline(pos_file, pos_line) && getline(vel_file, vel_line))
+	while (getline(pos_input, pos_line) && getline(vel_input, vel_line))
 	{
 		num_particles++;
 		stringstream str_pos(pos_line);
@@ -29,8 +29,8 @@ Distribution_Import::Distribution_Import(Planet my_p, double ref_h, double ref_T
 		str_pos >> positions(positions.rows()-1, 0) >> positions(positions.rows()-1, 1) >> positions(positions.rows()-1, 2);
 		str_vel >> velocities(velocities.rows()-1, 0) >> velocities(velocities.rows()-1, 1) >> velocities(velocities.rows()-1, 2);
 	}
-	pos_file.close();
-	vel_file.close();
+	pos_input.close();
+	vel_input.close();
 }
 
 Distribution_Import::~Distribution_Import() {
