@@ -11,6 +11,7 @@
 #include <vector>
 #include <iomanip>
 #include "Background_Species.hpp"
+#include "Distribution_Hot_H.hpp"
 #include "Distribution_Hot_O.hpp"
 #include "Distribution_Import.hpp"
 #include "Distribution_MB.hpp"

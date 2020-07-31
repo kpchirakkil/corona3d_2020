@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
 	//instantiate the Distribution class to be used
 	if (dist_type == "Hot_H")
 	{
-		//haven't made this distribution class yet
+		dist = new Distribution_Hot_H(my_planet, ref_height, bg_temp);
 	}
 	else if (dist_type == "Hot_O")
 	{
