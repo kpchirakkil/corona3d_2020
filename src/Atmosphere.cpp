@@ -26,6 +26,9 @@ Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* d
 		my_dist->init(my_parts[i]);
 	}
 
+	//the way I initialized particles before the distribution class was made
+	//only works for MB dist, but leaving in just in case it comes in handy
+
 	/*
 	double particle_r = my_planet.get_radius() + ref_height;
 	double particle_vavg = sqrt(constants::k_b*T_bg/my_parts[0].get_mass());
@@ -88,6 +91,8 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 	double v_Obg = sqrt(8.0*constants::k_b*T_bg / (constants::pi*my_parts[0]->get_mass()));
 	//double v_Obg = 0;
 	//double thresh_v = sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[0].get_inverse_radius()-1.0/(my_planet.get_radius()+900e3)));
+
+	cout << "Simulating Particle Transport...\n";
 
 	for (int i=0; i<num_steps; i++)
 	{

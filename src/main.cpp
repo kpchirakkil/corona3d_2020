@@ -47,6 +47,8 @@ Particle* set_particle_type(string type)
 
 int main(int argc, char* argv[])
 {
+	cout << "Initializing Simulation...\n";
+
 	//initialize and read parameters from configuration file
 	int num_testparts = 0;
 	string part_type = "";
@@ -66,7 +68,7 @@ int main(int argc, char* argv[])
 	int bg_params_index = 0;
 
 	ifstream infile;
-	infile.open("/home/rodney/git/corona3d_2020/src/corona3d_2020.cfg");
+	infile.open("corona3d_2020.cfg");
 	if (!infile.good())
 	{
 		cout << "Configuration file not found!\n";
