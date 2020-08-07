@@ -75,6 +75,16 @@ program main
 	call load_diff_xsect()
 	call init_planet()
 	call init_parts()
+	
+	! output distribution of positions and velocities to file
+    open(unit = 55, file='positions.out')
+    open(unit = 56, file='velocities.out')
+    do j = 1 , n_part_max
+       write(55,*) parts(j)%x(1), parts(j)%x(2), parts(j)%x(3)
+       write(56,*) parts(j)%v(1), parts(j)%v(2), parts(j)%v(3)
+    enddo
+    close(unit=55)
+    close(unit=56)
 
   write(*,*) 'Simulating Particle Transport...'
  
@@ -192,6 +202,17 @@ program main
 		endif
 	enddo
   enddo
+  
+  ! output final positions and velocities
+  open(unit = 75, file='positions2.out')
+  open(unit = 76, file='velocities2.out')
+  do j = 1 , n_part_max
+     if (parts(j)%active .eq. 0) cycle
+     write(75,*) parts(j)%x(1), parts(j)%x(2), parts(j)%x(3)
+     write(76,*) parts(j)%v(1), parts(j)%v(2), parts(j)%v(3)
+  enddo
+  close(unit=75)
+  close(unit=76)
 
 dens_conv = dt*2d0*H_DR*DR160*2d0*pi*(r_b+H_DR)**2        				! density conversion factor; 2 hot O per DR across day hemisphere
 
