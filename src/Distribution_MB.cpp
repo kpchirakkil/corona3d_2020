@@ -26,38 +26,16 @@ void Distribution_MB::init(Particle* p)
 	double y = ref_radius*sqrt(1-(u*u))*sin(phi);
 	double z = ref_radius*u;
 
-	double randnum1 = get_rand();
-	double randnum2 = get_rand();
-	double randnum3 = get_rand();
-	double randnum4 = get_rand();
+	double v[] = {0.0, 0.0, 0.0};
+	gen_mb(v_avg, v);
 
-	randnum1 = v_avg*sqrt(-2.0*log(1.0-randnum1));
-	randnum2 = constants::twopi*randnum2;
-	randnum3 = v_avg*sqrt(-2.0*log(1.0-randnum3));
-	randnum4 = constants::twopi*randnum4;
-
-	double vx = randnum1*cos(randnum2);
-	double vy = randnum1*sin(randnum2);
-	double vz = randnum3*cos(randnum4);
-
-	p->init_particle(x, y, z, vx, vy, vz);
+	p->init_particle(x, y, z, v[0], v[1], v[2]);
 }
 
 void Distribution_MB::init_vonly(Particle* p, double v_avg)
 {
-	double randnum1 = get_rand();
-	double randnum2 = get_rand();
-	double randnum3 = get_rand();
-	double randnum4 = get_rand();
+	double v[] = {0.0, 0.0, 0.0};
+	gen_mb(v_avg, v);
 
-	randnum1 = v_avg*sqrt(-2.0*log(1.0-randnum1));
-	randnum2 = constants::twopi*randnum2;
-	randnum3 = v_avg*sqrt(-2.0*log(1.0-randnum3));
-	randnum4 = constants::twopi*randnum4;
-
-	double vx = randnum1*cos(randnum2);
-	double vy = randnum1*sin(randnum2);
-	double vz = randnum3*cos(randnum4);
-
-	p->init_particle_vonly(vx, vy, vz);
+	p->init_particle_vonly(v[0], v[1], v[2]);
 }

@@ -88,18 +88,17 @@ void Atmosphere::output_velocity_distro(double bin_width, int num_bins, string d
 void Atmosphere::run_simulation(double dt, int num_steps)
 {
 	double k = my_planet.get_k_g();
-	double v_Obg = sqrt(8.0*constants::k_b*T_bg / (constants::pi*my_parts[0]->get_mass()));
+	double v_Obg = sqrt(8.0*constants::k_b*T_bg / (constants::pi*15.9994*constants::amu));
 	//double v_Obg = 0;
-	//double thresh_v = sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[0].get_inverse_radius()-1.0/(my_planet.get_radius()+900e3)));
-
+	//double thresh_v = sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[0]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e3)));
 	cout << "Simulating Particle Transport...\n";
 
 	for (int i=0; i<num_steps; i++)
 	{
-		if ((i+1) % 10000 == 0)
+		if ((i+1) % 1000 == 0)
 		{
 			cout << i+1 << "\t" << active_parts << endl;
-			//output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i+1) + ".out");
+			output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i+1) + ".out");
 		}
 
 		for (int j=0; j<num_parts; j++)

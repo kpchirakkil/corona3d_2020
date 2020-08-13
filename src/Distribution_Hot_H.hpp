@@ -15,6 +15,11 @@ public:
 	Distribution_Hot_H(Planet my_p, double ref_h, double ref_T);
 	virtual ~Distribution_Hot_H();
 	void init(Particle* p);
+
+private:
+	double T_ion;  // [K] ion temperature
+	double T_e;    // [K] electron temperature
+	double m_ion;  // [kg] O2+ ion mass
 };
 
 #endif /* DISTRIBUTION_HOT_H_HPP_ */

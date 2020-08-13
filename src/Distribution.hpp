@@ -24,6 +24,9 @@ protected:
 	double ref_radius;
 	double ref_temp;
 
+	// sets v_in[] to a Maxwell-Boltzmann velocity vector based on vavg
+	void gen_mb(double vavg, double v_in[]);
+
 	// returns uniformly distributed random number between 0 and 1
 	double get_rand() {return ((double)rand() / (double)RAND_MAX);}
 };
