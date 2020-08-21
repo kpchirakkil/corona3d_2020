@@ -7,17 +7,17 @@
 
 #include "Atmosphere.hpp"
 
-// construct atmosphere using specific parameters
+// construct atmosphere using given parameters
 Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h)
 {
-	srand((unsigned)time(NULL));
-	num_parts = n;              // number of test particles to track
+	srand((unsigned)time(NULL));  // seed random number generator
+	num_parts = n;                // number of test particles to track
 	active_parts = num_parts;
 	my_planet = p;
 	my_dist = dist;
 	my_parts.resize(num_parts);
-	T_bg = T;                   // [K] background temp where simulation starts
-	ref_height = ref_h;         // [m] altitude for bottom of model
+	T_bg = T;                     // [K] background temp where simulation starts
+	ref_height = ref_h;           // [m] altitude for bottom of model
 	bg_species = bg;
 
 	for (int i=0; i<num_parts; i++)
@@ -28,7 +28,6 @@ Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* d
 
 	//the way I initialized particles before the distribution class was made
 	//only works for MB dist, but leaving in just in case it comes in handy
-
 	/*
 	double particle_r = my_planet.get_radius() + ref_height;
 	double particle_vavg = sqrt(constants::k_b*T_bg/my_parts[0].get_mass());
@@ -37,6 +36,38 @@ Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* d
 		my_parts[i].init_particle_MB(particle_r, particle_vavg);
 	}
 	*/
+
+	// read in temperature profile
+	ifstream infile;
+	infile.open("/home/rodney/git/corona3d_2020/src/inputs/MarsTempHSA_FoxHac09.csv");
+	if (!infile.good())
+	{
+		cout << "Temperature profile file not found!\n";
+		exit(1);
+	}
+	string line, word;
+	vector<string> row;
+	while (getline(infile, line))
+	{
+		row.clear();
+		if (line[0] == '#' || line.empty() || std::all_of(line.begin(), line.end(), ::isspace))
+		{
+			continue;
+		}
+		else
+		{
+			stringstream str(line);
+			while(getline(str, word, ','))
+			{
+				row.push_back(word);
+			}
+			alt_bins.push_back(stod(row[0])*1000.0);
+			Tn.push_back(stod(row[1]));
+			Ti.push_back(stod(row[2]));
+			Te.push_back(stod(row[3]));
+		}
+	}
+	infile.close();
 }
 
 Atmosphere::~Atmosphere() {
@@ -95,7 +126,7 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 
 	for (int i=0; i<num_steps; i++)
 	{
-		if ((i+1) % 1000 == 0)
+		if ((i+1) % 10000 == 0)
 		{
 			cout << i+1 << "\t" << active_parts << endl;
 			output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i+1) + ".out");
@@ -106,7 +137,9 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 			if (my_parts[j]->get_active())
 			{
 				my_parts[j]->do_timestep(dt, k);
-				if (bg_species.check_collision(my_parts[j]->get_radius(), my_parts[j]->get_total_v(), dt))
+				double r = my_parts[j]->get_radius();
+				double temp = common.interpolate(alt_bins, Tn, (r - my_planet.get_radius()));
+				if (bg_species.check_collision(r, my_parts[j]->get_total_v(), dt))
 				{
 					my_parts[j]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta());
 				}

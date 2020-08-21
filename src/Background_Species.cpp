@@ -35,7 +35,7 @@ Background_Species::Background_Species(int n, Planet p, double T, double h, Dist
 	for (int i=0; i<num_species; i++)
 	{
 		bg_parts[i] = bg_p[i];
-		bg_densities[i] = bg_d[i];
+		bg_densities[i].push_back(bg_d[i]);
 		bg_sigmas[i] = bg_s[i];
 		bg_scaleheights[i] = constants::k_b*ref_temp/(bg_parts[i]->get_mass()*ref_g);
 		bg_avg_v[i] = sqrt(constants::k_b*ref_temp/bg_parts[i]->get_mass());
@@ -65,11 +65,11 @@ bool Background_Species::check_collision(double r, double v, double dt)
 	temp_dens.resize(num_species);
 	for (int i=0; i<num_species; i++)
 	{
-		temp_dens[i] = calc_new_density(bg_densities[i], bg_scaleheights[i], r_moved);
+		temp_dens[i] = calc_new_density(bg_densities[i][0], bg_scaleheights[i], r_moved);
 	}
 
 	// determine if test particle collided
-	double u = get_rand();
+	double u = common.get_rand();
 	double tau = 0.0;
 	for (int i=0; i<num_species; i++)
 	{
@@ -80,7 +80,7 @@ bool Background_Species::check_collision(double r, double v, double dt)
 		num_collisions++;
 
 		// pick target species for collision
-		u = get_rand();
+		u = common.get_rand();
 		double total_dens = 0.0;
 		for (int i=0; i<num_species; i++)
 		{
@@ -113,7 +113,7 @@ bool Background_Species::check_collision(double r, double v, double dt)
 // scans imported differential scattering CDF for new collision theta
 double Background_Species::find_new_theta()
 {
-	double u = get_rand();
+	double u = common.get_rand();
 	int k = 0;
 	while (cdf(k, 0) < u)
 	{

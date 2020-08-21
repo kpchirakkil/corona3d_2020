@@ -8,8 +8,8 @@
 #ifndef PARTICLE_HPP_
 #define PARTICLE_HPP_
 
-#include <cstdlib>
 #include <eigen3/Eigen/Core>
+#include "Common_Functions.hpp"
 using namespace Eigen;
 
 class Particle {
@@ -37,14 +37,12 @@ public:
 	void init_particle_vonly_MB(double v_avg);     // init with velocity only for collision partners
 
 protected:
+	Common_Functions common;
 	bool active;                    // flag for whether particle is active, i.e. should still be considered in the simulation
 	double radius;                  // radius from center of planet	[m]
 	double inverse_radius;          // inverse radius (for computational efficiency) [m^-1]
 	Matrix<double, 3, 1> position;  // position vector [m,m,m]
 	Matrix<double, 3, 1> velocity;  // velocity vector [m/s,m/s,m/s]
-
-	// returns uniformly distributed random number between 0 and 1
-	double get_rand() {return ((double)rand() / (double)RAND_MAX);}
 };
 
 #endif /* PARTICLE_HPP_ */

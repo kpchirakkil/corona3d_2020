@@ -15,6 +15,7 @@
 #include "Distribution_Hot_O.hpp"
 #include "Distribution_Import.hpp"
 #include "Distribution_MB.hpp"
+#include "Common_Functions.hpp"
 using namespace std;
 
 class Atmosphere {
@@ -27,6 +28,7 @@ public:
 	void run_simulation(double dt, int num_steps);
 
 private:
+	Common_Functions common;
 	int num_parts;                      // number of particles initially spawned
 	int active_parts;                   // number of active particles
 	Planet my_planet;                   // contains planet mass and radius
@@ -35,6 +37,11 @@ private:
 	Background_Species bg_species;      // background species used for collisions
 	double T_bg;                        // [K] background temp where simulation starts
 	double ref_height;                  // [m] altitude above planet surface of model bottom
+
+	vector<double> alt_bins;
+	vector<double> Tn;
+	vector<double> Ti;
+	vector<double> Te;
 };
 
 #endif /* ATMOSPHERE_HPP_ */

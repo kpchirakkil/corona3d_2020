@@ -19,6 +19,7 @@
 #include "Particle_O.hpp"
 #include "Distribution_MB.hpp"
 #include "Planet.hpp"
+#include "Common_Functions.hpp"
 using namespace std;
 
 class Background_Species {
@@ -33,6 +34,7 @@ public:
 	void import_CDF(string filename);
 
 private:
+	Common_Functions common;
 	int num_species;           // number of background species in atmosphere
 	int num_collisions;        // tracks total number of collisions during simulation
 	int collision_target;      // index of particle in bg_parts to be used for next collision
@@ -43,7 +45,7 @@ private:
 	double ref_g;              // acceleration due to gravity (G*M/r^2) at reference height
 	Distribution_MB* my_dist;  // distribution to be used for initialization of bg particles
 	vector<Particle*> bg_parts;      // array of pointers to child particle classes
-	vector<double> bg_densities;     // array of densities for each particle in bg_parts
+	vector<vector<double>> bg_densities;     // array of densities for each particle in bg_parts
 	vector<double> bg_sigmas;        // array of total cross sections for each particle
 	vector<double> bg_scaleheights;  // array of scale heights for each particle type
 	vector<double> bg_avg_v;         // array of average (thermal) velocities for each particle
@@ -54,9 +56,6 @@ private:
 
 	// scans imported differential scattering CDF for new collision theta
 	double find_new_theta();
-
-	// returns uniformly distributed random number between 0 and 1
-	double get_rand() {return ((double)rand() / (double)RAND_MAX);}
 };
 
 #endif /* BACKGROUND_SPECIES_HPP_ */

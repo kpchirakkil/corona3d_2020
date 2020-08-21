@@ -54,7 +54,7 @@ void Particle::do_collision(Particle* target, double theta)
 
 	double alpha = atan2(velocity[1], velocity[0]);
 	double phi = atan2(velocity[2], sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1]));
-	double gamma = constants::twopi*get_rand();
+	double gamma = constants::twopi*common.get_rand();
 
 	Matrix<double, 3, 1> vp;
 	vp[0] = v1*cos(alpha)*cos(phi-theta);
@@ -184,17 +184,17 @@ void Particle::init_particle_vonly(double vx, double vy, double vz)
 void Particle::init_particle_MB(double r, double v_avg)
 {
 	radius = r;
-	double phi = constants::twopi*(get_rand());
-	double u = 2.0*get_rand() - 1;
+	double phi = constants::twopi*(common.get_rand());
+	double u = 2.0*common.get_rand() - 1;
 	inverse_radius = 1.0/r;
 	position[0] = r*sqrt(1-(u*u))*cos(phi);
 	position[1] = r*sqrt(1-(u*u))*sin(phi);
 	position[2] = r*u;
 
-	double randnum1 = get_rand();
-	double randnum2 = get_rand();
-	double randnum3 = get_rand();
-	double randnum4 = get_rand();
+	double randnum1 = common.get_rand();
+	double randnum2 = common.get_rand();
+	double randnum3 = common.get_rand();
+	double randnum4 = common.get_rand();
 
 	randnum1 = v_avg*sqrt(-2.0*log(1.0-randnum1));
 	randnum2 = constants::twopi*randnum2;
@@ -208,10 +208,10 @@ void Particle::init_particle_MB(double r, double v_avg)
 
 void Particle::init_particle_vonly_MB(double v_avg)
 {
-	double randnum1 = get_rand();
-	double randnum2 = get_rand();
-	double randnum3 = get_rand();
-	double randnum4 = get_rand();
+	double randnum1 = common.get_rand();
+	double randnum2 = common.get_rand();
+	double randnum3 = common.get_rand();
+	double randnum4 = common.get_rand();
 
 	randnum1 = v_avg*sqrt(-2.0*log(1.0-randnum1));
 	randnum2 = constants::twopi*randnum2;
