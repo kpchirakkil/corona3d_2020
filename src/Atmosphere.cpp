@@ -8,7 +8,7 @@
 #include "Atmosphere.hpp"
 
 // construct atmosphere using given parameters
-Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h)
+Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile)
 {
 	srand((unsigned)time(NULL));  // seed random number generator
 	num_parts = n;                // number of test particles to track
@@ -38,36 +38,7 @@ Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* d
 	*/
 
 	// read in temperature profile
-	ifstream infile;
-	infile.open("/home/rodney/git/corona3d_2020/src/inputs/MarsTempHSA_FoxHac09.csv");
-	if (!infile.good())
-	{
-		cout << "Temperature profile file not found!\n";
-		exit(1);
-	}
-	string line, word;
-	vector<string> row;
-	while (getline(infile, line))
-	{
-		row.clear();
-		if (line[0] == '#' || line.empty() || std::all_of(line.begin(), line.end(), ::isspace))
-		{
-			continue;
-		}
-		else
-		{
-			stringstream str(line);
-			while(getline(str, word, ','))
-			{
-				row.push_back(word);
-			}
-			alt_bins.push_back(stod(row[0])*1000.0);
-			Tn.push_back(stod(row[1]));
-			Ti.push_back(stod(row[2]));
-			Te.push_back(stod(row[3]));
-		}
-	}
-	infile.close();
+	common.import_csv(temp_profile, alt_bins, Tn, Ti, Te);
 }
 
 Atmosphere::~Atmosphere() {
@@ -139,10 +110,13 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 				my_parts[j]->do_timestep(dt, k);
 				double r = my_parts[j]->get_radius();
 				double temp = common.interpolate(alt_bins, Tn, (r - my_planet.get_radius()));
-				if (bg_species.check_collision(r, my_parts[j]->get_total_v(), dt))
+
+				if (bg_species.check_collision(r, my_parts[j]->get_total_v(), dt, temp))
 				{
 					my_parts[j]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta());
 				}
+
+				// deactivation criteria...need to incorporate into configuration file
 				if (my_parts[j]->get_radius() < (my_planet.get_radius() + 900e3) && (my_parts[j]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[j]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e3))))
 				{
 					my_parts[j]->deactivate();

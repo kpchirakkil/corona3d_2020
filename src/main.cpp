@@ -54,10 +54,13 @@ int main(int argc, char* argv[])
 	string dist_type = "";
 	string pos_infile = "";
 	string vel_infile = "";
+	string temp_profile_filename = "";
+	string neut_densities_filename = "";
+	string ion_densities_filename = "";
 	int timesteps = 0;
 	double dt = 0.0;
 	double ref_height = 0.0;
-	double bg_temp = 0.0;
+	double ref_temp = 0.0;
 	double planet_mass = 0.0;
 	double planet_radius = 0.0;
 	Planet my_planet;
@@ -119,6 +122,18 @@ int main(int argc, char* argv[])
 		{
 			vel_infile = values[i];
 		}
+		else if (parameters[i] == "temp_profile")
+		{
+			temp_profile_filename = values[i];
+		}
+		else if (parameters[i] == "neutral_densities")
+		{
+			neut_densities_filename = values[i];
+		}
+		else if (parameters[i] == "ion_densities")
+		{
+			ion_densities_filename = values[i];
+		}
 		else if (parameters[i] == "timesteps")
 		{
 			timesteps = stoi(values[i]);
@@ -131,9 +146,9 @@ int main(int argc, char* argv[])
 		{
 			ref_height = stod(values[i]);
 		}
-		else if (parameters[i] == "bg_temp")
+		else if (parameters[i] == "ref_temp")
 		{
-			bg_temp = stod(values[i]);
+			ref_temp = stod(values[i]);
 		}
 		else if (parameters[i] == "planet_mass")
 		{
@@ -161,19 +176,19 @@ int main(int argc, char* argv[])
 	//instantiate the Distribution class to be used
 	if (dist_type == "Hot_H")
 	{
-		dist = new Distribution_Hot_H(my_planet, ref_height, bg_temp);
+		dist = new Distribution_Hot_H(my_planet, ref_height, ref_temp);
 	}
 	else if (dist_type == "Hot_O")
 	{
-		dist = new Distribution_Hot_O(my_planet, ref_height, bg_temp);
+		dist = new Distribution_Hot_O(my_planet, ref_height, ref_temp);
 	}
 	else if (dist_type == "MB")
 	{
-		dist = new Distribution_MB(my_planet, ref_height, bg_temp);
+		dist = new Distribution_MB(my_planet, ref_height, ref_temp);
 	}
 	else if (dist_type == "Import")
 	{
-		dist = new Distribution_Import(my_planet, ref_height, bg_temp, pos_infile, vel_infile);
+		dist = new Distribution_Import(my_planet, ref_height, ref_temp, pos_infile, vel_infile);
 	}
 	else
 	{
@@ -191,11 +206,11 @@ int main(int argc, char* argv[])
 		bg_dens[i] = stod(values[bg_params_index + num_bgparts + i]);
 		bg_sigs[i] = stod(values[bg_params_index + num_bgparts + num_bgparts + i]);
 	}
-	Distribution_MB* bg_dist = new Distribution_MB(my_planet, ref_height, bg_temp);
-	Background_Species bg_spec(num_bgparts, my_planet, bg_temp, ref_height, bg_dist, bg_parts, bg_dens, bg_sigs);
+	Distribution_MB* bg_dist = new Distribution_MB(my_planet, ref_height, ref_temp);
+	Background_Species bg_spec(num_bgparts, my_planet, ref_temp, ref_height, bg_dist, bg_parts, bg_dens, bg_sigs, neut_densities_filename);
 
 	// initialize atmosphere and run simulation
-	Atmosphere my_atmosphere(num_testparts, my_planet, parts, dist, bg_spec, bg_temp, ref_height);
+	Atmosphere my_atmosphere(num_testparts, my_planet, parts, dist, bg_spec, ref_temp, ref_height, temp_profile_filename);
 	my_atmosphere.output_velocity_distro(100.0, 150, "/home/rodney/Documents/coronaTest/vdist.out");
 	my_atmosphere.run_simulation(dt, timesteps);
 	my_atmosphere.output_velocity_distro(100.0, 150, "/home/rodney/Documents/coronaTest/vdist2.out");

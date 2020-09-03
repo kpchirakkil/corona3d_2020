@@ -20,7 +20,7 @@ using namespace std;
 
 class Atmosphere {
 public:
-	Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h);
+	Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile);
 	virtual ~Atmosphere();
 
 	void output_positions(std::string datapath);
