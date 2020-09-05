@@ -21,9 +21,9 @@ Planet::~Planet()
 
 void Planet::init()
 {
-	mass = 4.8675e24;              // Venus mass by default
-	radius = 6051.8e3;             // Venus radius by default
-	k_g = -(mass * constants::G);  // planetary gravitational constant
+	mass = 4.8675e27;              // Venus mass by default [g]
+	radius = 6.0518e8;             // Venus radius by default [cm]
+	k_g = -(mass * constants::G);  // planetary gravitational constant [cm^3/s^2]
 }
 
 void Planet::init(double m, double r)

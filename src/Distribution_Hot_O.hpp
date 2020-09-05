@@ -17,11 +17,11 @@ public:
 	void init(Particle* p);
 
 private:
-	double DR160;  // [m^3/s] dissociative recombination rate at 200km
-	double H_DR;   // [m] dissociative recombination scale height
+	double DR160;  // [cm^3/s] dissociative recombination rate at 200km
+	double H_DR;   // [cm] dissociative recombination scale height
 	double T_ion;  // [K] ion temperature
 	double T_e;    // [K] electron temperature
-	double m_ion;  // [kg] O2+ ion mass
+	double m_ion;  // [g] O2+ ion mass
 
 	double E_rot(double B, double T);
 };

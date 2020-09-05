@@ -26,8 +26,8 @@ void Distribution_Hot_H::init(Particle* p)
 	// altitude distribution for hot H
 	double r = my_planet.get_radius() + ref_height;
 
-	double phi = constants::twopi*(get_rand());
-	double u = 2.0*get_rand() - 1.0;
+	double phi = constants::twopi*(common.get_rand());
+	double u = 2.0*common.get_rand() - 1.0;
 	double x = r*sqrt(1-(u*u))*cos(phi);
 	double y = r*sqrt(1-(u*u))*sin(phi);
 	double z = r*u;

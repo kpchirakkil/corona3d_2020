@@ -21,9 +21,9 @@ public:
 	double get_k_g();
 
 private:
-	double mass;    // [kg] mass of planet
-	double radius;  // [m] radius of planet
-	double k_g;     // [m^3/s^2] planet's gravitational constant (-G*mass)
+	double mass;    // [g] mass of planet
+	double radius;  // [cm] radius of planet
+	double k_g;     // [cm^3/s^2] planet's gravitational constant (-G*mass)
 };
 
 #endif /* PLANET_HPP_ */

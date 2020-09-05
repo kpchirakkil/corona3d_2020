@@ -18,8 +18,8 @@ Distribution_MB::~Distribution_MB() {
 
 void Distribution_MB::init(Particle* p)
 {
-	double phi = constants::twopi*(get_rand());
-	double u = 2.0*get_rand() - 1;
+	double phi = constants::twopi*(common.get_rand());
+	double u = 2.0*common.get_rand() - 1;
 	double v_avg = sqrt(constants::k_b*ref_temp/p->get_mass());
 
 	double x = ref_radius*sqrt(1-(u*u))*cos(phi);

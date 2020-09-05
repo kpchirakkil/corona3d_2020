@@ -12,15 +12,16 @@
 
 namespace constants
 {
-	inline const double pi    = M_PIl;            // pi [unitless]
-	inline const double twopi = 2*pi;             // 2*pi [unitless]
-	inline const double k_b   = 1.3806504e-23;    // Boltzmann's Constant [J/K]
-	inline const double c     = 299792458.0;      // Speed of Light in Vacuum [m/s]
-	inline const double G     = 6.67428e-11;      // Gravitational Constant [m^3/kg/s^2]
-	inline const double amu   = 1.660538782e-27;  // Atomic Mass Unit [kg]
-	inline const double m_e   = 9.10938215e-31;   // Electron Mass [kg]
-	inline const double q_e   = 1.602176487e-19;  // Elementary Charge [C]
-	inline const double jev   = q_e;              // Joules/Electron Volt [unitless]
+	const double pi    = M_PIl;            // pi [unitless]
+	const double twopi = 2*pi;             // 2*pi [unitless]
+	const double k_b   = 1.3806504e-16;    // Boltzmann's Constant [erg/K]
+	const double c     = 29979245800.0;    // Speed of Light in Vacuum [cm/s]
+	const double G     = 6.67430e-8;       // Gravitational Constant [cm^3/g/s^2]
+	const double amu   = 1.660538782e-24;  // Atomic Mass Unit [g]
+	const double m_e   = 9.10938215e-28;   // Electron Mass [g]
+	const double q_e   = 1.602176487e-19;  // Elementary Charge [C]
+	const double jev   = q_e;              // Joules/Electron Volt [unitless]
+	const double ergev = jev*1.0e7;        // ergs/Electron Volt [unitless]
 }
 
 #endif /* CONSTANTS_HPP_ */

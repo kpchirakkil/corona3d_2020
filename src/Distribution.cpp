@@ -20,10 +20,10 @@ Distribution::~Distribution() {
 
 void Distribution::gen_mb(double vavg, double v_in[])
 {
-	double randnum1 = get_rand();
-	double randnum2 = get_rand();
-	double randnum3 = get_rand();
-	double randnum4 = get_rand();
+	double randnum1 = common.get_rand();
+	double randnum2 = common.get_rand();
+	double randnum3 = common.get_rand();
+	double randnum4 = common.get_rand();
 
 	randnum1 = vavg*sqrt(-2.0*log(1.0-randnum1));
 	randnum2 = constants::twopi*randnum2;

@@ -36,7 +36,7 @@ private:
 	Distribution* my_dist;              // distribution class to initialize particles
 	Background_Species bg_species;      // background species used for collisions
 	double T_bg;                        // [K] background temp where simulation starts
-	double ref_height;                  // [m] altitude above planet surface of model bottom
+	double ref_height;                  // [cm] altitude above planet surface of model bottom
 
 	vector<double> alt_bins;
 	vector<double> Tn;

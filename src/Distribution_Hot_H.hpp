@@ -19,7 +19,7 @@ public:
 private:
 	double T_ion;  // [K] ion temperature
 	double T_e;    // [K] electron temperature
-	double m_ion;  // [kg] O2+ ion mass
+	double m_ion;  // [g] H+ ion mass
 };
 
 #endif /* DISTRIBUTION_HOT_H_HPP_ */

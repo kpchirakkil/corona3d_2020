@@ -39,10 +39,10 @@ public:
 protected:
 	Common_Functions common;
 	bool active;                    // flag for whether particle is active, i.e. should still be considered in the simulation
-	double radius;                  // radius from center of planet	[m]
-	double inverse_radius;          // inverse radius (for computational efficiency) [m^-1]
-	Matrix<double, 3, 1> position;  // position vector [m,m,m]
-	Matrix<double, 3, 1> velocity;  // velocity vector [m/s,m/s,m/s]
+	double radius;                  // radius from center of planet	[cm]
+	double inverse_radius;          // inverse radius (for computational efficiency) [cm^-1]
+	Matrix<double, 3, 1> position;  // position vector [cm,cm,cm]
+	Matrix<double, 3, 1> velocity;  // velocity vector [cm/s,cm/s,cm/s]
 };
 
 #endif /* PARTICLE_HPP_ */

@@ -10,8 +10,8 @@
 Distribution_Hot_O::Distribution_Hot_O(Planet my_p, double ref_h, double ref_T)
 	: Distribution(my_p, ref_h, ref_T) {
 
-	DR160 = 600e6;
-	H_DR = 19e3;
+	DR160 = 600e12;
+	H_DR = 19e5;
 	T_ion = 400.0;
 	T_e = 1600.0;
 	m_ion = 31.9983*constants::amu;
@@ -24,10 +24,10 @@ Distribution_Hot_O::~Distribution_Hot_O() {
 void Distribution_Hot_O::init(Particle* p)
 {
 	// altitude distribution for O2+ dissociative recombination
-	double r = my_planet.get_radius() + 160e3 - log(get_rand())*H_DR;
+	double r = my_planet.get_radius() + 160e5 - log(common.get_rand())*H_DR;
 
-	double phi = constants::twopi*(get_rand());
-	double u = 2.0*get_rand() - 1.0;
+	double phi = constants::twopi*(common.get_rand());
+	double u = 2.0*common.get_rand() - 1.0;
 	double x = r*sqrt(1-(u*u))*cos(phi);
 	double y = r*sqrt(1-(u*u))*sin(phi);
 	double z = r*u;
@@ -42,33 +42,33 @@ void Distribution_Hot_O::init(Particle* p)
 	// Probabilities and energies
 	// Particles are activated per channel to allow testing the contribution of each population in the simulation
 	double Ei = 0.0;
-	double randnum = get_rand();
+	double randnum = common.get_rand();
 	if (randnum < 0.22)
 	{
-		Ei = 6.99*constants::jev;
+		Ei = 6.99*constants::ergev;
 	}
 	else if (randnum < (0.22+0.42))
 	{
-		Ei = 5.02*constants::jev;
+		Ei = 5.02*constants::ergev;
 	}
 	else if (randnum < (0.22+0.42+0.31))
 	{
-		Ei = 3.06*constants::jev;
+		Ei = 3.06*constants::ergev;
 	}
 	else
 	{
-		Ei = 0.84*constants::jev;
+		Ei = 0.84*constants::ergev;
 	}
 
 	// Thermal Rotational Energy of O2+
-	Ei = Ei + E_rot(3.35967e-23, T_ion);
+	Ei = Ei + E_rot(3.35967e-16, T_ion);
 
 	// Translational Energy per O Resulting from Dissociative Recombination of O2+
 	double v = sqrt(Ei / p->get_mass());
 
 	// spherically isotropic velocity vector
-	phi = constants::twopi*get_rand();
-	u = 2.0*get_rand() - 1.0;
+	phi = constants::twopi*common.get_rand();
+	u = 2.0*common.get_rand() - 1.0;
 	double vx = v*sqrt(1-u*u)*cos(phi);
 	double vy = v*sqrt(1-u*u)*sin(phi);
 	double vz = v*u;
@@ -100,7 +100,7 @@ double Distribution_Hot_O::E_rot(double B, double T)
 
 	double P_tot = 0.0;
 	double P_j = 0.0;
-	double u = get_rand();
+	double u = common.get_rand();
 
 	for (int i=0; i<(nj+1); i++)
 	{

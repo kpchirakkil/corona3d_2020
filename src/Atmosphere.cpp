@@ -17,7 +17,7 @@ Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* d
 	my_dist = dist;
 	my_parts.resize(num_parts);
 	T_bg = T;                     // [K] background temp where simulation starts
-	ref_height = ref_h;           // [m] altitude for bottom of model
+	ref_height = ref_h;           // [cm] altitude for bottom of model
 	bg_species = bg;
 
 	for (int i=0; i<num_parts; i++)
@@ -117,7 +117,7 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 				}
 
 				// deactivation criteria...need to incorporate into configuration file
-				if (my_parts[j]->get_radius() < (my_planet.get_radius() + 900e3) && (my_parts[j]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[j]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e3))))
+				if (my_parts[j]->get_radius() < (my_planet.get_radius() + 900e5) && (my_parts[j]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[j]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e5))))
 				{
 					my_parts[j]->deactivate();
 					active_parts--;
