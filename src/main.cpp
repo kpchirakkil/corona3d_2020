@@ -212,8 +212,10 @@ int main(int argc, char* argv[])
 	// initialize atmosphere and run simulation
 	Atmosphere my_atmosphere(num_testparts, my_planet, parts, dist, bg_spec, ref_temp, ref_height, temp_profile_filename);
 	my_atmosphere.output_velocity_distro(10000.0, 150, "/home/rodney/Documents/coronaTest/vdist.out");
+	my_atmosphere.output_altitude_distro(100000.0, 500, "/home/rodney/Documents/coronaTest/altdist.out");
 	my_atmosphere.run_simulation(dt, timesteps);
 	my_atmosphere.output_velocity_distro(10000.0, 150, "/home/rodney/Documents/coronaTest/vdist2.out");
+	my_atmosphere.output_altitude_distro(100000.0, 8000, "/home/rodney/Documents/coronaTest/altdist2.out");
 
 	return 0;
 }

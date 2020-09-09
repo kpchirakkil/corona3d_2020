@@ -60,13 +60,40 @@ void Atmosphere::output_positions(string datapath)
 	outfile.close();
 }
 
-// writes single-column output file of velocity bin counts in myParticles
+// writes single-column output file of altitude bin counts using active particles
+// bin_width is in cm
+void Atmosphere::output_altitude_distro(double bin_width, int num_bins, std::string datapath)
+{
+	ofstream outfile;
+	outfile.open(datapath);
+	double alt = 0.0;           // altitude of particle [cm]
+	int nb = 0;                 // bin number
+	int abins[num_bins] = {0};  // array of altitude bin counts
+
+	for (int i=0; i<num_parts; i++)
+	{
+		if (my_parts[i]->get_active())
+		{
+			alt = my_parts[i]->get_radius() - my_planet.get_radius();
+			nb = (int)(alt / bin_width);
+			abins[nb]++;
+		}
+	}
+	for (int i=0; i<num_bins; i++)
+	{
+		outfile << abins[i] << "\n";
+	}
+	outfile.close();
+}
+
+// writes single-column output file of velocity bin counts using active particles
+// bin_width is in cm/s
 void Atmosphere::output_velocity_distro(double bin_width, int num_bins, string datapath)
 {
 	ofstream outfile;
 	outfile.open(datapath);
-	double v = 0.0;             // velocity magnitude [m/s]
-	int nvb = 0;                // bin number
+	double v = 0.0;             // velocity magnitude [cm/s]
+	int nb = 0;                 // bin number
 	int vbins[num_bins] = {0};  // array of velocity bin counts
 
 	for (int i=0; i<num_parts; i++)
@@ -74,8 +101,8 @@ void Atmosphere::output_velocity_distro(double bin_width, int num_bins, string d
 		if (my_parts[i]->get_active())
 		{
 			v = my_parts[i]->get_total_v();
-			nvb = (int)(v / bin_width);
-			vbins[nvb]++;
+			nb = (int)(v / bin_width);
+			vbins[nb]++;
 		}
 	}
 	for (int i=0; i<num_bins; i++)

@@ -12,7 +12,46 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 
 	T_ion = 400.0;
 	T_e = 1250.0;
-	m_ion = 1.00728*constants::amu;
+	m_Hion = 1.00728*constants::amu;
+	H_Hplus_rate_coeff = 8.7e-10;
+
+	temp_profile.resize(4);
+	H_profile.resize(2);
+	Hplus_profile.resize(2);
+
+	string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/MarsTempHSA_FoxHac09.csv";
+	string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_HSA_FoxHac09.csv";
+	string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H+_density_profile_HSA_FoxHac09.csv";
+
+	common.import_csv(temp_prof_filename, temp_profile[0], temp_profile[1], temp_profile[2], temp_profile[3]);
+	common.import_csv(H_prof_filename, H_profile[0], H_profile[1]);
+	common.import_csv(Hplus_prof_filename, Hplus_profile[0], Hplus_profile[1]);
+
+	vector<double> H_Hplus_rate;
+	H_Hplus_rate.resize(2000);
+	alt_bins.resize(2000);
+	H_Hplus_CDF.resize(2000);
+	double rate_sum = 0.0;
+	for (int i=0; i<2000; i++)
+	{
+		alt_bins[i] = 2e7 + 10000.0*i;
+		double Ti = common.interpolate(temp_profile[0], temp_profile[2], alt_bins[i]);
+		double H_dens = common.interpolate(H_profile[0], H_profile[1], alt_bins[i]);
+		double Hplus_dens = common.interpolate(Hplus_profile[0], Hplus_profile[1], alt_bins[i]);
+		H_Hplus_rate[i] = H_Hplus_rate_coeff * sqrt(Ti) * H_dens * Hplus_dens;
+		rate_sum = rate_sum + H_Hplus_rate[i];
+	}
+	for (int i=0; i<2000; i++)
+	{
+		if (i == 0)
+		{
+			H_Hplus_CDF[i] = H_Hplus_rate[i] / rate_sum;
+		}
+		else
+		{
+			H_Hplus_CDF[i] = (H_Hplus_rate[i] / rate_sum) + H_Hplus_CDF[i-1];
+		}
+	}
 }
 
 Distribution_Hot_H::~Distribution_Hot_H() {
@@ -24,7 +63,10 @@ void Distribution_Hot_H::init(Particle* p)
 	double my_mass = p->get_mass();
 
 	// altitude distribution for hot H
-	double r = my_planet.get_radius() + ref_height;
+	double r = get_new_radius_H_Hplus();
+	double alt = r - my_planet.get_radius();
+	double temp_ion = common.interpolate(temp_profile[0], temp_profile[2], alt);
+	double temp_neut = common.interpolate(temp_profile[0], temp_profile[1], alt);
 
 	double phi = constants::twopi*(common.get_rand());
 	double u = 2.0*common.get_rand() - 1.0;
@@ -48,19 +90,19 @@ void Distribution_Hot_H::init(Particle* p)
 	*/
 
 	// Add initial H+ and H translational momentum
-	double vavg = sqrt(constants::k_b*T_ion/(m_ion));  // average thermal ion velocity
+	double vavg = sqrt(constants::k_b*temp_ion/(m_Hion));  // average thermal ion velocity
 	double v_ion[] = {0.0, 0.0, 0.0};
 	gen_mb(vavg, v_ion);                               // sample from Maxwell-Boltzmann distribution
-	vavg = sqrt(constants::k_b*ref_temp/my_mass);    //average thermal H velocity
+	vavg = sqrt(constants::k_b*temp_neut/my_mass);    //average thermal H velocity
 	double v_H[] = {0.0, 0.0, 0.0};
 	gen_mb(vavg, v_H);                                 // sample from Maxwell-Boltzmann distribution
 
 	// add it all up
 
 	// case 1
-	double vx = (m_ion*v_ion[0] + my_mass*v_H[0]) / (m_ion+my_mass);
-	double vy = (m_ion*v_ion[1] + my_mass*v_H[1]) / (m_ion+my_mass);
-	double vz = (m_ion*v_ion[2] + my_mass*v_H[2]) / (m_ion+my_mass);
+	double vx = (m_Hion*v_ion[0] + my_mass*v_H[0]) / (m_Hion+my_mass);
+	double vy = (m_Hion*v_ion[1] + my_mass*v_H[1]) / (m_Hion+my_mass);
+	double vz = (m_Hion*v_ion[2] + my_mass*v_H[2]) / (m_Hion+my_mass);
 
 	/* case 2
 	double vx = v_H[0] + (m_ion*v_ion[0] + my_mass*v_H[0]) / (m_ion+my_mass);
@@ -71,3 +113,14 @@ void Distribution_Hot_H::init(Particle* p)
 	p->init_particle(x, y, z, vx, vy, vz);
 }
 
+// scans H_Hplus_CDF for new particle radius
+double Distribution_Hot_H::get_new_radius_H_Hplus()
+{
+	double u = common.get_rand();
+	int k = 0;
+	while (H_Hplus_CDF[k] < u)
+	{
+		k++;
+	}
+	return alt_bins[k] + my_planet.get_radius();
+}
