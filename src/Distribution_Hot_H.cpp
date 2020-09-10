@@ -10,8 +10,6 @@
 Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	: Distribution(my_p, ref_h, ref_T) {
 
-	T_ion = 400.0;
-	T_e = 1250.0;
 	m_Hion = 1.00728*constants::amu;
 	H_Hplus_rate_coeff = 8.7e-10;
 
@@ -80,14 +78,20 @@ void Distribution_Hot_H::init(Particle* p)
 	{
 		x = -x;
 	}
+	*/
 
+	double vavg = sqrt(constants::k_b*temp_ion/m_Hion);  // average thermal H+ velocity
+	double v_ion[] = {0.0, 0.0, 0.0};
+	gen_mb(vavg, v_ion);
+
+
+	/*
 	// spherically isotropic velocity vector
-	phi = constants::twopi*get_rand();
-	u = 2.0*get_rand() - 1.0;
+	phi = constants::twopi*common.get_rand();
+	u = 2.0*common.get_rand() - 1.0;
 	double vx = v*sqrt(1-u*u)*cos(phi);
 	double vy = v*sqrt(1-u*u)*sin(phi);
 	double vz = v*u;
-	*/
 
 	// Add initial H+ and H translational momentum
 	double vavg = sqrt(constants::k_b*temp_ion/(m_Hion));  // average thermal ion velocity
@@ -104,13 +108,13 @@ void Distribution_Hot_H::init(Particle* p)
 	double vy = (m_Hion*v_ion[1] + my_mass*v_H[1]) / (m_Hion+my_mass);
 	double vz = (m_Hion*v_ion[2] + my_mass*v_H[2]) / (m_Hion+my_mass);
 
-	/* case 2
+	// case 2
 	double vx = v_H[0] + (m_ion*v_ion[0] + my_mass*v_H[0]) / (m_ion+my_mass);
 	double vy = v_H[1] + (m_ion*v_ion[1] + my_mass*v_H[1]) / (m_ion+my_mass);
 	double vz = v_H[2] + (m_ion*v_ion[2] + my_mass*v_H[2]) / (m_ion+my_mass);
 	*/
 
-	p->init_particle(x, y, z, vx, vy, vz);
+	p->init_particle(x, y, z, v_ion[0], v_ion[1], v_ion[2]);
 }
 
 // scans H_Hplus_CDF for new particle radius

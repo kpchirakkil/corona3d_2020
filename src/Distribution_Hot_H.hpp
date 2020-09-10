@@ -17,11 +17,8 @@ public:
 	void init(Particle* p);
 
 private:
-	double T_ion;              // [K] ion temperature
-	double T_e;                // [K] electron temperature
 	double m_Hion;             // [g] H+ ion mass
 	double H_Hplus_rate_coeff; // [cm^3/s] rate coefficient for H+ + H -> H* + H+
-
 	vector<vector<double>> H_profile;
 	vector<vector<double>> Hplus_profile;
 	vector<vector<double>> temp_profile;

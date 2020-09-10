@@ -24,8 +24,8 @@ public:
 	virtual ~Atmosphere();
 
 	void output_positions(std::string datapath);
-	void output_altitude_distro(double bin_width, int num_bins, std::string datapath);
-	void output_velocity_distro(double bin_width, int num_bins, std::string datapath);
+	void output_altitude_distro(double bin_width, std::string datapath);
+	void output_velocity_distro(double bin_width, std::string datapath);
 	void run_simulation(double dt, int num_steps);
 
 private:
