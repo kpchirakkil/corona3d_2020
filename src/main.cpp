@@ -50,6 +50,7 @@ int main(int argc, char* argv[])
 
 	//initialize and read parameters from configuration file
 	int num_testparts = 0;
+	int num_traced = 0;
 	string part_type = "";
 	string dist_type = "";
 	string pos_infile = "";
@@ -105,6 +106,10 @@ int main(int argc, char* argv[])
 		if (parameters[i] == "num_testparts")
 		{
 			num_testparts = stoi(values[i]);
+		}
+		else if (parameters[i] == "num_traced")
+		{
+			num_traced = stoi(values[i]);
 		}
 		else if (parameters[i] == "part_type")
 		{
@@ -210,7 +215,7 @@ int main(int argc, char* argv[])
 	Background_Species bg_spec(num_bgparts, my_planet, ref_temp, ref_height, bg_dist, bg_parts, bg_dens, bg_sigs, neut_densities_filename);
 
 	// initialize atmosphere and run simulation
-	Atmosphere my_atmosphere(num_testparts, my_planet, parts, dist, bg_spec, ref_temp, ref_height, temp_profile_filename);
+	Atmosphere my_atmosphere(num_testparts, num_traced, my_planet, parts, dist, bg_spec, ref_temp, ref_height, temp_profile_filename);
 	my_atmosphere.output_velocity_distro(10000.0, "/home/rodney/Documents/coronaTest/vdist.out");
 	my_atmosphere.output_altitude_distro(100000.0, "/home/rodney/Documents/coronaTest/altdist.out");
 	my_atmosphere.run_simulation(dt, timesteps);

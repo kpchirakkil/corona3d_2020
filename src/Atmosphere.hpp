@@ -20,7 +20,7 @@ using namespace std;
 
 class Atmosphere {
 public:
-	Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile);
+	Atmosphere(int n, int num_traced, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile);
 	virtual ~Atmosphere();
 
 	void output_positions(std::string datapath);
@@ -39,10 +39,15 @@ private:
 	double T_bg;                        // [K] background temp where simulation starts
 	double ref_height;                  // [cm] altitude above planet surface of model bottom
 
+	vector<int> traced_parts;
+
 	vector<double> alt_bins;
 	vector<double> Tn;
 	vector<double> Ti;
 	vector<double> Te;
+
+	// output test particle trace data for selected particles
+	void output_trace_data(int num_traced);
 };
 
 #endif /* ATMOSPHERE_HPP_ */

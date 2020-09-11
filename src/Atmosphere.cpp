@@ -8,7 +8,7 @@
 #include "Atmosphere.hpp"
 
 // construct atmosphere using given parameters
-Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile)
+Atmosphere::Atmosphere(int n, int num_traced, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile)
 {
 	srand((unsigned)time(NULL));  // seed random number generator
 	num_parts = n;                // number of test particles to track
@@ -37,27 +37,22 @@ Atmosphere::Atmosphere(int n, Planet p, vector<Particle*> parts, Distribution* d
 	}
 	*/
 
+	// pick trace particles if any
+	if (num_traced > 0)
+	{
+		traced_parts.resize(num_traced);
+		for (int i=0; i<num_traced; i++)
+		{
+			traced_parts[i] = rand() % num_parts;
+		}
+	}
+
 	// read in temperature profile
 	common.import_csv(temp_profile, alt_bins, Tn, Ti, Te);
 }
 
 Atmosphere::~Atmosphere() {
 
-}
-
-// writes 3-column output file of all current particle positions
-// file is saved to location specified by datapath
-void Atmosphere::output_positions(string datapath)
-{
-	ofstream outfile;
-	outfile.open(datapath);
-	for (int i=0; i<num_parts; i++)
-	{
-		outfile << setprecision(10) << my_parts[i]->get_x() << '\t';
-		outfile << setprecision(10) << my_parts[i]->get_y() << '\t';
-		outfile << setprecision(10) << my_parts[i]->get_z() << '\n';
-	}
-	outfile.close();
 }
 
 // writes single-column output file of altitude bin counts using active particles
@@ -101,6 +96,35 @@ void Atmosphere::output_altitude_distro(double bin_width, std::string datapath)
 		outfile << abins[i] << "\n";
 	}
 	outfile.close();
+}
+
+// writes 3-column output file of all current particle positions
+// file is saved to location specified by datapath
+void Atmosphere::output_positions(string datapath)
+{
+	ofstream outfile;
+	outfile.open(datapath);
+	for (int i=0; i<num_parts; i++)
+	{
+		outfile << setprecision(10) << my_parts[i]->get_x() << '\t';
+		outfile << setprecision(10) << my_parts[i]->get_y() << '\t';
+		outfile << setprecision(10) << my_parts[i]->get_z() << '\n';
+	}
+	outfile.close();
+}
+
+// output test particle trace data for selected particles
+void Atmosphere::output_trace_data(int num_traced)
+{
+	for (int i=0; i<num_traced; i++)
+	{
+		ofstream position_file;
+		position_file.open("/home/rodney/Documents/coronaTest/trace_data/part" + to_string(traced_parts[i]) + "_positions.out", ios::out | ios::app);
+		position_file << setprecision(10) << my_parts[traced_parts[i]]->get_x() << '\t';
+		position_file << setprecision(10) << my_parts[traced_parts[i]]->get_y() << '\t';
+		position_file << setprecision(10) << my_parts[traced_parts[i]]->get_z() << '\n';
+		position_file.close();
+	}
 }
 
 // writes single-column output file of velocity bin counts using active particles
@@ -163,6 +187,11 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 		{
 			cout << i+1 << "\t" << active_parts << endl;
 			output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i+1) + ".out");
+		}
+
+		if (traced_parts.size() > 0)
+		{
+			output_trace_data(traced_parts.size());
 		}
 
 		for (int j=0; j<num_parts; j++)
