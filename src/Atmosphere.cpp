@@ -10,7 +10,6 @@
 // construct atmosphere using given parameters
 Atmosphere::Atmosphere(int n, int num_traced, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile)
 {
-	srand((unsigned)time(NULL));  // seed random number generator
 	num_parts = n;                // number of test particles to track
 	active_parts = num_parts;
 	my_planet = p;
@@ -48,7 +47,7 @@ Atmosphere::Atmosphere(int n, int num_traced, Planet p, vector<Particle*> parts,
 	}
 
 	// read in temperature profile
-	common.import_csv(temp_profile, alt_bins, Tn, Ti, Te);
+	common::import_csv(temp_profile, alt_bins, Tn, Ti, Te);
 }
 
 Atmosphere::~Atmosphere() {
@@ -118,12 +117,15 @@ void Atmosphere::output_trace_data(int num_traced)
 {
 	for (int i=0; i<num_traced; i++)
 	{
-		ofstream position_file;
-		position_file.open("/home/rodney/Documents/coronaTest/trace_data/part" + to_string(traced_parts[i]) + "_positions.out", ios::out | ios::app);
-		position_file << setprecision(10) << my_parts[traced_parts[i]]->get_x() << '\t';
-		position_file << setprecision(10) << my_parts[traced_parts[i]]->get_y() << '\t';
-		position_file << setprecision(10) << my_parts[traced_parts[i]]->get_z() << '\n';
-		position_file.close();
+		if (my_parts[traced_parts[i]]->get_active())
+		{
+			ofstream position_file;
+			position_file.open("/home/rodney/Documents/coronaTest/trace_data/part" + to_string(traced_parts[i]) + "_positions.out", ios::out | ios::app);
+			position_file << setprecision(10) << my_parts[traced_parts[i]]->get_x() << '\t';
+			position_file << setprecision(10) << my_parts[traced_parts[i]]->get_y() << '\t';
+			position_file << setprecision(10) << my_parts[traced_parts[i]]->get_z() << '\n';
+			position_file.close();
+		}
 	}
 }
 
@@ -200,7 +202,7 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 			{
 				my_parts[j]->do_timestep(dt, k);
 				double r = my_parts[j]->get_radius();
-				double temp = common.interpolate(alt_bins, Tn, (r - my_planet.get_radius()));
+				double temp = common::interpolate(alt_bins, Tn, (r - my_planet.get_radius()));
 
 				if (bg_species.check_collision(r, my_parts[j]->get_total_v(), dt, temp))
 				{

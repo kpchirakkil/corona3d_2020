@@ -6,7 +6,6 @@
  */
 
 #include "Particle_O.hpp"
-#include "constants.hpp"
 
 const double Particle_O::mass = 15.9994*constants::amu;
 

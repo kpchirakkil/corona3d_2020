@@ -61,23 +61,23 @@ Background_Species::Background_Species(int n, Planet p, double T, double h, Dist
 		}
 		if (num_species == 5)
 		{
-			common.import_csv(dens_profile_filename, alt_bins, bg_densities[0], bg_densities[1], bg_densities[2], bg_densities[3], bg_densities[4]);
+			common::import_csv(dens_profile_filename, alt_bins, bg_densities[0], bg_densities[1], bg_densities[2], bg_densities[3], bg_densities[4]);
 		}
 		else if (num_species == 4)
 		{
-			common.import_csv(dens_profile_filename, alt_bins, bg_densities[0], bg_densities[1], bg_densities[2], bg_densities[3]);
+			common::import_csv(dens_profile_filename, alt_bins, bg_densities[0], bg_densities[1], bg_densities[2], bg_densities[3]);
 		}
 		else if (num_species == 3)
 		{
-			common.import_csv(dens_profile_filename, alt_bins, bg_densities[0], bg_densities[1], bg_densities[2]);
+			common::import_csv(dens_profile_filename, alt_bins, bg_densities[0], bg_densities[1], bg_densities[2]);
 		}
 		else if (num_species == 2)
 		{
-			common.import_csv(dens_profile_filename, alt_bins, bg_densities[0], bg_densities[1]);
+			common::import_csv(dens_profile_filename, alt_bins, bg_densities[0], bg_densities[1]);
 		}
 		else if (num_species == 1)
 		{
-			common.import_csv(dens_profile_filename, alt_bins, bg_densities[0]);
+			common::import_csv(dens_profile_filename, alt_bins, bg_densities[0]);
 		}
 	}
 
@@ -118,7 +118,7 @@ bool Background_Species::check_collision(double r, double v, double dt, double T
 	}
 
 	// determine if test particle collided
-	double u = common.get_rand();
+	double u = common::get_rand();
 	double tau = 0.0;
 	for (int i=0; i<num_species; i++)
 	{
@@ -129,7 +129,7 @@ bool Background_Species::check_collision(double r, double v, double dt, double T
 		num_collisions++;
 
 		// pick target species for collision
-		u = common.get_rand();
+		u = common::get_rand();
 		double total_dens = 0.0;
 		for (int i=0; i<num_species; i++)
 		{
@@ -172,7 +172,7 @@ bool Background_Species::check_collision(double r, double v, double dt, double T
 // scans imported differential scattering CDF for new collision theta
 double Background_Species::find_new_theta()
 {
-	double u = common.get_rand();
+	double u = common::get_rand();
 	int k = 0;
 	while (cdf(k, 0) < u)
 	{
@@ -184,7 +184,7 @@ double Background_Species::find_new_theta()
 // get density from imported density profile
 double Background_Species::get_density(double r, vector<double> &dens_bins)
 {
-	double current_dens = common.interpolate(alt_bins, dens_bins, r - my_planet.get_radius());
+	double current_dens = common::interpolate(alt_bins, dens_bins, r - my_planet.get_radius());
 	return current_dens;
 }
 

@@ -8,7 +8,7 @@
 #ifndef PLANET_HPP_
 #define PLANET_HPP_
 
-#include "constants.hpp"
+#include "Common_Functions.hpp"
 
 class Planet {
 public:

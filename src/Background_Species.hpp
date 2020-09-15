@@ -34,7 +34,6 @@ public:
 	void import_CDF(string filename);
 
 private:
-	Common_Functions common;
 	bool use_dens_profile;       // flag for whether or not density profile is available
 	int num_species;             // number of background species in atmosphere
 	int num_collisions;          // tracks total number of collisions during simulation

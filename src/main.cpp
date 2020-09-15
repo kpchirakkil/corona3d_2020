@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include "constants.hpp"
+#include <typeinfo>
 #include "Atmosphere.hpp"
 using namespace std;
 

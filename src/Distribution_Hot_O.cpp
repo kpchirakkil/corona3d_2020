@@ -24,10 +24,10 @@ Distribution_Hot_O::~Distribution_Hot_O() {
 void Distribution_Hot_O::init(Particle* p)
 {
 	// altitude distribution for O2+ dissociative recombination
-	double r = my_planet.get_radius() + 160e5 - log(common.get_rand())*H_DR;
+	double r = my_planet.get_radius() + 160e5 - log(common::get_rand())*H_DR;
 
-	double phi = constants::twopi*(common.get_rand());
-	double u = 2.0*common.get_rand() - 1.0;
+	double phi = constants::twopi*(common::get_rand());
+	double u = 2.0*common::get_rand() - 1.0;
 	double x = r*sqrt(1-(u*u))*cos(phi);
 	double y = r*sqrt(1-(u*u))*sin(phi);
 	double z = r*u;
@@ -42,7 +42,7 @@ void Distribution_Hot_O::init(Particle* p)
 	// Probabilities and energies
 	// Particles are activated per channel to allow testing the contribution of each population in the simulation
 	double Ei = 0.0;
-	double randnum = common.get_rand();
+	double randnum = common::get_rand();
 	if (randnum < 0.22)
 	{
 		Ei = 6.99*constants::ergev;
@@ -67,8 +67,8 @@ void Distribution_Hot_O::init(Particle* p)
 	double v = sqrt(Ei / p->get_mass());
 
 	// spherically isotropic velocity vector
-	phi = constants::twopi*common.get_rand();
-	u = 2.0*common.get_rand() - 1.0;
+	phi = constants::twopi*common::get_rand();
+	u = 2.0*common::get_rand() - 1.0;
 	double vx = v*sqrt(1-u*u)*cos(phi);
 	double vy = v*sqrt(1-u*u)*sin(phi);
 	double vz = v*u;
@@ -100,7 +100,7 @@ double Distribution_Hot_O::E_rot(double B, double T)
 
 	double P_tot = 0.0;
 	double P_j = 0.0;
-	double u = common.get_rand();
+	double u = common::get_rand();
 
 	for (int i=0; i<(nj+1); i++)
 	{

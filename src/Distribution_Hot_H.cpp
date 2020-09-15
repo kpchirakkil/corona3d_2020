@@ -21,9 +21,9 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_HSA_FoxHac09.csv";
 	string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H+_density_profile_HSA_FoxHac09.csv";
 
-	common.import_csv(temp_prof_filename, temp_profile[0], temp_profile[1], temp_profile[2], temp_profile[3]);
-	common.import_csv(H_prof_filename, H_profile[0], H_profile[1]);
-	common.import_csv(Hplus_prof_filename, Hplus_profile[0], Hplus_profile[1]);
+	common::import_csv(temp_prof_filename, temp_profile[0], temp_profile[1], temp_profile[2], temp_profile[3]);
+	common::import_csv(H_prof_filename, H_profile[0], H_profile[1]);
+	common::import_csv(Hplus_prof_filename, Hplus_profile[0], Hplus_profile[1]);
 
 	vector<double> H_Hplus_rate;
 	H_Hplus_rate.resize(2000);
@@ -33,9 +33,9 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	for (int i=0; i<2000; i++)
 	{
 		alt_bins[i] = 2e7 + 10000.0*i;
-		double Ti = common.interpolate(temp_profile[0], temp_profile[2], alt_bins[i]);
-		double H_dens = common.interpolate(H_profile[0], H_profile[1], alt_bins[i]);
-		double Hplus_dens = common.interpolate(Hplus_profile[0], Hplus_profile[1], alt_bins[i]);
+		double Ti = common::interpolate(temp_profile[0], temp_profile[2], alt_bins[i]);
+		double H_dens = common::interpolate(H_profile[0], H_profile[1], alt_bins[i]);
+		double Hplus_dens = common::interpolate(Hplus_profile[0], Hplus_profile[1], alt_bins[i]);
 		H_Hplus_rate[i] = H_Hplus_rate_coeff * sqrt(Ti) * H_dens * Hplus_dens;
 		rate_sum = rate_sum + H_Hplus_rate[i];
 	}
@@ -63,11 +63,11 @@ void Distribution_Hot_H::init(Particle* p)
 	// altitude distribution for hot H
 	double r = get_new_radius_H_Hplus();
 	double alt = r - my_planet.get_radius();
-	double temp_ion = common.interpolate(temp_profile[0], temp_profile[2], alt);
-	double temp_neut = common.interpolate(temp_profile[0], temp_profile[1], alt);
+	double temp_ion = common::interpolate(temp_profile[0], temp_profile[2], alt);
+	double temp_neut = common::interpolate(temp_profile[0], temp_profile[1], alt);
 
-	double phi = constants::twopi*(common.get_rand());
-	double u = 2.0*common.get_rand() - 1.0;
+	double phi = constants::twopi*(common::get_rand());
+	double u = 2.0*common::get_rand() - 1.0;
 	double x = r*sqrt(1-(u*u))*cos(phi);
 	double y = r*sqrt(1-(u*u))*sin(phi);
 	double z = r*u;
@@ -120,7 +120,7 @@ void Distribution_Hot_H::init(Particle* p)
 // scans H_Hplus_CDF for new particle radius
 double Distribution_Hot_H::get_new_radius_H_Hplus()
 {
-	double u = common.get_rand();
+	double u = common::get_rand();
 	int k = 0;
 	while (H_Hplus_CDF[k] < u)
 	{

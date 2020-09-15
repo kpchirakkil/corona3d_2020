@@ -37,7 +37,6 @@ public:
 	void init_particle_vonly_MB(double v_avg);     // init with velocity only for collision partners
 
 protected:
-	Common_Functions common;
 	bool active;                    // flag for whether particle is active, i.e. should still be considered in the simulation
 	double radius;                  // radius from center of planet	[cm]
 	double inverse_radius;          // inverse radius (for computational efficiency) [cm^-1]

@@ -6,7 +6,6 @@
  */
 
 #include "Particle_CO2.hpp"
-#include "constants.hpp"
 
 const double Particle_CO2::mass = 44.0095*constants::amu;
 

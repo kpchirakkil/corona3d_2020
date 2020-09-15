@@ -13,13 +13,25 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+#include <random>
+#include <chrono>
+#include <cmath>
 using namespace std;
 
-class Common_Functions {
-public:
-	Common_Functions();
-	virtual ~Common_Functions();
+namespace constants {
+	extern const double pi;       // pi [unitless]
+	extern const double twopi;    // 2*pi [unitless]
+	extern const double k_b;      // Boltzmann's Constant [erg/K]
+	extern const double c;        // Speed of Light in Vacuum [cm/s]
+	extern const double G;        // Gravitational Constant [cm^3/g/s^2]
+	extern const double amu;      // Atomic Mass Unit [g]
+	extern const double m_e;      // Electron Mass [g]
+	extern const double q_e;      // Elementary Charge [C]
+	extern const double jev;      // Joules/Electron Volt [unitless]
+	extern const double ergev;    // ergs/Electron Volt [unitless]
+}
 
+namespace common {
 	void import_csv(string filename, vector<double> &col1, vector<double> &col2);
 	void import_csv(string filename, vector<double> &col1, vector<double> &col2, vector<double> &col3);
 	void import_csv(string filename, vector<double> &col1, vector<double> &col2, vector<double> &col3, vector<double> &col4);

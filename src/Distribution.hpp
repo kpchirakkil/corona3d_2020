@@ -10,7 +10,6 @@
 
 #include "Particle.hpp"
 #include "Planet.hpp"
-#include "constants.hpp"
 
 class Distribution {
 public:
@@ -19,7 +18,6 @@ public:
 	virtual void init(Particle* p) = 0;
 
 protected:
-	Common_Functions common;
 	Planet my_planet;
 	double ref_height;
 	double ref_radius;

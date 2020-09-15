@@ -29,7 +29,6 @@ public:
 	void run_simulation(double dt, int num_steps);
 
 private:
-	Common_Functions common;
 	int num_parts;                      // number of particles initially spawned
 	int active_parts;                   // number of active particles
 	Planet my_planet;                   // contains planet mass and radius
