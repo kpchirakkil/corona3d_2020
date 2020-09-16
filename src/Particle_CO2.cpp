@@ -8,6 +8,7 @@
 #include "Particle_CO2.hpp"
 
 const double Particle_CO2::mass = 44.0095*constants::amu;
+const string Particle_CO2::name = "CO2";
 
 Particle_CO2::Particle_CO2() {
 
@@ -20,4 +21,9 @@ Particle_CO2::~Particle_CO2() {
 double Particle_CO2::get_mass()
 {
 	return mass;
+}
+
+string Particle_CO2::get_name()
+{
+	return name;
 }

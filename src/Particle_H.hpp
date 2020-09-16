@@ -15,7 +15,9 @@ public:
 	Particle_H();
 	virtual ~Particle_H();
 	static const double mass;
+	static const string name;
 	double get_mass();
+	string get_name();
 };
 
 #endif /* PARTICLE_H_HPP_ */

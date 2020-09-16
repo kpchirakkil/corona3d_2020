@@ -8,6 +8,7 @@
 #include "Particle_H.hpp"
 
 const double Particle_H::mass = 1.00794*constants::amu;
+const string Particle_H::name = "H";
 
 Particle_H::Particle_H() {
 
@@ -19,4 +20,9 @@ Particle_H::~Particle_H() {
 double Particle_H::get_mass()
 {
 	return mass;
+}
+
+string Particle_H::get_name()
+{
+	return name;
 }

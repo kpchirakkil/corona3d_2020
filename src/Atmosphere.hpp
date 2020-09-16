@@ -20,7 +20,7 @@ using namespace std;
 
 class Atmosphere {
 public:
-	Atmosphere(int n, int num_traced, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile);
+	Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile);
 	virtual ~Atmosphere();
 
 	void output_positions(std::string datapath);
@@ -30,6 +30,7 @@ public:
 
 private:
 	int num_parts;                      // number of particles initially spawned
+	int num_traced;                     // number of particles to output trace data on
 	int active_parts;                   // number of active particles
 	Planet my_planet;                   // contains planet mass and radius
 	vector<Particle*> my_parts;         // array of particles to be tracked
@@ -38,15 +39,16 @@ private:
 	double T_bg;                        // [K] background temp where simulation starts
 	double ref_height;                  // [cm] altitude above planet surface of model bottom
 
-	vector<int> traced_parts;
+	vector<int> traced_parts;           // indices of randomly selected trace particles
 
-	vector<double> alt_bins;
-	vector<double> Tn;
-	vector<double> Ti;
-	vector<double> Te;
+	vector<double> alt_bins;            // altitude bins from imported temperature profile
+	vector<double> Tn;                  // neutral species temperature profile
+	vector<double> Ti;                  // ionic species temperature profile
+	vector<double> Te;                  // electron temperature profile
 
 	// output test particle trace data for selected particles
-	void output_trace_data(int num_traced);
+	void output_collision_data();
+	void output_trace_data();
 };
 
 #endif /* ATMOSPHERE_HPP_ */

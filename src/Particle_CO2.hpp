@@ -15,7 +15,9 @@ public:
 	Particle_CO2();
 	virtual ~Particle_CO2();
 	static const double mass;
+	static const string name;
 	double get_mass();
+	string get_name();
 };
 
 #endif /* PARTICLE_CO2_HPP_ */

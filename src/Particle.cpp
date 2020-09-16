@@ -16,6 +16,7 @@
 Particle::Particle()
 {
 	active = true;
+	traced = false;
 	radius = 0.0;
 	inverse_radius = 0.0;
 	position[0] = position[1] = position[2] = 0.0;
@@ -34,7 +35,7 @@ void Particle::deactivate()
 }
 
 // perform collision on a particle and update velocity vector
-void Particle::do_collision(Particle* target, double theta)
+void Particle::do_collision(Particle* target, double theta, double time, double alt_in_km)
 {
 	double my_mass = get_mass();
 	double targ_mass = target->get_mass();
@@ -83,6 +84,12 @@ void Particle::do_collision(Particle* target, double theta)
 
 	// in case you need the updated collision partner velocity for something
 	// targ_v = vcm.array() - ((my_mass / targ_mass) * vrel1.array());
+
+	// write to collision log if traced particle
+	if (traced)
+	{
+		collision_log.push_back(to_string(time) + "\t\t" + to_string(alt_in_km) + "\t\t" + target->get_name() + "\t\t" + to_string(theta * (180.0/constants::pi)));
+	}
 }
 
 void Particle::do_timestep(double dt, double k_g)
@@ -106,9 +113,28 @@ void Particle::do_timestep(double dt, double k_g)
 	velocity.array() = velocity.array() + 0.5*a*dt;
 }
 
+// write collision log to given file
+void Particle::dump_collision_log(string filename)
+{
+	ofstream outfile;
+	outfile.open(filename);
+	outfile << "#time(s) \t\t alt(km) \t\t target_species \t\t angle(deg) \n";
+	int num_lines = collision_log.size();
+	for (int i=0; i<num_lines; i++)
+	{
+		outfile << collision_log[i] << "\n";
+	}
+	outfile.close();
+}
+
 bool Particle::get_active()
 {
 	return active;
+}
+
+bool Particle::get_traced()
+{
+	return traced;
 }
 
 double Particle::get_radius()
@@ -220,4 +246,9 @@ void Particle::init_particle_vonly_MB(double v_avg)
 	velocity[0] = randnum1*cos(randnum2);
 	velocity[1] = randnum1*sin(randnum2);
 	velocity[2] = randnum3*cos(randnum4);
+}
+
+void Particle::set_traced()
+{
+	traced = true;
 }

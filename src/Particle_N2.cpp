@@ -8,6 +8,7 @@
 #include "Particle_N2.hpp"
 
 const double Particle_N2::mass = 28.0134*constants::amu;
+const string Particle_N2::name = "N2";
 
 Particle_N2::Particle_N2() {
 
@@ -20,4 +21,9 @@ Particle_N2::~Particle_N2() {
 double Particle_N2::get_mass()
 {
 	return mass;
+}
+
+string Particle_N2::get_name()
+{
+	return name;
 }

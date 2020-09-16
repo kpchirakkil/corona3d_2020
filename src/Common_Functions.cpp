@@ -8,7 +8,7 @@
 #include "Common_Functions.hpp"
 
 // function to check if custom random seed exists in local file "rng_seed"
-// if file does not exist, uses system clock to seed rng
+// if file does not exist, uses system clock to generate seed
 static long long get_seed()
 {
 	long long s = 0;
@@ -33,7 +33,7 @@ static long long get_seed()
 // using common::get_rand() (will return uniform real between 0 and 1)
 static long long seed = get_seed();
 static mt19937 rand_generator(seed);   // Mersenne Twister PRNG (apparently, pretty good)
-static uniform_real_distribution<double> rand_dist(0.0, 1.0);
+static uniform_real_distribution<double> rand_dist(0.0, 1.0);  // dist to be used with get_rand()
 
 namespace constants {
 	const double pi    = M_PIl;            // pi [unitless]
@@ -242,9 +242,16 @@ namespace common {
 		return y_left + dydx * (x - x_left);   // linear interpolation
 	}
 
-	// returns uniformly distributed random number between 0 and 1
+	// returns uniformly distributed random number from interval [0, 1)
 	double get_rand()
 	{
 		return rand_dist(rand_generator);
+	}
+
+	// returns uniformly distributed random integer between lower and upper (inclusive)
+	int get_rand_int(int lower, int upper)
+	{
+		uniform_int_distribution<int> dist(lower, upper);
+		return dist(rand_generator);
 	}
 }

@@ -8,9 +8,10 @@
 #include "Atmosphere.hpp"
 
 // construct atmosphere using given parameters
-Atmosphere::Atmosphere(int n, int num_traced, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile)
+Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile)
 {
 	num_parts = n;                // number of test particles to track
+	num_traced = num_to_trace;    // number of tracked particles to output detailed trace data for
 	active_parts = num_parts;
 	my_planet = p;
 	my_dist = dist;
@@ -42,7 +43,8 @@ Atmosphere::Atmosphere(int n, int num_traced, Planet p, vector<Particle*> parts,
 		traced_parts.resize(num_traced);
 		for (int i=0; i<num_traced; i++)
 		{
-			traced_parts[i] = rand() % num_parts;
+			traced_parts[i] = common::get_rand_int(0, num_parts);
+			my_parts[traced_parts[i]]->set_traced();
 		}
 	}
 
@@ -97,6 +99,15 @@ void Atmosphere::output_altitude_distro(double bin_width, std::string datapath)
 	outfile.close();
 }
 
+void Atmosphere::output_collision_data()
+{
+	for (int i=0; i<num_traced; i++)
+	{
+		string filename = "/home/rodney/Documents/coronaTest/trace_data/part" + to_string(traced_parts[i]) + "_collisions.out";
+		my_parts[traced_parts[i]]->dump_collision_log(filename);
+	}
+}
+
 // writes 3-column output file of all current particle positions
 // file is saved to location specified by datapath
 void Atmosphere::output_positions(string datapath)
@@ -113,7 +124,7 @@ void Atmosphere::output_positions(string datapath)
 }
 
 // output test particle trace data for selected particles
-void Atmosphere::output_trace_data(int num_traced)
+void Atmosphere::output_trace_data()
 {
 	for (int i=0; i<num_traced; i++)
 	{
@@ -191,9 +202,9 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 			output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i+1) + ".out");
 		}
 
-		if (traced_parts.size() > 0)
+		if (num_traced > 0)
 		{
-			output_trace_data(traced_parts.size());
+			output_trace_data();
 		}
 
 		for (int j=0; j<num_parts; j++)
@@ -202,11 +213,12 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 			{
 				my_parts[j]->do_timestep(dt, k);
 				double r = my_parts[j]->get_radius();
-				double temp = common::interpolate(alt_bins, Tn, (r - my_planet.get_radius()));
+				double alt = r - my_planet.get_radius();
+				double temp = common::interpolate(alt_bins, Tn, alt);
 
 				if (bg_species.check_collision(r, my_parts[j]->get_total_v(), dt, temp))
 				{
-					my_parts[j]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta());
+					my_parts[j]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta(), i*dt, alt*1e-5);
 				}
 
 				// deactivation criteria...need to incorporate into configuration file
@@ -217,6 +229,11 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 				}
 			}
 		}
+	}
+
+	if (num_traced > 0)
+	{
+		output_collision_data();
 	}
 
 	cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;

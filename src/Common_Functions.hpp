@@ -32,6 +32,7 @@ namespace constants {
 }
 
 namespace common {
+	// functions for importing double type data from 2, 3, 4, 5, or 6-column csv files
 	void import_csv(string filename, vector<double> &col1, vector<double> &col2);
 	void import_csv(string filename, vector<double> &col1, vector<double> &col2, vector<double> &col3);
 	void import_csv(string filename, vector<double> &col1, vector<double> &col2, vector<double> &col3, vector<double> &col4);
@@ -41,8 +42,11 @@ namespace common {
 	// returns interpolated value at x from parallel arrays (x_data, y_data)
 	double interpolate(vector<double> &x_data, vector<double> &y_data, double x);
 
-	// returns uniformly distributed random number between 0 and 1
+	// returns uniformly distributed random number from interval [0, 1)
 	double get_rand();
+
+	// returns uniformly distributed random integer between lower and upper (inclusive)
+	int get_rand_int(int lower, int upper);
 };
 
 #endif /* COMMON_FUNCTIONS_HPP_ */
