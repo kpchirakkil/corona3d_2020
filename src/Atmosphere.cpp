@@ -19,6 +19,15 @@ Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> part
 	T_bg = T;                     // [K] background temp where simulation starts
 	ref_height = ref_h;           // [cm] altitude for bottom of model
 	bg_species = bg;
+	shell_active = false;
+	shell_bottom = 0.0;
+	shell_top = 0.0;
+	shell_enter_top = 0;
+	shell_enter_bottom = 0;
+	shell_exit_top = 0;
+	shell_exit_bottom = 0;
+	shell_numvelbins = 0;
+	shell_velbinwidth = 0.0;
 
 	for (int i=0; i<num_parts; i++)
 	{
@@ -43,7 +52,7 @@ Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> part
 		traced_parts.resize(num_traced);
 		for (int i=0; i<num_traced; i++)
 		{
-			traced_parts[i] = common::get_rand_int(0, num_parts);
+			traced_parts[i] = common::get_rand_int(0, num_parts-1);
 			my_parts[traced_parts[i]]->set_traced();
 		}
 	}
@@ -56,9 +65,51 @@ Atmosphere::~Atmosphere() {
 
 }
 
+// initialize a shell of atmosphere between bottom_r and top_r for data collection
+void Atmosphere::init_shell(double bottom_r, double top_r, int num_bins, double bin_width)
+{
+	shell_active = true;
+	shell_bottom = bottom_r;
+	shell_top = top_r;
+	shell_enter_top = 0;
+	shell_enter_bottom = 0;
+	shell_exit_top = 0;
+	shell_exit_bottom = 0;
+	shell_numvelbins = num_bins;
+	shell_velbinwidth = bin_width;
+	shell_velbins.clear();
+	shell_velbins.resize(shell_numvelbins);
+}
+
+void Atmosphere::output_shell_data(string folder_path)
+{
+	ofstream vel_outfile, info_outfile;
+	vel_outfile.open(folder_path + "shell_veldistro.out");
+	info_outfile.open(folder_path + "shell_info.out");
+
+	vel_outfile << shell_velbinwidth << "\n";
+	vel_outfile << shell_numvelbins << "\n";
+
+	for (int i=0; i<shell_numvelbins; i++)
+	{
+		vel_outfile << shell_velbins[i] << '\n';
+	}
+	vel_outfile.close();
+
+	info_outfile << "Shell bottom: \t\t" << to_string(shell_bottom) << "\n";
+	info_outfile << "Shell top: \t\t" << to_string(shell_top) << "\n";
+	info_outfile << "Enter bottom: \t\t" << to_string(shell_enter_bottom) << "\n";
+	info_outfile << "Enter top: \t\t" << to_string(shell_enter_top) << "\n";
+	info_outfile << "Exit bottom: \t\t" << to_string(shell_exit_bottom) << "\n";
+	info_outfile << "Exit top: \t\t" << to_string(shell_exit_top) << "\n";
+	info_outfile.close();
+
+	shell_active = false;
+}
+
 // writes single-column output file of altitude bin counts using active particles
 // bin_width is in cm; first 2 numbers in output file are bin_width and num_bins
-void Atmosphere::output_altitude_distro(double bin_width, std::string datapath)
+void Atmosphere::output_altitude_distro(double bin_width, string datapath)
 {
 	ofstream outfile;
 	outfile.open(datapath);
@@ -229,6 +280,11 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 				}
 			}
 		}
+		// update shell tracking data if necessary
+		if (shell_active)
+		{
+			update_shell_data();
+		}
 	}
 
 	if (num_traced > 0)
@@ -238,4 +294,48 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 
 	cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;
 	cout << "Active particles remaining: " << active_parts << endl;
+}
+
+// update shell numbers (velocity distro, etc.)
+void Atmosphere::update_shell_data()
+{
+	int bin_num = 0;
+	double v = 0.0;
+
+	for (int i=0; i<num_parts; i++)
+	{
+		if (my_parts[i]->get_active())
+		{
+			double r = my_parts[i]->get_radius();
+			double prev_r = my_parts[i]->get_previous_radius();
+			if (r > shell_bottom && r < shell_top)
+			{
+				if (prev_r < shell_bottom)
+				{
+					shell_enter_bottom++;
+					v = my_parts[i]->get_total_v();
+					bin_num = (int)(v / shell_velbinwidth);
+					shell_velbins[bin_num]++;
+				}
+				else if (prev_r > shell_top)
+				{
+					shell_enter_top++;
+					v = my_parts[i]->get_total_v();
+					bin_num = (int)(v / shell_velbinwidth);
+					shell_velbins[bin_num]++;
+				}
+			}
+			else if (prev_r > shell_bottom && prev_r < shell_top)
+			{
+				if (r < shell_bottom)
+				{
+					shell_exit_bottom++;
+				}
+				else if (r > shell_top)
+				{
+					shell_exit_top++;
+				}
+			}
+		}
+	}
 }

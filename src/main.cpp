@@ -218,7 +218,9 @@ int main(int argc, char* argv[])
 	Atmosphere my_atmosphere(num_testparts, num_traced, my_planet, parts, dist, bg_spec, ref_temp, ref_height, temp_profile_filename);
 	my_atmosphere.output_velocity_distro(10000.0, "/home/rodney/Documents/coronaTest/vdist.out");
 	my_atmosphere.output_altitude_distro(100000.0, "/home/rodney/Documents/coronaTest/altdist.out");
+	my_atmosphere.init_shell(my_planet.get_radius()+40000000.0, my_planet.get_radius()+40500000.0, 150, 10000.0);
 	my_atmosphere.run_simulation(dt, timesteps);
+	my_atmosphere.output_shell_data("/home/rodney/Documents/coronaTest/");
 	my_atmosphere.output_velocity_distro(10000.0, "/home/rodney/Documents/coronaTest/vdist2.out");
 	my_atmosphere.output_altitude_distro(100000000.0, "/home/rodney/Documents/coronaTest/altdist2.out");
 

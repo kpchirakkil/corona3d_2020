@@ -19,6 +19,7 @@ Particle::Particle()
 	traced = false;
 	radius = 0.0;
 	inverse_radius = 0.0;
+	previous_radius = 0.0;
 	position[0] = position[1] = position[2] = 0.0;
 	velocity[0] = velocity[1] = velocity[2] = 0.0;
 }
@@ -94,6 +95,7 @@ void Particle::do_collision(Particle* target, double theta, double time, double 
 
 void Particle::do_timestep(double dt, double k_g)
 {
+	previous_radius = radius;  // record current radius as new previous radius
 	Array<double, 3, 1> a = {0.0, 0.0, 0.0}; // particle acceleration vector
 
 	// calculate acceleration at current position
@@ -118,7 +120,7 @@ void Particle::dump_collision_log(string filename)
 {
 	ofstream outfile;
 	outfile.open(filename);
-	outfile << "#time(s) \t\t alt(km) \t\t target_species \t\t angle(deg) \n";
+	outfile << "#time(s) \t\t alt(km) \t\t target \t\t angle(deg) \n";
 	int num_lines = collision_log.size();
 	for (int i=0; i<num_lines; i++)
 	{
@@ -145,6 +147,11 @@ double Particle::get_radius()
 double Particle::get_inverse_radius()
 {
 	return inverse_radius;
+}
+
+double Particle::get_previous_radius()
+{
+	return previous_radius;
 }
 
 double Particle::get_x()
@@ -189,6 +196,7 @@ void Particle::init_particle(double x, double y, double z, double vx, double vy,
 {
 	radius = sqrt(x*x + y*y + z*z);
 	inverse_radius = 1.0/radius;
+	previous_radius = radius;
 	position[0] = x;
 	position[1] = y;
 	position[2] = z;
@@ -212,6 +220,7 @@ void Particle::init_particle_MB(double r, double v_avg)
 	double phi = constants::twopi*(common::get_rand());
 	double u = 2.0*common::get_rand() - 1;
 	inverse_radius = 1.0/r;
+	previous_radius = radius;
 	position[0] = r*sqrt(1-(u*u))*cos(phi);
 	position[1] = r*sqrt(1-(u*u))*sin(phi);
 	position[2] = r*u;

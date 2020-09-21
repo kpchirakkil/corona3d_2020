@@ -23,9 +23,11 @@ public:
 	Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile);
 	virtual ~Atmosphere();
 
-	void output_positions(std::string datapath);
-	void output_altitude_distro(double bin_width, std::string datapath);
-	void output_velocity_distro(double bin_width, std::string datapath);
+	void init_shell(double bottom_r, double top_r, int num_bins, double bin_width);
+	void output_shell_data(string folder_path);
+	void output_positions(string datapath);
+	void output_altitude_distro(double bin_width, string datapath);
+	void output_velocity_distro(double bin_width, string datapath);
 	void run_simulation(double dt, int num_steps);
 
 private:
@@ -38,17 +40,29 @@ private:
 	Background_Species bg_species;      // background species used for collisions
 	double T_bg;                        // [K] background temp where simulation starts
 	double ref_height;                  // [cm] altitude above planet surface of model bottom
-
 	vector<int> traced_parts;           // indices of randomly selected trace particles
-
 	vector<double> alt_bins;            // altitude bins from imported temperature profile
 	vector<double> Tn;                  // neutral species temperature profile
 	vector<double> Ti;                  // ionic species temperature profile
 	vector<double> Te;                  // electron temperature profile
 
+	bool shell_active;
+	double shell_bottom;
+	double shell_top;
+	int shell_enter_top;
+	int shell_enter_bottom;
+	int shell_exit_top;
+	int shell_exit_bottom;
+	int shell_numvelbins;
+	int shell_velbinwidth;
+	vector<int> shell_velbins;
+
 	// output test particle trace data for selected particles
 	void output_collision_data();
 	void output_trace_data();
+
+	// update shell numbers (velocity distro, etc.)
+	void update_shell_data();
 };
 
 #endif /* ATMOSPHERE_HPP_ */

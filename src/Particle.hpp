@@ -27,6 +27,7 @@ public:
 	bool get_traced();
 	double get_radius();
 	double get_inverse_radius();
+	double get_previous_radius();
 	double get_x();
 	double get_y();
 	double get_z();
@@ -45,6 +46,7 @@ protected:
 	bool traced;                    // flag for whether particle is traced through simulation
 	double radius;                  // radius from center of planet	[cm]
 	double inverse_radius;          // inverse radius (for computational efficiency) [cm^-1]
+	double previous_radius;         // radius at previous time step; used for tracking
 	Matrix<double, 3, 1> position;  // position vector [cm,cm,cm]
 	Matrix<double, 3, 1> velocity;  // velocity vector [cm/s,cm/s,cm/s]
 	vector<string> collision_log;   // log of collision data kept on traced particles
