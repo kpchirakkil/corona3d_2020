@@ -36,7 +36,7 @@ void Particle::deactivate()
 }
 
 // perform collision on a particle and update velocity vector
-void Particle::do_collision(Particle* target, double theta, double time, double alt_in_km)
+void Particle::do_collision(Particle* target, double theta, double time, double planet_r)
 {
 	double my_mass = get_mass();
 	double targ_mass = target->get_mass();
@@ -89,6 +89,7 @@ void Particle::do_collision(Particle* target, double theta, double time, double 
 	// write to collision log if traced particle
 	if (traced)
 	{
+		double alt_in_km = 1e-5*(radius - planet_r);
 		collision_log.push_back(to_string(time) + "\t\t" + to_string(alt_in_km) + "\t\t" + target->get_name() + "\t\t" + to_string(theta * (180.0/constants::pi)));
 	}
 }

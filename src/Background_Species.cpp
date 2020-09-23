@@ -8,7 +8,10 @@
 #include "Background_Species.hpp"
 
 Background_Species::Background_Species() {
+	use_temp_profile = false;
 	use_dens_profile = false;
+	profile_bottom_alt = 0.0;
+	profile_top_alt = 0.0;
 	num_collisions = 0;
 	num_species = 0;
 	ref_temp = 0.0;
@@ -19,14 +22,25 @@ Background_Species::Background_Species() {
 	my_dist = NULL;
 }
 
-Background_Species::Background_Species(int n, Planet p, double T, double h, Distribution_MB* dist, Particle* bg_p[], double bg_d[], double bg_s[], string dens_profile_filename) {
+Background_Species::Background_Species(int n, Planet p, double T, double h, Distribution_MB* dist, Particle* bg_p[], double bg_d[], double bg_s[], string temp_profile_filename, string dens_profile_filename, double profile_bottom, double profile_top) {
 	num_collisions = 0;
 	num_species = n;
 	my_planet = p;
 	my_dist = dist;
 	ref_temp = T;
 	ref_height = h;
+	profile_bottom_alt = profile_bottom;
+	profile_top_alt = profile_top;
 	ref_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+ref_height, 2.0));
+
+	if (temp_profile_filename != "")
+	{
+		use_temp_profile = true;
+	}
+	else
+	{
+		use_temp_profile = false;
+	}
 
 	if (dens_profile_filename != "")
 	{
@@ -50,9 +64,16 @@ Background_Species::Background_Species(int n, Planet p, double T, double h, Dist
 		bg_scaleheights[i] = constants::k_b*ref_temp/(bg_parts[i]->get_mass()*ref_g);
 		bg_avg_v[i] = sqrt(constants::k_b*ref_temp/bg_parts[i]->get_mass());
 	}
-	collision_target = -1;
+	collision_target = -1;   // set to -1 when no collision happening
 	collision_theta = 0.0;
 
+	// read in temperature profile (if available)
+	if (use_temp_profile)
+	{
+		common::import_csv(temp_profile_filename, temp_alt_bins, Tn, Ti, Te);
+	}
+
+	// read in density profile (if available)
 	if (use_dens_profile)
 	{
 		for (int i=0; i<num_species; i++)
@@ -61,23 +82,23 @@ Background_Species::Background_Species(int n, Planet p, double T, double h, Dist
 		}
 		if (num_species == 5)
 		{
-			common::import_csv(dens_profile_filename, alt_bins, bg_densities[0], bg_densities[1], bg_densities[2], bg_densities[3], bg_densities[4]);
+			common::import_csv(dens_profile_filename, dens_alt_bins, bg_densities[0], bg_densities[1], bg_densities[2], bg_densities[3], bg_densities[4]);
 		}
 		else if (num_species == 4)
 		{
-			common::import_csv(dens_profile_filename, alt_bins, bg_densities[0], bg_densities[1], bg_densities[2], bg_densities[3]);
+			common::import_csv(dens_profile_filename, dens_alt_bins, bg_densities[0], bg_densities[1], bg_densities[2], bg_densities[3]);
 		}
 		else if (num_species == 3)
 		{
-			common::import_csv(dens_profile_filename, alt_bins, bg_densities[0], bg_densities[1], bg_densities[2]);
+			common::import_csv(dens_profile_filename, dens_alt_bins, bg_densities[0], bg_densities[1], bg_densities[2]);
 		}
 		else if (num_species == 2)
 		{
-			common::import_csv(dens_profile_filename, alt_bins, bg_densities[0], bg_densities[1]);
+			common::import_csv(dens_profile_filename, dens_alt_bins, bg_densities[0], bg_densities[1]);
 		}
 		else if (num_species == 1)
 		{
-			common::import_csv(dens_profile_filename, alt_bins, bg_densities[0]);
+			common::import_csv(dens_profile_filename, dens_alt_bins, bg_densities[0]);
 		}
 	}
 
@@ -95,7 +116,7 @@ double Background_Species::calc_new_density(double ref_density, double scale_hei
 }
 
 // check to see if a collision occurred and set target particle if so
-bool Background_Species::check_collision(double r, double v, double dt, double T)
+bool Background_Species::check_collision(double r, double v, double dt)
 {
 	// get densities at current location
 	double r_moved = my_planet.get_radius() + ref_height - r;
@@ -106,10 +127,10 @@ bool Background_Species::check_collision(double r, double v, double dt, double T
 	{
 		for (int i=0; i<num_species; i++)
 		{
-			temp_dens[i] = get_density(r, bg_densities[i]);
+			temp_dens[i] = get_density(r, bg_densities[i], bg_parts[i]->get_mass());
 		}
 	}
-	else  // calculate new density based on scale height
+	else  // calculate new density based on reference scale height
 	{
 		for (int i=0; i<num_species; i++)
 		{
@@ -148,9 +169,10 @@ bool Background_Species::check_collision(double r, double v, double dt, double T
 		// subtract the extra added integer, and initialize collision target
 		collision_target--;
 
-		if (use_dens_profile)
+		if (use_temp_profile)
 		{
-			double avg_v = sqrt(constants::k_b*T/bg_parts[collision_target]->get_mass());
+			double temp = common::interpolate(temp_alt_bins, Tn, r - my_planet.get_radius());
+			double avg_v = sqrt(constants::k_b*temp/bg_parts[collision_target]->get_mass());
 			my_dist->init_vonly(bg_parts[collision_target], avg_v);
 		}
 		else
@@ -182,9 +204,23 @@ double Background_Species::find_new_theta()
 }
 
 // get density from imported density profile
-double Background_Species::get_density(double r, vector<double> &dens_bins)
+double Background_Species::get_density(double r, vector<double> &dens_bins, double targ_mass)
 {
-	double current_dens = common::interpolate(alt_bins, dens_bins, r - my_planet.get_radius());
+	double alt = r - my_planet.get_radius();
+	double current_dens = 0.0;
+	if (alt < profile_bottom_alt)
+	{
+		current_dens = calc_new_density(dens_bins[0], constants::k_b*common::interpolate(temp_alt_bins, Tn, profile_bottom_alt)/(targ_mass*ref_g), profile_bottom_alt - alt);
+	}
+	else if (alt > profile_top_alt)
+	{
+		current_dens = calc_new_density(dens_bins.back(), constants::k_b*common::interpolate(temp_alt_bins, Tn, profile_top_alt)/(targ_mass*ref_g), profile_top_alt - alt);
+	}
+	else
+	{
+		current_dens = common::interpolate(dens_alt_bins, dens_bins, alt);
+	}
+
 	return current_dens;
 }
 

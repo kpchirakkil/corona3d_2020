@@ -55,6 +55,8 @@ int main(int argc, char* argv[])
 	string dist_type = "";
 	string pos_infile = "";
 	string vel_infile = "";
+	double profile_bottom_alt = 0.0;
+	double profile_top_alt = 0.0;
 	string temp_profile_filename = "";
 	string neut_densities_filename = "";
 	string ion_densities_filename = "";
@@ -126,6 +128,14 @@ int main(int argc, char* argv[])
 		else if (parameters[i] == "vel_infle")
 		{
 			vel_infile = values[i];
+		}
+		else if (parameters[i] == "profile_bottom_alt")
+		{
+			profile_bottom_alt = stod(values[i]);
+		}
+		else if (parameters[i] == "profile_top_alt")
+		{
+			profile_top_alt = stod(values[i]);
 		}
 		else if (parameters[i] == "temp_profile")
 		{
@@ -212,13 +222,13 @@ int main(int argc, char* argv[])
 		bg_sigs[i] = stod(values[bg_params_index + num_bgparts + num_bgparts + i]);
 	}
 	Distribution_MB* bg_dist = new Distribution_MB(my_planet, ref_height, ref_temp);
-	Background_Species bg_spec(num_bgparts, my_planet, ref_temp, ref_height, bg_dist, bg_parts, bg_dens, bg_sigs, neut_densities_filename);
+	Background_Species bg_spec(num_bgparts, my_planet, ref_temp, ref_height, bg_dist, bg_parts, bg_dens, bg_sigs, temp_profile_filename, neut_densities_filename, profile_bottom_alt, profile_top_alt);
 
 	// initialize atmosphere and run simulation
-	Atmosphere my_atmosphere(num_testparts, num_traced, my_planet, parts, dist, bg_spec, ref_temp, ref_height, temp_profile_filename);
+	Atmosphere my_atmosphere(num_testparts, num_traced, my_planet, parts, dist, bg_spec);
 	my_atmosphere.output_velocity_distro(10000.0, "/home/rodney/Documents/coronaTest/vdist.out");
 	my_atmosphere.output_altitude_distro(100000.0, "/home/rodney/Documents/coronaTest/altdist.out");
-	my_atmosphere.init_shell(my_planet.get_radius()+40000000.0, my_planet.get_radius()+40500000.0, 150, 10000.0);
+	my_atmosphere.init_shell(my_planet.get_radius()+60000000.0, my_planet.get_radius()+60500000.0, 300, 10000.0);
 	my_atmosphere.run_simulation(dt, timesteps);
 	my_atmosphere.output_shell_data("/home/rodney/Documents/coronaTest/");
 	my_atmosphere.output_velocity_distro(10000.0, "/home/rodney/Documents/coronaTest/vdist2.out");

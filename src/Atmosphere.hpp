@@ -20,7 +20,7 @@ using namespace std;
 
 class Atmosphere {
 public:
-	Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile);
+	Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg);
 	virtual ~Atmosphere();
 
 	void init_shell(double bottom_r, double top_r, int num_bins, double bin_width);
@@ -38,13 +38,7 @@ private:
 	vector<Particle*> my_parts;         // array of particles to be tracked
 	Distribution* my_dist;              // distribution class to initialize particles
 	Background_Species bg_species;      // background species used for collisions
-	double T_bg;                        // [K] background temp where simulation starts
-	double ref_height;                  // [cm] altitude above planet surface of model bottom
 	vector<int> traced_parts;           // indices of randomly selected trace particles
-	vector<double> alt_bins;            // altitude bins from imported temperature profile
-	vector<double> Tn;                  // neutral species temperature profile
-	vector<double> Ti;                  // ionic species temperature profile
-	vector<double> Te;                  // electron temperature profile
 
 	bool shell_active;
 	double shell_bottom;

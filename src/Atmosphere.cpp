@@ -8,7 +8,7 @@
 #include "Atmosphere.hpp"
 
 // construct atmosphere using given parameters
-Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, double T, double ref_h, string temp_profile)
+Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg)
 {
 	num_parts = n;                // number of test particles to track
 	num_traced = num_to_trace;    // number of tracked particles to output detailed trace data for
@@ -16,8 +16,6 @@ Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> part
 	my_planet = p;
 	my_dist = dist;
 	my_parts.resize(num_parts);
-	T_bg = T;                     // [K] background temp where simulation starts
-	ref_height = ref_h;           // [cm] altitude for bottom of model
 	bg_species = bg;
 	shell_active = false;
 	shell_bottom = 0.0;
@@ -56,9 +54,6 @@ Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> part
 			my_parts[traced_parts[i]]->set_traced();
 		}
 	}
-
-	// read in temperature profile
-	common::import_csv(temp_profile, alt_bins, Tn, Ti, Te);
 }
 
 Atmosphere::~Atmosphere() {
@@ -240,7 +235,7 @@ void Atmosphere::output_velocity_distro(double bin_width, string datapath)
 void Atmosphere::run_simulation(double dt, int num_steps)
 {
 	double k = my_planet.get_k_g();
-	double v_Obg = sqrt(8.0*constants::k_b*T_bg / (constants::pi*15.9994*constants::amu));
+	double v_Obg = sqrt(8.0*constants::k_b*277.6 / (constants::pi*15.9994*constants::amu));
 	//double v_Obg = 0;
 	//double thresh_v = sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[0]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e3)));
 	cout << "Simulating Particle Transport...\n";
@@ -263,13 +258,10 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 			if (my_parts[j]->get_active())
 			{
 				my_parts[j]->do_timestep(dt, k);
-				double r = my_parts[j]->get_radius();
-				double alt = r - my_planet.get_radius();
-				double temp = common::interpolate(alt_bins, Tn, alt);
 
-				if (bg_species.check_collision(r, my_parts[j]->get_total_v(), dt, temp))
+				if (bg_species.check_collision(my_parts[j]->get_radius(), my_parts[j]->get_total_v(), dt))
 				{
-					my_parts[j]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta(), i*dt, alt*1e-5);
+					my_parts[j]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta(), i*dt, my_planet.get_radius());
 				}
 
 				// deactivation criteria...need to incorporate into configuration file
