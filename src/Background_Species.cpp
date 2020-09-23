@@ -210,11 +210,13 @@ double Background_Species::get_density(double r, vector<double> &dens_bins, doub
 	double current_dens = 0.0;
 	if (alt < profile_bottom_alt)
 	{
-		current_dens = calc_new_density(dens_bins[0], constants::k_b*common::interpolate(temp_alt_bins, Tn, profile_bottom_alt)/(targ_mass*ref_g), profile_bottom_alt - alt);
+		double local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+profile_bottom_alt, 2.0));
+		current_dens = calc_new_density(dens_bins[0], constants::k_b*common::interpolate(temp_alt_bins, Tn, profile_bottom_alt)/(targ_mass*local_g), profile_bottom_alt - alt);
 	}
 	else if (alt > profile_top_alt)
 	{
-		current_dens = calc_new_density(dens_bins.back(), constants::k_b*common::interpolate(temp_alt_bins, Tn, profile_top_alt)/(targ_mass*ref_g), profile_top_alt - alt);
+		double local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+profile_top_alt, 2.0));
+		current_dens = calc_new_density(dens_bins.back(), constants::k_b*common::interpolate(temp_alt_bins, Tn, profile_top_alt)/(targ_mass*local_g), profile_top_alt - alt);
 	}
 	else
 	{

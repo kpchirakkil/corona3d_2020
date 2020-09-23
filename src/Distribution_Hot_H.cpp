@@ -10,12 +10,14 @@
 Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	: Distribution(my_p, ref_h, ref_T) {
 
+	m_H = 1.00794*constants::amu;
 	m_Hion = 1.00728*constants::amu;
 	H_Hplus_rate_coeff = 8.7e-10;
 
 	temp_profile.resize(4);
 	H_profile.resize(2);
 	Hplus_profile.resize(2);
+	H_Hplus_CDF.resize(2);
 
 	string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/MarsTempLSA_FoxHac09.csv";
 	string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_LSA_FoxHac09.csv";
@@ -25,55 +27,7 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	common::import_csv(H_prof_filename, H_profile[0], H_profile[1]);
 	common::import_csv(Hplus_prof_filename, Hplus_profile[0], Hplus_profile[1]);
 
-	vector<double> logtemp;
-	logtemp.resize(temp_profile[2].size());
-	for (int i=0; i<logtemp.size(); i++)
-	{
-		logtemp[i] = log10(temp_profile[2][i]);
-	}
-	vector<double> logHplus;
-	logHplus.resize(Hplus_profile[1].size());
-	for (int i=0; i<logHplus.size(); i++)
-	{
-		logHplus[i] = log10(Hplus_profile[1][i]);
-	}
-	vector<double> logH;
-	logH.resize(H_profile[1].size());
-	for (int i=0; i<logH.size(); i++)
-	{
-		logH[i] = log10(H_profile[1][i]);
-	}
-	int num_alt_bins = 4000;
-
-	vector<double> H_Hplus_rate;
-	H_Hplus_rate.resize(num_alt_bins);
-	alt_bins.resize(num_alt_bins);
-	H_Hplus_CDF.resize(num_alt_bins);
-	double rate_sum = 0.0;
-	for (int i=0; i<num_alt_bins; i++)
-	{
-		alt_bins[i] = 2e7 + 10000.0*i;
-		//double Ti = pow(10.0, common::interpolate(temp_profile[0], logtemp, alt_bins[i]));
-		//double H_dens = pow(10.0, common::interpolate(H_profile[0], logH, alt_bins[i]));
-		//double Hplus_dens = pow(10.0, common::interpolate(Hplus_profile[0], logHplus, alt_bins[i]));
-		double Ti = common::interpolate(temp_profile[0], temp_profile[2], alt_bins[i]);
-		double H_dens = common::interpolate(H_profile[0], H_profile[1], alt_bins[i]);
-		double Hplus_dens = common::interpolate(Hplus_profile[0], Hplus_profile[1], alt_bins[i]);
-		H_Hplus_rate[i] = H_Hplus_rate_coeff * sqrt(Ti) * H_dens * Hplus_dens;
-		cout << alt_bins[i] << "," << H_Hplus_rate[i] << "\n";
-		rate_sum = rate_sum + H_Hplus_rate[i];
-	}
-	for (int i=0; i<num_alt_bins; i++)
-	{
-		if (i == 0)
-		{
-			H_Hplus_CDF[i] = H_Hplus_rate[i] / rate_sum;
-		}
-		else
-		{
-			H_Hplus_CDF[i] = (H_Hplus_rate[i] / rate_sum) + H_Hplus_CDF[i-1];
-		}
-	}
+	make_H_Hplus_CDF(80e5, 700e5);
 }
 
 Distribution_Hot_H::~Distribution_Hot_H() {
@@ -146,9 +100,89 @@ double Distribution_Hot_H::get_new_radius_H_Hplus()
 {
 	double u = common::get_rand();
 	int k = 0;
-	while (H_Hplus_CDF[k] < u)
+	while (H_Hplus_CDF[0][k] < u)
 	{
 		k++;
 	}
-	return alt_bins[k] + my_planet.get_radius();
+	return H_Hplus_CDF[1][k] + my_planet.get_radius();
+}
+
+// generate H_Hplus_CDF for given altitude range using imported density/temp profiles
+void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
+{
+	ofstream outfile;
+	outfile.open("/home/rodney/Documents/coronaTest/rodney_hplh.dat");
+
+	int num_alt_bins = (int)((upper_alt - lower_alt) / 10000.0);
+	vector<double> H_Hplus_rate;
+	H_Hplus_rate.resize(num_alt_bins);
+	H_Hplus_CDF[0].resize(num_alt_bins);
+	H_Hplus_CDF[1].resize(num_alt_bins);
+
+	double bottom_Hplus = Hplus_profile[0][0];
+	double top_Hplus = Hplus_profile[0].back();
+	double bottom_H = H_profile[0][0];
+	double top_H = H_profile[0].back();
+
+	double local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+bottom_Hplus, 2.0));
+	double Hplus_bottom_scaleheight = constants::k_b*common::interpolate(temp_profile[0], temp_profile[2], bottom_Hplus)/(m_Hion*local_g);
+	local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+top_Hplus, 2.0));
+	double Hplus_top_scaleheight = constants::k_b*common::interpolate(temp_profile[0], temp_profile[2], top_Hplus)/(m_Hion*local_g);
+	local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+bottom_H, 2.0));
+	double H_bottom_scaleheight = constants::k_b*common::interpolate(temp_profile[0], temp_profile[1], bottom_H)/(m_H*local_g);
+	local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+top_H, 2.0));
+	double H_top_scaleheight = constants::k_b*common::interpolate(temp_profile[0], temp_profile[1], top_H)/(m_H*local_g);
+
+	double rate_sum = 0.0;
+	for (int i=0; i<num_alt_bins; i++)
+	{
+		H_Hplus_CDF[1][i] = lower_alt + 10000.0*i;
+
+		// get new H density by either interpolation or extrapolation
+		double H_dens = 0.0;
+		if (H_Hplus_CDF[1][i] < bottom_H)
+		{
+			H_dens = H_profile[1][0]*exp((bottom_H - H_Hplus_CDF[1][i])/H_bottom_scaleheight);
+		}
+		else if (H_Hplus_CDF[1][i] > top_H)
+		{
+			H_dens = H_profile[1].back()*exp((top_H - H_Hplus_CDF[1][i])/H_top_scaleheight);
+		}
+		else
+		{
+			H_dens = common::interpolate(H_profile[0], H_profile[1], H_Hplus_CDF[1][i]);
+		}
+
+		// get new Hplus density by either interpolation or extrapolation
+		double Hplus_dens = 0.0;
+		if (H_Hplus_CDF[1][i] < bottom_Hplus)
+		{
+			Hplus_dens = Hplus_profile[1][0]*exp((bottom_Hplus - H_Hplus_CDF[1][i])/Hplus_bottom_scaleheight);
+		}
+		else if (H_Hplus_CDF[1][i] > top_Hplus)
+		{
+			Hplus_dens = Hplus_profile[1].back()*exp((top_Hplus - H_Hplus_CDF[1][i])/Hplus_top_scaleheight);
+		}
+		else
+		{
+			Hplus_dens = common::interpolate(Hplus_profile[0], Hplus_profile[1], H_Hplus_CDF[1][i]);
+		}
+
+		double Ti = common::interpolate(temp_profile[0], temp_profile[2], H_Hplus_CDF[1][i]);
+		H_Hplus_rate[i] = H_Hplus_rate_coeff * sqrt(Ti) * H_dens * Hplus_dens;
+		outfile << H_Hplus_CDF[1][i]*1e-5 << "\t" << H_Hplus_rate[i] << "\n";
+		rate_sum = rate_sum + H_Hplus_rate[i];
+	}
+	outfile.close();
+	for (int i=0; i<num_alt_bins; i++)
+	{
+		if (i == 0)
+		{
+			H_Hplus_CDF[0][i] = H_Hplus_rate[i] / rate_sum;
+		}
+		else
+		{
+			H_Hplus_CDF[0][i] = (H_Hplus_rate[i] / rate_sum) + H_Hplus_CDF[0][i-1];
+		}
+	}
 }
