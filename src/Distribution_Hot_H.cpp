@@ -19,9 +19,9 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	Hplus_profile.resize(2);
 	H_Hplus_CDF.resize(2);
 
-	string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/MarsTempLSA_FoxHac09.csv";
-	string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_LSA_FoxHac09.csv";
-	string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H+_density_profile_LSA_FoxHac09.csv";
+	string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/MarsTemp_Fox2014.csv";
+	string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_Fox2014.csv";
+	string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H+_density_profile_Fox2014.csv";
 
 	common::import_csv(temp_prof_filename, temp_profile[0], temp_profile[1], temp_profile[2], temp_profile[3]);
 	common::import_csv(H_prof_filename, H_profile[0], H_profile[1]);
