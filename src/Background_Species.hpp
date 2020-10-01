@@ -25,9 +25,9 @@ using namespace std;
 class Background_Species {
 public:
 	Background_Species();
-	Background_Species(int n, Planet p, double T, double h, Distribution_MB* dist, Particle* bg_p[], double bg_d[], double bg_s[], string temp_profile_filename, string dens_profile_filename, double profile_bottom, double profile_top);
+	Background_Species(int n, Planet p, double T, double h, Distribution_MB* dist, Particle* bg_p[], double bg_d[], double bg_s[], string bg_s_f[], string temp_profile_filename, string dens_profile_filename, double profile_bottom, double profile_top);
 	virtual ~Background_Species();
-	bool check_collision(double r, double v, double dt);
+	bool check_collision(Particle* p, double dt);
 	int get_num_collisions();
 	Particle* get_collision_target();
 	double get_collision_theta();
@@ -55,10 +55,14 @@ private:
 	vector<double> Te;                    // electron temperature profile
 	vector<double> dens_alt_bins;         // array of altitude bins imported along with densities
 	vector<vector<double>> bg_densities;  // array of densities for each particle in bg_parts
-	vector<double> bg_sigmas;             // array of total cross sections for each particle
+	vector<double> bg_sigma_defaults;     // array of default total cross sections for each particle
+	vector<vector<vector<double>>> bg_sigma_tables;  // lookup tables for total cross sections
 	vector<double> bg_scaleheights;       // array of scale heights for each particle type
-	vector<double> bg_avg_v;              // array of average (thermal) velocities for each particle
+	vector<vector <double>> bg_avg_v;     // array of average (thermal) velocities for each particle
 	Matrix<double, 180, 2> cdf;           // 180x2 array of cos(theta) vs diff. cross section CDF values
+
+	// returns collision energy in eV between particle 1 and particle 2
+	double calc_collision_e(Particle* p1, Particle* p2);
 
 	// calculates new density of background particle based on radial position and scale height
 	double calc_new_density(double ref_density, double scale_height, double r_moved);

@@ -44,7 +44,7 @@ void Particle::do_collision(Particle* target, double theta, double time, double 
 	Matrix<double, 3, 1> vcm;
 	Matrix<double, 3, 3> Rrg;
 
-	vcm = (my_mass*velocity.array() + targ_mass * targ_v.array()) / (my_mass + targ_mass);
+	vcm = (my_mass*velocity.array() + targ_mass*targ_v.array()) / (my_mass + targ_mass);
 	Matrix<double, 3, 1> v1v = velocity.array() - vcm.array();        // particle 1 c-o-m velocity
 	// Matrix<double, 3, 1> v2v = targ_v.array() - vcm.array();          // particle 2 c-o-m velocity
 	double v1 = sqrt(v1v[0]*v1v[0] + v1v[1]*v1v[1] + v1v[2]*v1v[2]);  // particle 1 c-o-m scalar velocity

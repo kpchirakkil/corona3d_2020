@@ -215,14 +215,16 @@ int main(int argc, char* argv[])
 	Particle* bg_parts[num_bgparts];
 	double bg_dens[num_bgparts];
 	double bg_sigs[num_bgparts];
+	string bg_sig_files[num_bgparts];
 	for (int i=0; i<num_bgparts; i++)
 	{
 		bg_parts[i] = set_particle_type(values[bg_params_index + i]);
 		bg_dens[i] = stod(values[bg_params_index + num_bgparts + i]);
 		bg_sigs[i] = stod(values[bg_params_index + num_bgparts + num_bgparts + i]);
+		bg_sig_files[i] = values[bg_params_index + num_bgparts + num_bgparts + num_bgparts + i];
 	}
 	Distribution_MB* bg_dist = new Distribution_MB(my_planet, ref_height, ref_temp);
-	Background_Species bg_spec(num_bgparts, my_planet, ref_temp, ref_height, bg_dist, bg_parts, bg_dens, bg_sigs, temp_profile_filename, neut_densities_filename, profile_bottom_alt, profile_top_alt);
+	Background_Species bg_spec(num_bgparts, my_planet, ref_temp, ref_height, bg_dist, bg_parts, bg_dens, bg_sigs, bg_sig_files, temp_profile_filename, neut_densities_filename, profile_bottom_alt, profile_top_alt);
 
 	// initialize atmosphere and run simulation
 	Atmosphere my_atmosphere(num_testparts, num_traced, my_planet, parts, dist, bg_spec);

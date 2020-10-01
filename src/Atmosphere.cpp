@@ -259,7 +259,7 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 			{
 				my_parts[j]->do_timestep(dt, k);
 
-				if (bg_species.check_collision(my_parts[j]->get_radius(), my_parts[j]->get_total_v(), dt))
+				if (bg_species.check_collision(my_parts[j], dt))
 				{
 					my_parts[j]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta(), i*dt, my_planet.get_radius());
 				}
