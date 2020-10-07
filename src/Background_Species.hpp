@@ -71,7 +71,7 @@ private:
 	double find_new_theta();
 
 	// get density from imported density profile if available
-	double get_density(double r, vector<double> &dens, double targ_mass);
+	double get_density(double alt, vector<double> &dens, double targ_mass);
 };
 
 #endif /* BACKGROUND_SPECIES_HPP_ */

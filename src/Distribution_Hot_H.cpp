@@ -27,7 +27,7 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	common::import_csv(H_prof_filename, H_profile[0], H_profile[1]);
 	common::import_csv(Hplus_prof_filename, Hplus_profile[0], Hplus_profile[1]);
 
-	make_H_Hplus_CDF(80e5, 700e5);
+	make_H_Hplus_CDF(80e5, 700.103333e5);
 }
 
 Distribution_Hot_H::~Distribution_Hot_H() {
@@ -113,7 +113,7 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 	ofstream outfile;
 	outfile.open("/home/rodney/Documents/coronaTest/rodney_hplh.dat");
 
-	int num_alt_bins = (int)((upper_alt - lower_alt) / 10000.0);
+	int num_alt_bins = (int)((upper_alt - lower_alt) / 10333.3);
 	vector<double> H_Hplus_rate;
 	H_Hplus_rate.resize(num_alt_bins);
 	H_Hplus_CDF[0].resize(num_alt_bins);
@@ -136,7 +136,7 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 	double rate_sum = 0.0;
 	for (int i=0; i<num_alt_bins; i++)
 	{
-		H_Hplus_CDF[1][i] = lower_alt + 10000.0*i;
+		H_Hplus_CDF[1][i] = lower_alt + 10333.3*i;
 
 		// get new H density by either interpolation or extrapolation
 		double H_dens = 0.0;

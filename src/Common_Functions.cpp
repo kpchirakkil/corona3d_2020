@@ -224,6 +224,7 @@ namespace common {
 	// assumes that x_data has at least two elements, is sorted and is strictly monotonic increasing
 	double interpolate(vector<double> &x_data, vector<double> &y_data, double x)
 	{
+		/*
 		int size = x_data.size();
 
 		int i = 0;                    // find left end of interval for interpolation
@@ -236,10 +237,23 @@ namespace common {
 			while (x > x_data[i+1]) i++;
 		}
 		double x_left = x_data[i], y_left = y_data[i], x_right = x_data[i+1], y_right = y_data[i+1];  // points on either side (unless beyond ends)
+		*/
 
-		double dydx = (y_right - y_left) / (x_right - x_left);   // gradient
-
-		return y_left + dydx * (x - x_left);   // linear interpolation
+		if (x <= x_data[0])
+		{
+			return y_data[0];
+		}
+		else if (x >= x_data.back())
+		{
+			return y_data.back();
+		}
+		else
+		{
+			int i = lower_bound(x_data.begin(), x_data.end(), x) - x_data.begin();
+			double x_left = x_data[i-1], x_right = x_data[i], y_left = y_data[i-1], y_right = y_data[i];
+			double dydx = (y_right - y_left) / (x_right - x_left);   // gradient
+			return y_left + dydx * (x - x_left);   // linear interpolation
+		}
 	}
 
 	// returns uniformly distributed random number from interval [0, 1)

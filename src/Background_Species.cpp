@@ -159,121 +159,6 @@ bool Background_Species::check_collision(Particle* p, double dt)
 	double alt = r - my_planet.get_radius();
 	double r_moved = my_planet.get_radius() + ref_height - r;
 
-	// determine if test particle collided, and if so, initialize target and pick theta
-	double u = common::get_rand();
-	double tau = 0.0;
-	collision_target = -1;
-	int i = 0;
-	while (collision_target == -1 && i < num_species)
-	{
-		// get density at current location
-		double dens = 0.0;
-
-		if (use_dens_profile)  // get new density from imported density profile
-		{
-			dens = get_density(alt, bg_densities[i], bg_parts[i]->get_mass());
-		}
-		else  // calculate new density based on reference scale height
-		{
-			dens = calc_new_density(bg_densities[i][0], bg_scaleheights[i], r_moved);
-		}
-
-		// look up total cross section to use for this species, or use default if no table available
-		double sig = 0.0;
-		double avg_v = 0.0;
-
-		// if default sigma is zero, then table is available, must initialize a particle to get energy
-		if (bg_sigma_defaults[i] == 0.0)
-		{
-			if (use_temp_profile)
-			{
-				if (alt < profile_bottom_alt)
-				{
-					avg_v = bg_avg_v[i][0];
-				}
-				else if (alt > profile_top_alt)
-				{
-					avg_v = bg_avg_v[i].back();
-				}
-				else
-				{
-					avg_v = common::interpolate(temp_alt_bins, bg_avg_v[i], alt);
-				}
-			}
-			else  // use reference temp avg_v
-			{
-				avg_v = bg_avg_v[i][0];
-			}
-			my_dist->init_vonly(bg_parts[i], avg_v);
-
-			//double my_mass = p->get_mass();
-			//double targ_mass = bg_parts[i]->get_mass();
-			//double dm = my_mass*targ_mass / (my_mass + targ_mass);
-			//double dv = p->get_total_v() - avg_v;
-			//double test_energy = 0.5*dm*dv*dv / constants::ergev;
-			//double test_energy = 0.5*p->get_mass()*my_total_v*my_total_v / constants::ergev;
-
-			// calculate collision energy and look up cross section
-			double energy = calc_collision_e(p, bg_parts[i]);
-			sig = common::interpolate(bg_sigma_tables[i][0], bg_sigma_tables[i][1], energy);
-
-			//ofstream outfile;
-			//outfile.open("/home/rodney/Documents/coronaTest/energy_compare_HotH.out", ios::out | ios::app);
-			//outfile << bg_parts[i]->get_name() << "\t" << alt*1e-5 << "km\t" << test_energy << "eV\t" << energy << "eV\n";
-			//outfile.close();
-		}
-		else  // just use default sigma if no lookup table available
-		{
-			sig = bg_sigma_defaults[i];
-		}
-
-		// increase tau and check for collision, move on to next particle if no collision yet,
-		// exit loop and return true if collision detected
-		tau += 	my_total_v*dt*sig*dens;
-		if (u > exp(-tau))
-		{
-			num_collisions++;
-			collision_target = i;
-			collision_theta = find_new_theta();
-			if (bg_sigma_defaults[collision_target] != 0.0)  // particle needs to be initialized
-			{
-				if (use_temp_profile)
-				{
-					double avg_v = 0.0;
-					if (alt < profile_bottom_alt)
-					{
-						avg_v = bg_avg_v[collision_target][0];
-					}
-					else if (alt > profile_top_alt)
-					{
-						avg_v = bg_avg_v[collision_target].back();
-					}
-					else
-					{
-						avg_v = common::interpolate(temp_alt_bins, bg_avg_v[collision_target], alt);
-					}
-					my_dist->init_vonly(bg_parts[collision_target], avg_v);
-				}
-				else
-				{
-					my_dist->init_vonly(bg_parts[collision_target], bg_avg_v[collision_target][0]);
-				}
-			}
-		}
-		i++;
-	}
-
-	// outside while loop now, check if collision detected
-	if (collision_target == -1)
-	{
-		return false;
-	}
-	else
-	{
-		return true;
-	}
-
-	/* old way below here
 	// get densities at current location
 	vector<double> dens;
 	dens.resize(num_species);
@@ -282,7 +167,7 @@ bool Background_Species::check_collision(Particle* p, double dt)
 	{
 		for (int i=0; i<num_species; i++)
 		{
-			dens[i] = get_density(r, bg_densities[i], bg_parts[i]->get_mass());
+			dens[i] = get_density(alt, bg_densities[i], bg_parts[i]->get_mass());
 		}
 	}
 	else  // calculate new density based on reference scale height
@@ -404,6 +289,120 @@ bool Background_Species::check_collision(Particle* p, double dt)
 	{
 		collision_target = -1;
 		return false;
+	}
+
+	/* experimental
+	// determine if test particle collided, and if so, initialize target and pick theta
+	double u = common::get_rand();
+	double tau = 0.0;
+	collision_target = -1;
+	int i = 0;
+	while (collision_target == -1 && i < num_species)
+	{
+		// get density at current location
+		double dens = 0.0;
+
+		if (use_dens_profile)  // get new density from imported density profile
+		{
+			dens = get_density(alt, bg_densities[i], bg_parts[i]->get_mass());
+		}
+		else  // calculate new density based on reference scale height
+		{
+			dens = calc_new_density(bg_densities[i][0], bg_scaleheights[i], r_moved);
+		}
+
+		// look up total cross section to use for this species, or use default if no table available
+		double sig = 0.0;
+		double avg_v = 0.0;
+
+		// if default sigma is zero, then table is available, must initialize a particle to get energy
+		if (bg_sigma_defaults[i] == 0.0)
+		{
+			if (use_temp_profile)
+			{
+				if (alt < profile_bottom_alt)
+				{
+					avg_v = bg_avg_v[i][0];
+				}
+				else if (alt > profile_top_alt)
+				{
+					avg_v = bg_avg_v[i].back();
+				}
+				else
+				{
+					avg_v = common::interpolate(temp_alt_bins, bg_avg_v[i], alt);
+				}
+			}
+			else  // use reference temp avg_v
+			{
+				avg_v = bg_avg_v[i][0];
+			}
+			my_dist->init_vonly(bg_parts[i], avg_v);
+
+			//double my_mass = p->get_mass();
+			//double targ_mass = bg_parts[i]->get_mass();
+			//double dm = my_mass*targ_mass / (my_mass + targ_mass);
+			//double dv = my_total_v - avg_v;
+			//double test_energy = 0.5*dm*dv*dv / constants::ergev;
+			//double test_energy = 0.5*p->get_mass()*my_total_v*my_total_v / constants::ergev;
+
+			// calculate collision energy and look up cross section
+			double energy = calc_collision_e(p, bg_parts[i]);
+			sig = common::interpolate(bg_sigma_tables[i][0], bg_sigma_tables[i][1], energy);
+
+			//ofstream outfile;
+			//outfile.open("/home/rodney/Documents/coronaTest/energy_compare_HotH_2.out", ios::out | ios::app);
+			//outfile << bg_parts[i]->get_name() << "\t" << alt*1e-5 << "km\t" << test_energy << "eV\t" << energy << "eV\n";
+			//outfile.close();
+		}
+		else  // just use default sigma if no lookup table available
+		{
+			sig = bg_sigma_defaults[i];
+		}
+
+		// increase tau and check for collision, move on to next particle if no collision yet
+		tau += 	my_total_v*dt*sig*dens;
+		if (u > exp(-tau))
+		{
+			num_collisions++;
+			collision_target = i;
+			collision_theta = find_new_theta();
+			if (bg_sigma_defaults[collision_target] != 0.0)  // particle needs to be initialized
+			{
+				if (use_temp_profile)
+				{
+					double avg_v = 0.0;
+					if (alt < profile_bottom_alt)
+					{
+						avg_v = bg_avg_v[collision_target][0];
+					}
+					else if (alt > profile_top_alt)
+					{
+						avg_v = bg_avg_v[collision_target].back();
+					}
+					else
+					{
+						avg_v = common::interpolate(temp_alt_bins, bg_avg_v[collision_target], alt);
+					}
+					my_dist->init_vonly(bg_parts[collision_target], avg_v);
+				}
+				else
+				{
+					my_dist->init_vonly(bg_parts[collision_target], bg_avg_v[collision_target][0]);
+				}
+			}
+		}
+		i++;
+	}
+
+	// outside while loop now, check if collision detected
+	if (collision_target == -1)
+	{
+		return false;
+	}
+	else
+	{
+		return true;
 	}
 	*/
 }
