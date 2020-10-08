@@ -582,7 +582,7 @@ void Background_Species::make_new_CDF(int part_index, int energy_index, vector<d
 	}
 }
 
-//subroutine to set particle types from main or Background_Species class
+//subroutine to set particle types
 Particle* Background_Species::set_particle_type(string type)
 {
 	Particle* p;

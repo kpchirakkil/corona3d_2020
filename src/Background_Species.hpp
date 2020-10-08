@@ -45,7 +45,6 @@ private:
 	double ref_g;                // acceleration due to gravity (G*M/r^2) at reference height
 	Distribution_MB* my_dist;    // distribution to be used for initialization of bg particles
 	vector<Particle*> bg_parts;  // array of pointers to child particle classes
-
 	double profile_bottom_alt;            //altitude above surface (cm) where atmospheric profiles begin
 	double profile_top_alt;               //altitude above surface (cm) where atmospheric profiles end
 	vector<double> temp_alt_bins;         // altitude bins from imported temperature profile
@@ -58,9 +57,8 @@ private:
 	vector<vector<vector<double>>> bg_sigma_tables;  // lookup tables for total cross sections
 	vector<double> bg_scaleheights;       // array of scale heights for each particle type
 	vector<vector <double>> bg_avg_v;     // array of average (thermal) velocities for each particle
-
-	vector<vector<double>> diff_sigma_energies;
-	vector<vector<vector<vector<double>>>> diff_sigma_CDFs;
+	vector<vector<double>> diff_sigma_energies;              // array of available differential cross section energies for each species
+	vector<vector<vector<vector<double>>>> diff_sigma_CDFs;  // CDFs built from imported differential cross section tables; used for looking up scattering angles
 
 	// returns collision energy in eV between particle 1 and particle 2
 	double calc_collision_e(Particle* p1, Particle* p2);
