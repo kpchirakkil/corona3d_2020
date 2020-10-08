@@ -242,7 +242,7 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 
 	for (int i=0; i<num_steps; i++)
 	{
-		if ((i+1) % 10000 == 0)
+		if ((i+1) % 1000 == 0)
 		{
 			cout << i+1 << "\t" << active_parts << endl;
 			output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i+1) + ".out");

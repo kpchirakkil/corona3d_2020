@@ -25,13 +25,12 @@ using namespace std;
 class Background_Species {
 public:
 	Background_Species();
-	Background_Species(int n, Planet p, double T, double h, Distribution_MB* dist, Particle* bg_p[], double bg_d[], double bg_s[], string bg_s_f[], string temp_profile_filename, string dens_profile_filename, double profile_bottom, double profile_top);
+	Background_Species(int num_parts, string config_files[], Planet p, double ref_T, double ref_h, string temp_profile_filename, string dens_profile_filename, double profile_bottom, double profile_top);
 	virtual ~Background_Species();
 	bool check_collision(Particle* p, double dt);
 	int get_num_collisions();
 	Particle* get_collision_target();
 	double get_collision_theta();
-	void import_CDF(string filename);
 
 private:
 	bool use_temp_profile;       // flag for whether or not temperature profile is available
@@ -59,7 +58,9 @@ private:
 	vector<vector<vector<double>>> bg_sigma_tables;  // lookup tables for total cross sections
 	vector<double> bg_scaleheights;       // array of scale heights for each particle type
 	vector<vector <double>> bg_avg_v;     // array of average (thermal) velocities for each particle
-	Matrix<double, 180, 2> cdf;           // 180x2 array of cos(theta) vs diff. cross section CDF values
+
+	vector<vector<double>> diff_sigma_energies;
+	vector<vector<vector<vector<double>>>> diff_sigma_CDFs;
 
 	// returns collision energy in eV between particle 1 and particle 2
 	double calc_collision_e(Particle* p1, Particle* p2);
@@ -68,10 +69,16 @@ private:
 	double calc_new_density(double ref_density, double scale_height, double r_moved);
 
 	// scans imported differential scattering CDF for new collision theta
-	double find_new_theta();
+	double find_new_theta(int part_index, double energy);
 
 	// get density from imported density profile if available
 	double get_density(double alt, vector<double> &dens, double targ_mass);
+
+	// make a new differential cross section CDF and store at diff_sigma_CDFs[index]
+	void make_new_CDF(int part_index, int energy_index, vector<double> &angle, vector<double> &sigma);
+
+	//subroutine to set particle type
+	Particle* set_particle_type(string type);
 };
 
 #endif /* BACKGROUND_SPECIES_HPP_ */

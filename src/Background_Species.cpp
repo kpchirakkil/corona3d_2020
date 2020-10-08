@@ -22,15 +22,18 @@ Background_Species::Background_Species() {
 	my_dist = NULL;
 }
 
-Background_Species::Background_Species(int n, Planet p, double T, double h, Distribution_MB* dist, Particle* bg_p[], double bg_d[], double bg_s[], string bg_s_f[], string temp_profile_filename, string dens_profile_filename, double profile_bottom, double profile_top) {
+Background_Species::Background_Species(int num_parts, string config_files[], Planet p, double ref_T, double ref_h, string temp_profile_filename, string dens_profile_filename, double profile_bottom, double profile_top)
+{
 	num_collisions = 0;
-	num_species = n;
+	num_species = num_parts;
 	my_planet = p;
-	my_dist = dist;
-	ref_temp = T;
-	ref_height = h;
+	ref_temp = ref_T;
+	ref_height = ref_h;
+	my_dist = new Distribution_MB(my_planet, ref_height, ref_temp);
 	profile_bottom_alt = profile_bottom;
 	profile_top_alt = profile_top;
+	collision_target = -1;   // set to -1 when no collision happening
+	collision_theta = 0.0;
 	ref_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+ref_height, 2.0));
 
 	if (temp_profile_filename != "")
@@ -57,24 +60,90 @@ Background_Species::Background_Species(int n, Planet p, double T, double h, Dist
 	bg_sigma_tables.resize(num_species);
 	bg_scaleheights.resize(num_species);
 	bg_avg_v.resize(num_species);
+	diff_sigma_energies.resize(num_species);
+	diff_sigma_CDFs.resize(num_species);
 	for (int i=0; i<num_species; i++)
 	{
-		bg_parts[i] = bg_p[i];
-		bg_densities[i].push_back(bg_d[i]);
-		bg_sigma_defaults[i] = bg_s[i];
+		int num_energies = 0;
+		int energies_index = 0;
 		bg_sigma_tables[i].resize(2);
-		if (bg_s_f[i] != "")
+		diff_sigma_CDFs[i].resize(2);
+
+		ifstream infile;
+		infile.open(config_files[i]);
+		if (!infile.good())
 		{
-			bg_sigma_defaults[i] = 0.0;
-			common::import_csv(bg_s_f[i], bg_sigma_tables[i][0], bg_sigma_tables[i][1]);
+			cout << "Background species configuration file " + to_string(i+1) + " not found!\n";
+			exit(1);
+		}
+		string line, param, val;
+		vector<string> parameters;
+		vector<string> values;
+		int num_params = 0;
+
+		while (getline(infile, line))
+		{
+			if (line[0] == '#' || line.empty() || std::all_of(line.begin(), line.end(), ::isspace))
+			{
+				continue;
+			}
+			else
+			{
+				stringstream str(line);
+				str >> param >> val;
+				parameters.push_back(param);
+				values.push_back(val);
+				num_params++;
+				param = "";
+				val = "";
+			}
+		}
+		infile.close();
+
+		for (int j=0; j<num_params; j++)
+		{
+			if (parameters[j] == "type")
+			{
+				bg_parts[i] = set_particle_type(values[j]);
+			}
+			else if (parameters[j] == "ref_dens")
+			{
+				bg_densities[i].push_back(stod(values[j]));
+			}
+			else if (parameters[j] == "total_sigma_default")
+			{
+				bg_sigma_defaults[i] = stod(values[j]);
+			}
+			else if (parameters[j] == "total_sigma_file")
+			{
+				if (values[j] != "")
+				{
+					bg_sigma_defaults[i] = 0.0;
+					common::import_csv(values[j], bg_sigma_tables[i][0], bg_sigma_tables[i][1]);
+				}
+			}
+			else if (parameters[j] == "num_diff_energies")
+			{
+				num_energies = stoi(values[j]);
+				energies_index = j+1;
+				diff_sigma_CDFs[i].resize(num_energies);
+			}
 		}
 		bg_scaleheights[i] = constants::k_b*ref_temp/(bg_parts[i]->get_mass()*ref_g);
 		bg_avg_v[i].push_back(sqrt(constants::k_b*ref_temp/bg_parts[i]->get_mass()));
-	}
-	collision_target = -1;   // set to -1 when no collision happening
-	collision_theta = 0.0;
 
-	// read in temperature profile (if available)
+		for (int j=0; j<num_energies; j++)
+		{
+			diff_sigma_CDFs[i][j].resize(2);
+			vector<vector<double>> diff_sigma_PDF;
+			diff_sigma_PDF.resize(2);
+			diff_sigma_energies[i].push_back(stod(values[energies_index + j]));
+			common::import_csv(values[energies_index + num_energies + j], diff_sigma_PDF[0], diff_sigma_PDF[1]);
+			make_new_CDF(i, j, diff_sigma_PDF[0], diff_sigma_PDF[1]);
+		}
+	}
+
+	// read in temperature profile (if available) and set avg_v for each alt bin for each species
 	if (use_temp_profile)
 	{
 		common::import_csv(temp_profile_filename, temp_alt_bins, Tn, Ti, Te);
@@ -118,9 +187,8 @@ Background_Species::Background_Species(int n, Planet p, double T, double h, Dist
 			common::import_csv(dens_profile_filename, dens_alt_bins, bg_densities[0]);
 		}
 	}
-
-	import_CDF("/home/rodney/Documents/coronaTest/KHARCHENKOCDF.TXT");
 }
+
 
 Background_Species::~Background_Species() {
 
@@ -129,7 +197,7 @@ Background_Species::~Background_Species() {
 // returns collision energy in eV between particle 1 and particle 2
 double Background_Species::calc_collision_e(Particle* p1, Particle* p2)
 {
-	double energy = 0.0;
+	double e = 0.0;
 	double p1_mass = p1->get_mass();
 	double p2_mass = p2->get_mass();
 	Matrix<double, 3, 1> p1_v = {p1->get_vx(), p1->get_vy(), p1->get_vz()};
@@ -140,9 +208,9 @@ double Background_Species::calc_collision_e(Particle* p1, Particle* p2)
 	Matrix<double, 3, 1> p2_vcm = p2_v.array() - vcm.array();    // particle 2 c-o-m velocity
 	double p1_vcm_tot = sqrt(p1_vcm[0]*p1_vcm[0] + p1_vcm[1]*p1_vcm[1] + p1_vcm[2]*p1_vcm[2]);  // particle 1 c-o-m scalar velocity
 	double p2_vcm_tot = sqrt(p2_vcm[0]*p2_vcm[0] + p2_vcm[1]*p2_vcm[1] + p2_vcm[2]*p2_vcm[2]);  // particle 2 c-o-m scalar velocity
-	energy = (0.5*p1_mass*p1_vcm_tot*p1_vcm_tot + 0.5*p2_mass*p2_vcm_tot*p2_vcm_tot) / constants::ergev;
+	e = (0.5*p1_mass*p1_vcm_tot*p1_vcm_tot + 0.5*p2_mass*p2_vcm_tot*p2_vcm_tot) / constants::ergev;
 
-	return energy;
+	return e;
 }
 
 // calculates new density of background particle based on radial position and scale height
@@ -154,6 +222,8 @@ double Background_Species::calc_new_density(double ref_density, double scale_hei
 // check to see if a collision occurred and initialize target particle if so
 bool Background_Species::check_collision(Particle* p, double dt)
 {
+	vector<double> energy;
+	energy.resize(num_species);
 	double r = p->get_radius();
 	double my_total_v = p->get_total_v();
 	double alt = r - my_planet.get_radius();
@@ -216,8 +286,8 @@ bool Background_Species::check_collision(Particle* p, double dt)
 			//double test_energy = 0.5*dm*dv*dv / constants::ergev;
 
 			// calculate collision energy and look up cross section
-			double energy = calc_collision_e(p, bg_parts[i]);
-			total_sig[i] = common::interpolate(bg_sigma_tables[i][0], bg_sigma_tables[i][1], energy);
+			energy[i] = calc_collision_e(p, bg_parts[i]);
+			total_sig[i] = common::interpolate(bg_sigma_tables[i][0], bg_sigma_tables[i][1], energy[i]);
 
 			//cout << "test_energy: " << test_energy << "\t" << "energy: " << energy << "\n";
 		}
@@ -281,8 +351,9 @@ bool Background_Species::check_collision(Particle* p, double dt)
 			{
 				my_dist->init_vonly(bg_parts[collision_target], bg_avg_v[collision_target][0]);
 			}
+			energy[collision_target] = calc_collision_e(p, bg_parts[collision_target]);
 		}
-		collision_theta = find_new_theta();
+		collision_theta = find_new_theta(collision_target, energy[collision_target]);
 		return true;
 	}
 	else
@@ -408,15 +479,41 @@ bool Background_Species::check_collision(Particle* p, double dt)
 }
 
 // scans imported differential scattering CDF for new collision theta
-double Background_Species::find_new_theta()
+double Background_Species::find_new_theta(int part_index, double energy)
 {
+	// get energy index
+	int energy_index = 0;
+	int num_energies = diff_sigma_energies[part_index].size();
+	if (energy <= diff_sigma_energies[part_index][0])
+	{
+		energy_index = 0;
+	}
+	else if (energy >= diff_sigma_energies[part_index].back())
+	{
+		energy_index = num_energies - 1;
+	}
+	else
+	{
+		double difference = INFINITY;
+		for (int i=0; i<num_energies; i++)
+		{
+			double new_diff = abs(energy - diff_sigma_energies[part_index][i]);
+			if (new_diff < difference)
+			{
+				difference = new_diff;
+				energy_index = i;
+			}
+		}
+	}
+
+	// search CDF for angle
 	double u = common::get_rand();
 	int k = 0;
-	while (cdf(k, 0) < u)
+	while (diff_sigma_CDFs[part_index][energy_index][0][k] < u)
 	{
 		k++;
 	}
-	return acos(cdf(k, 1));
+	return diff_sigma_CDFs[part_index][energy_index][1][k];
 }
 
 // get density from imported density profile
@@ -458,21 +555,62 @@ double Background_Species::get_collision_theta()
 	return collision_theta;
 }
 
-void Background_Species::import_CDF(string filename)
+// make a new differential cross section CDF and store at diff_sigma_CDFs[index]
+void Background_Species::make_new_CDF(int part_index, int energy_index, vector<double> &angle, vector<double> &sigma)
 {
-	ifstream infile;
-	infile.open(filename);
-	string line;
+	int num_angles = angle.size();
+	diff_sigma_CDFs[part_index][energy_index][0].resize(num_angles);
+	diff_sigma_CDFs[part_index][energy_index][1].resize(num_angles);
 
-	for (int i=0; i<180; i++)
+	double sig_total = 0.0;
+	for (int i=0; i<num_angles; i++)
 	{
-		getline(infile, line);
-		stringstream str(line);
-
-		for (int j=0; j<2; j++)
+		diff_sigma_CDFs[part_index][energy_index][1][i] = angle[i] * (constants::pi / 180.0);
+		sigma[i] = sigma[i] * sin(angle[i]*constants::pi/180.0);
+		sig_total = sig_total + sigma[i];
+	}
+	for (int i=0; i<num_angles; i++)
+	{
+		if (i == 0)
 		{
-			str >> cdf(i, j);
+			diff_sigma_CDFs[part_index][energy_index][0][i] = sigma[i] / sig_total;
+		}
+		else
+		{
+			diff_sigma_CDFs[part_index][energy_index][0][i] = (sigma[i] / sig_total) + diff_sigma_CDFs[part_index][energy_index][0][i-1];
 		}
 	}
-	infile.close();
+}
+
+//subroutine to set particle types from main or Background_Species class
+Particle* Background_Species::set_particle_type(string type)
+{
+	Particle* p;
+
+	if (type == "H")
+	{
+		p = new Particle_H();
+	}
+	else if (type == "O")
+	{
+		p = new Particle_O();
+	}
+	else if (type == "N2")
+	{
+		p = new Particle_N2();
+	}
+	else if (type == "CO")
+	{
+		p = new Particle_CO();
+	}
+	else if (type == "CO2")
+	{
+		p = new Particle_CO2();
+	}
+	else
+	{
+		cout << "Invalid particle type specified! Please check configuration file.\n";
+		exit(1);
+	}
+	return p;
 }
