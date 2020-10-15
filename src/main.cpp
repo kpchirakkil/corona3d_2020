@@ -50,11 +50,17 @@ int main(int argc, char* argv[])
 
 	//initialize and read parameters from configuration file
 	int num_testparts = 0;
-	int num_traced = 0;
 	string part_type = "";
 	string dist_type = "";
 	string pos_infile = "";
 	string vel_infile = "";
+	string output_dir = "";
+	int num_traced = 0;
+	int output_pos_freq = 0;
+	string output_pos_dir = "";
+	double shell_bottom = 0.0;
+	double shell_top = 0.0;
+	string shell_output_dir = "";
 	double profile_bottom_alt = 0.0;
 	double profile_top_alt = 0.0;
 	string temp_profile_filename = "";
@@ -109,10 +115,6 @@ int main(int argc, char* argv[])
 		{
 			num_testparts = stoi(values[i]);
 		}
-		else if (parameters[i] == "num_traced")
-		{
-			num_traced = stoi(values[i]);
-		}
 		else if (parameters[i] == "part_type")
 		{
 			part_type = values[i];
@@ -128,6 +130,34 @@ int main(int argc, char* argv[])
 		else if (parameters[i] == "vel_infle")
 		{
 			vel_infile = values[i];
+		}
+		else if (parameters[i] == "output_dir")
+		{
+			output_dir = values[i];
+		}
+		else if (parameters[i] == "num_traced")
+		{
+			num_traced = stoi(values[i]);
+		}
+		else if (parameters[i] == "output_pos_freq")
+		{
+			output_pos_freq = stoi(values[i]);
+		}
+		else if (parameters[i] == "output_pos_dir")
+		{
+			output_pos_dir = values[i];
+		}
+		else if (parameters[i] == "shell_bottom")
+		{
+			shell_bottom = stod(values[i]);
+		}
+		else if (parameters[i] == "shell_top")
+		{
+			shell_top = stod(values[i]);
+		}
+		else if (parameters[i] == "shell_output_dir")
+		{
+			shell_output_dir = values[i];
 		}
 		else if (parameters[i] == "profile_bottom_alt")
 		{
@@ -220,14 +250,26 @@ int main(int argc, char* argv[])
 	Background_Species bg_spec(num_bgparts, bg_config_files, my_planet, ref_temp, ref_height, temp_profile_filename, neut_densities_filename, profile_bottom_alt, profile_top_alt);
 
 	// initialize atmosphere and run simulation
-	Atmosphere my_atmosphere(num_testparts, num_traced, my_planet, parts, dist, bg_spec);
-	my_atmosphere.output_velocity_distro(10000.0, "/home/rodney/Documents/coronaTest/vdist.out");
-	my_atmosphere.output_altitude_distro(100000.0, "/home/rodney/Documents/coronaTest/altdist.out");
-	my_atmosphere.init_shell(my_planet.get_radius()+90000000.0, my_planet.get_radius()+90500000.0, 300, 10000.0);
+	if (output_pos_dir == "")
+	{
+		output_pos_dir = output_dir;
+	}
+	Atmosphere my_atmosphere(num_testparts, num_traced, my_planet, parts, dist, bg_spec, output_pos_freq, output_pos_dir);
+	my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist.out");
+	my_atmosphere.output_altitude_distro(100000.0, output_dir + "altdist.out");
+
+	if (shell_bottom != 0.0 && shell_top != 0.0)
+	{
+		if (shell_output_dir == "")
+		{
+			shell_output_dir = output_dir;
+		}
+		my_atmosphere.init_shell(my_planet.get_radius()+shell_bottom, my_planet.get_radius()+shell_top, 300, 10000.0, shell_output_dir);
+	}
+
 	my_atmosphere.run_simulation(dt, timesteps);
-	my_atmosphere.output_shell_data("/home/rodney/Documents/coronaTest/");
-	my_atmosphere.output_velocity_distro(10000.0, "/home/rodney/Documents/coronaTest/vdist2.out");
-	my_atmosphere.output_altitude_distro(100000000.0, "/home/rodney/Documents/coronaTest/altdist2.out");
+	my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist2.out");
+	my_atmosphere.output_altitude_distro(100000000.0, output_dir + "altdist2.out");
 
 	return 0;
 }

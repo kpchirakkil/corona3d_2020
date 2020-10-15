@@ -20,11 +20,10 @@ using namespace std;
 
 class Atmosphere {
 public:
-	Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg);
+	Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, int pos_out_freq, string pos_out_dir);
 	virtual ~Atmosphere();
 
-	void init_shell(double bottom_r, double top_r, int num_bins, double bin_width);
-	void output_shell_data(string folder_path);
+	void init_shell(double bottom_r, double top_r, int num_bins, double bin_width, string output_dir);
 	void output_positions(string datapath);
 	void output_altitude_distro(double bin_width, string datapath);
 	void output_velocity_distro(double bin_width, string datapath);
@@ -39,6 +38,8 @@ private:
 	Distribution* my_dist;              // distribution class to initialize particles
 	Background_Species bg_species;      // background species used for collisions
 	vector<int> traced_parts;           // indices of randomly selected trace particles
+	int output_pos_freq;                // number of timesteps between outputting all active particle positions
+	string output_pos_dir;              // directory to output active particles positions to
 
 	bool shell_active;
 	double shell_bottom;
@@ -50,10 +51,14 @@ private:
 	int shell_numvelbins;
 	int shell_velbinwidth;
 	vector<int> shell_velbins;
+	string shell_output_dir;
 
 	// output test particle trace data for selected particles
 	void output_collision_data();
 	void output_trace_data();
+
+	// output accumulated shell data
+	void output_shell_data();
 
 	// update shell numbers (velocity distro, etc.)
 	void update_shell_data();

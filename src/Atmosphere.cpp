@@ -8,7 +8,7 @@
 #include "Atmosphere.hpp"
 
 // construct atmosphere using given parameters
-Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg)
+Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, int pos_out_freq, string pos_out_dir)
 {
 	num_parts = n;                // number of test particles to track
 	num_traced = num_to_trace;    // number of tracked particles to output detailed trace data for
@@ -17,6 +17,8 @@ Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> part
 	my_dist = dist;
 	my_parts.resize(num_parts);
 	bg_species = bg;
+	output_pos_freq = pos_out_freq;
+	output_pos_dir = pos_out_dir;
 	shell_active = false;
 	shell_bottom = 0.0;
 	shell_top = 0.0;
@@ -26,23 +28,13 @@ Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> part
 	shell_exit_bottom = 0;
 	shell_numvelbins = 0;
 	shell_velbinwidth = 0.0;
+	shell_output_dir = "";
 
 	for (int i=0; i<num_parts; i++)
 	{
 		my_parts[i] = parts[i];
 		my_dist->init(my_parts[i]);
 	}
-
-	//the way I initialized particles before the distribution class was made
-	//only works for MB dist, but leaving in just in case it comes in handy
-	/*
-	double particle_r = my_planet.get_radius() + ref_height;
-	double particle_vavg = sqrt(constants::k_b*T_bg/my_parts[0].get_mass());
-	for (int i=0; i<N; i++)
-	{
-		my_parts[i].init_particle_MB(particle_r, particle_vavg);
-	}
-	*/
 
 	// pick trace particles if any
 	if (num_traced > 0)
@@ -61,7 +53,7 @@ Atmosphere::~Atmosphere() {
 }
 
 // initialize a shell of atmosphere between bottom_r and top_r for data collection
-void Atmosphere::init_shell(double bottom_r, double top_r, int num_bins, double bin_width)
+void Atmosphere::init_shell(double bottom_r, double top_r, int num_bins, double bin_width, string output_dir)
 {
 	shell_active = true;
 	shell_bottom = bottom_r;
@@ -74,13 +66,14 @@ void Atmosphere::init_shell(double bottom_r, double top_r, int num_bins, double 
 	shell_velbinwidth = bin_width;
 	shell_velbins.clear();
 	shell_velbins.resize(shell_numvelbins);
+	shell_output_dir = output_dir;
 }
 
-void Atmosphere::output_shell_data(string folder_path)
+void Atmosphere::output_shell_data()
 {
 	ofstream vel_outfile, info_outfile;
-	vel_outfile.open(folder_path + "shell_veldistro.out");
-	info_outfile.open(folder_path + "shell_info.out");
+	vel_outfile.open(shell_output_dir + "shell_veldistro.out");
+	info_outfile.open(shell_output_dir + "shell_info.out");
 
 	vel_outfile << shell_velbinwidth << "\n";
 	vel_outfile << shell_numvelbins << "\n";
@@ -242,10 +235,10 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 
 	for (int i=0; i<num_steps; i++)
 	{
-		if ((i+1) % 100 == 0)
+		if (output_pos_freq > 0 && (i+1) % output_pos_freq == 0)
 		{
 			cout << i+1 << "\t" << active_parts << endl;
-			output_positions("/home/rodney/Documents/coronaTest/data/positions" + to_string(i+1) + ".out");
+			output_positions(output_pos_dir + "positions" + to_string(i+1) + ".out");
 		}
 
 		if (num_traced > 0)
@@ -282,6 +275,11 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 	if (num_traced > 0)
 	{
 		output_collision_data();
+	}
+
+	if (shell_active)
+	{
+		output_shell_data();
 	}
 
 	cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;

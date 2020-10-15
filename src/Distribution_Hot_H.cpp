@@ -118,6 +118,18 @@ void Distribution_Hot_H::init(Particle* p)
 	p->init_particle(x, y, z, vx, vy, vz);
 }
 
+// init particle using H_Hplus mechanism
+void Distribution_Hot_H::init_H_Hplus_particle(Particle* p)
+{
+
+}
+
+// init particle using HCOplus_DR mechanism
+void Distribution_Hot_H::init_HCOplus_DR_particle(Particle* p)
+{
+
+}
+
 // scans HCOplus_DR_CDF for new particle radius
 double Distribution_Hot_H::get_new_radius_HCOplus_DR()
 {

@@ -36,6 +36,12 @@ private:
 	// scans H_Hplus_CDF for new particle radius
 	double get_new_radius_H_Hplus();
 
+	// init particle using H_Hplus mechanism
+	void init_H_Hplus_particle(Particle* p);
+
+	// init particle using HCOplus_DR mechanism
+	void init_HCOplus_DR_particle(Particle* p);
+
 	// generate HCOplus_DR_CDF for given altitude range using imported density/temp profiles
 	void make_HCOplus_DR_CDF(double lower_alt, double upper_alt);
 
