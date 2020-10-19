@@ -18,7 +18,7 @@ class Distribution_Import: public Distribution {
 public:
 	Distribution_Import(Planet my_p, double ref_h, double ref_T, string pos_file, string vel_file);
 	virtual ~Distribution_Import();
-	void init(Particle* p);
+	void init(shared_ptr<Particle> p);
 
 private:
 	int num_particles;

@@ -13,6 +13,7 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	m_H = 1.00794*constants::amu;
 	m_Hplus = 1.00728*constants::amu;
 	m_HCOplus = 29.0175*constants::amu;
+	m_CO = 28.0101*constants::amu;
 	H_Hplus_rate_coeff = 8.7e-10;
 	HCOplus_DR_rate_coeff = 2.7e-7;
 
@@ -44,14 +45,50 @@ Distribution_Hot_H::~Distribution_Hot_H() {
 
 }
 
-void Distribution_Hot_H::init(Particle* p)
+void Distribution_Hot_H::init(shared_ptr<Particle> p)
+{
+	//init_H_Hplus_particle(p);
+	init_HCOplus_DR_particle(p);
+}
+
+// init particle using H_Hplus mechanism
+void Distribution_Hot_H::init_H_Hplus_particle(shared_ptr<Particle> p)
 {
 	// altitude distribution for hot H
-	//double r = get_new_radius_H_Hplus();
+	double r = get_new_radius_H_Hplus();
+	double alt = r - my_planet.get_radius();
+	double temp_ion = common::interpolate(temp_profile[0], temp_profile[2], alt);
+	//double temp_neut = common::interpolate(temp_profile[0], temp_profile[1], alt);
+
+	double phi = constants::twopi*(common::get_rand());
+	double u = 2.0*common::get_rand() - 1.0;
+	double x = r*sqrt(1-(u*u))*cos(phi);
+	double y = r*sqrt(1-(u*u))*sin(phi);
+	double z = r*u;
+
+	/*
+	// Hemispherical Adjustment For Dayside Photochemical Process
+	if (x < 0)
+	{
+		x = -x;
+	}
+	*/
+
+	double vavg = sqrt(constants::k_b*temp_ion/m_Hplus);  // average thermal H+ velocity
+	double v_ion[] = {0.0, 0.0, 0.0};
+	gen_mb(vavg, v_ion);
+
+	p->init_particle(x, y, z, v_ion[0], v_ion[1], v_ion[2]);
+}
+
+// init particle using HCOplus_DR mechanism
+void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
+{
+	// altitude distribution for hot H
 	double r = get_new_radius_HCOplus_DR();
 	double alt = r - my_planet.get_radius();
 	double temp_ion = common::interpolate(temp_profile[0], temp_profile[2], alt);
-	double temp_neut = common::interpolate(temp_profile[0], temp_profile[1], alt);
+	//double temp_neut = common::interpolate(temp_profile[0], temp_profile[1], alt);
 	double temp_e = common::interpolate(temp_profile[0], temp_profile[3], alt);
 
 	double phi = constants::twopi*(common::get_rand());
@@ -68,31 +105,45 @@ void Distribution_Hot_H::init(Particle* p)
 	}
 	*/
 
-	/* H_Hplus velocity
-	double vavg = sqrt(constants::k_b*temp_ion/m_Hplus);  // average thermal H+ velocity
-	double v_ion[] = {0.0, 0.0, 0.0};
-	gen_mb(vavg, v_ion);
-	*/
-
-	// HCOplus_DR velocity
 	// Select HCO+ DR Electronic Channel
-	double Ei = 0.0;
+	double Ei = 0.0;       // excess energy from DR (eV)
+	double vib_lvl = 0.0;  // vibrational level of CO after DR
+	double we = 0.0;       // vibrational frequency (cm-1)
+	double wexe = 0.0;     // first correction term to vibrational frequency (cm-1)
+
 	double randnum = common::get_rand();
 	if (randnum < 0.23)
 	{
-		Ei = 0.44*constants::ergev;
+		Ei = 1.3;
+		we = 1743.41;
+		wexe = 14.36;
 	}
-	else if (randnum < (0.23+0.40))
+	else if (randnum < (0.23+0.385))
 	{
-		Ei = 1.3*constants::ergev;
+		Ei = 0.44;
+		we = 1228.6;
+		wexe = 10.468;
 	}
 	else
 	{
-		Ei = 7.31*constants::ergev;
+		Ei = 7.31;
+		we = 2169.81358;
+		wexe = 13.28831;
 	}
 
+	// subtract vibrational energy from excess if vib_lvl above 0 (convert inverse cm to eV before subtracting)
+	if (vib_lvl > 0.0)
+	{
+		cout << "Ei = " << Ei << "\n";
+		Ei = Ei - ((we*(vib_lvl + 0.5) - (wexe*(vib_lvl + 0.5)*(vib_lvl + 0.5))) * 1.239841984e-4);
+		cout << "Ei - vib = " << Ei << "\n";
+	}
+
+	// convert energy to ergs
+	Ei = Ei*constants::ergev;
+
 	// Translational Energy of H Resulting from Dissociative Recombination of HCO+
-	double v = sqrt(Ei / p->get_mass());
+	double v = sqrt(2.0*Ei / (m_H + (m_H*m_H/m_CO)));
 
 	// spherically isotropic velocity vector
 	phi = constants::twopi*common::get_rand();
@@ -114,20 +165,7 @@ void Distribution_Hot_H::init(Particle* p)
 	vy = vy + (m_HCOplus*v_ion[1] + constants::m_e*v_e[1]) / (m_HCOplus+constants::m_e);
 	vz = vz + (m_HCOplus*v_ion[2] + constants::m_e*v_e[2]) / (m_HCOplus+constants::m_e);
 
-	//p->init_particle(x, y, z, v_ion[0], v_ion[1], v_ion[2]);
 	p->init_particle(x, y, z, vx, vy, vz);
-}
-
-// init particle using H_Hplus mechanism
-void Distribution_Hot_H::init_H_Hplus_particle(Particle* p)
-{
-
-}
-
-// init particle using HCOplus_DR mechanism
-void Distribution_Hot_H::init_HCOplus_DR_particle(Particle* p)
-{
-
 }
 
 // scans HCOplus_DR_CDF for new particle radius

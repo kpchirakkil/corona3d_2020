@@ -36,7 +36,7 @@ void Particle::deactivate()
 }
 
 // perform collision on a particle and update velocity vector
-void Particle::do_collision(Particle* target, double theta, double time, double planet_r)
+void Particle::do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r)
 {
 	double my_mass = get_mass();
 	double targ_mass = target->get_mass();

@@ -21,7 +21,7 @@ Distribution_Hot_O::~Distribution_Hot_O() {
 
 }
 
-void Distribution_Hot_O::init(Particle* p)
+void Distribution_Hot_O::init(shared_ptr<Particle> p)
 {
 	// altitude distribution for O2+ dissociative recombination
 	double r = my_planet.get_radius() + 160e5 - log(common::get_rand())*H_DR;

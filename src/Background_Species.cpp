@@ -29,7 +29,7 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 	my_planet = p;
 	ref_temp = ref_T;
 	ref_height = ref_h;
-	my_dist = new Distribution_MB(my_planet, ref_height, ref_temp);
+	my_dist = make_shared<Distribution_MB>(my_planet, ref_height, ref_temp);
 	profile_bottom_alt = profile_bottom;
 	profile_top_alt = profile_top;
 	collision_target = -1;   // set to -1 when no collision happening
@@ -195,7 +195,7 @@ Background_Species::~Background_Species() {
 }
 
 // returns collision energy in eV between particle 1 and particle 2
-double Background_Species::calc_collision_e(Particle* p1, Particle* p2)
+double Background_Species::calc_collision_e(shared_ptr<Particle> p1, shared_ptr<Particle> p2)
 {
 	double e = 0.0;
 	double p1_mass = p1->get_mass();
@@ -220,7 +220,7 @@ double Background_Species::calc_new_density(double ref_density, double scale_hei
 }
 
 // check to see if a collision occurred and initialize target particle if so
-bool Background_Species::check_collision(Particle* p, double dt)
+bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 {
 	vector<double> energy;
 	energy.resize(num_species);
@@ -545,7 +545,7 @@ int Background_Species::get_num_collisions()
 	return num_collisions;
 }
 
-Particle* Background_Species::get_collision_target()
+shared_ptr<Particle> Background_Species::get_collision_target()
 {
 	return bg_parts[collision_target];
 }
@@ -583,29 +583,29 @@ void Background_Species::make_new_CDF(int part_index, int energy_index, vector<d
 }
 
 //subroutine to set particle types
-Particle* Background_Species::set_particle_type(string type)
+shared_ptr<Particle> Background_Species::set_particle_type(string type)
 {
-	Particle* p;
+	shared_ptr<Particle> p;
 
 	if (type == "H")
 	{
-		p = new Particle_H();
+		p = make_shared<Particle_H>();
 	}
 	else if (type == "O")
 	{
-		p = new Particle_O();
+		p = make_shared<Particle_O>();
 	}
 	else if (type == "N2")
 	{
-		p = new Particle_N2();
+		p = make_shared<Particle_N2>();
 	}
 	else if (type == "CO")
 	{
-		p = new Particle_CO();
+		p = make_shared<Particle_CO>();
 	}
 	else if (type == "CO2")
 	{
-		p = new Particle_CO2();
+		p = make_shared<Particle_CO2>();
 	}
 	else
 	{

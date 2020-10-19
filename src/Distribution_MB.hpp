@@ -14,8 +14,8 @@ class Distribution_MB: public Distribution {
 public:
 	Distribution_MB(Planet my_p, double ref_h, double ref_T);
 	virtual ~Distribution_MB();
-	void init(Particle* p);
-	void init_vonly(Particle* p, double v_avg);
+	void init(shared_ptr<Particle> p);
+	void init_vonly(shared_ptr<Particle> p, double v_avg);
 
 };
 

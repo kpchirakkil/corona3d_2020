@@ -16,7 +16,7 @@ Distribution_MB::~Distribution_MB() {
 
 }
 
-void Distribution_MB::init(Particle* p)
+void Distribution_MB::init(shared_ptr<Particle> p)
 {
 	double phi = constants::twopi*(common::get_rand());
 	double u = 2.0*common::get_rand() - 1;
@@ -32,7 +32,7 @@ void Distribution_MB::init(Particle* p)
 	p->init_particle(x, y, z, v[0], v[1], v[2]);
 }
 
-void Distribution_MB::init_vonly(Particle* p, double v_avg)
+void Distribution_MB::init_vonly(shared_ptr<Particle> p, double v_avg)
 {
 	double v[] = {0.0, 0.0, 0.0};
 	gen_mb(v_avg, v);

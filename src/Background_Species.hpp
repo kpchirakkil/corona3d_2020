@@ -27,9 +27,9 @@ public:
 	Background_Species();
 	Background_Species(int num_parts, string config_files[], Planet p, double ref_T, double ref_h, string temp_profile_filename, string dens_profile_filename, double profile_bottom, double profile_top);
 	virtual ~Background_Species();
-	bool check_collision(Particle* p, double dt);
+	bool check_collision(shared_ptr<Particle> p, double dt);
 	int get_num_collisions();
-	Particle* get_collision_target();
+	shared_ptr<Particle> get_collision_target();
 	double get_collision_theta();
 
 private:
@@ -43,8 +43,8 @@ private:
 	double ref_temp;             // temperature (in Kelvin) at reference height
 	double ref_height;           // height (in cm above planet surface) to extrapolate densities from if no profile available
 	double ref_g;                // acceleration due to gravity (G*M/r^2) at reference height
-	Distribution_MB* my_dist;    // distribution to be used for initialization of bg particles
-	vector<Particle*> bg_parts;  // array of pointers to child particle classes
+	shared_ptr<Distribution_MB> my_dist;    // distribution to be used for initialization of bg particles
+	vector<shared_ptr<Particle>> bg_parts;  // array of pointers to child particle classes
 	double profile_bottom_alt;            //altitude above surface (cm) where atmospheric profiles begin
 	double profile_top_alt;               //altitude above surface (cm) where atmospheric profiles end
 	vector<double> temp_alt_bins;         // altitude bins from imported temperature profile
@@ -61,7 +61,7 @@ private:
 	vector<vector<vector<vector<double>>>> diff_sigma_CDFs;  // CDFs built from imported differential cross section tables; used for looking up scattering angles
 
 	// returns collision energy in eV between particle 1 and particle 2
-	double calc_collision_e(Particle* p1, Particle* p2);
+	double calc_collision_e(shared_ptr<Particle> p1, shared_ptr<Particle> p2);
 
 	// calculates new density of background particle based on radial position and scale height
 	double calc_new_density(double ref_density, double scale_height, double r_moved);
@@ -76,7 +76,7 @@ private:
 	void make_new_CDF(int part_index, int energy_index, vector<double> &angle, vector<double> &sigma);
 
 	//subroutine to set particle type
-	Particle* set_particle_type(string type);
+	shared_ptr<Particle> set_particle_type(string type);
 };
 
 #endif /* BACKGROUND_SPECIES_HPP_ */

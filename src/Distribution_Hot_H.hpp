@@ -14,12 +14,13 @@ class Distribution_Hot_H: public Distribution {
 public:
 	Distribution_Hot_H(Planet my_p, double ref_h, double ref_T);
 	virtual ~Distribution_Hot_H();
-	void init(Particle* p);
+	void init(shared_ptr<Particle> p);
 
 private:
 	double m_H;                // [g] neutral H mass
 	double m_Hplus;            // [g] H+ ion mass
 	double m_HCOplus;          // [g] HCO+ ion mass
+	double m_CO;               // [g] CO mass
 	double H_Hplus_rate_coeff; // [cm^3/s] rate coefficient for H+ + H -> H* + H+
 	double HCOplus_DR_rate_coeff;  // [cm^3/s] rate coefficient for HCO+ + e -> H* + CO
 	vector<vector<double>> H_profile;
@@ -37,10 +38,10 @@ private:
 	double get_new_radius_H_Hplus();
 
 	// init particle using H_Hplus mechanism
-	void init_H_Hplus_particle(Particle* p);
+	void init_H_Hplus_particle(shared_ptr<Particle> p);
 
 	// init particle using HCOplus_DR mechanism
-	void init_HCOplus_DR_particle(Particle* p);
+	void init_HCOplus_DR_particle(shared_ptr<Particle> p);
 
 	// generate HCOplus_DR_CDF for given altitude range using imported density/temp profiles
 	void make_HCOplus_DR_CDF(double lower_alt, double upper_alt);

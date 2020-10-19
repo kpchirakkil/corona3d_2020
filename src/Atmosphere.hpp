@@ -20,7 +20,7 @@ using namespace std;
 
 class Atmosphere {
 public:
-	Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, int pos_out_freq, string pos_out_dir);
+	Atmosphere(int n, int num_to_trace, Planet p, vector<shared_ptr<Particle>> parts, shared_ptr<Distribution> dist, Background_Species bg, int pos_out_freq, string pos_out_dir);
 	virtual ~Atmosphere();
 
 	void init_shell(double bottom_r, double top_r, int num_bins, double bin_width, string output_dir);
@@ -34,8 +34,8 @@ private:
 	int num_traced;                     // number of particles to output trace data on
 	int active_parts;                   // number of active particles
 	Planet my_planet;                   // contains planet mass and radius
-	vector<Particle*> my_parts;         // array of particles to be tracked
-	Distribution* my_dist;              // distribution class to initialize particles
+	vector<shared_ptr<Particle>> my_parts;         // array of particles to be tracked
+	shared_ptr<Distribution> my_dist;              // distribution class to initialize particles
 	Background_Species bg_species;      // background species used for collisions
 	vector<int> traced_parts;           // indices of randomly selected trace particles
 	int output_pos_freq;                // number of timesteps between outputting all active particle positions

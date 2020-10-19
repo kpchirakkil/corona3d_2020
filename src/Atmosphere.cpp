@@ -8,7 +8,7 @@
 #include "Atmosphere.hpp"
 
 // construct atmosphere using given parameters
-Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<Particle*> parts, Distribution* dist, Background_Species bg, int pos_out_freq, string pos_out_dir)
+Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<shared_ptr<Particle>> parts, shared_ptr<Distribution> dist, Background_Species bg, int pos_out_freq, string pos_out_dir)
 {
 	num_parts = n;                // number of test particles to track
 	num_traced = num_to_trace;    // number of tracked particles to output detailed trace data for

@@ -37,7 +37,7 @@ Distribution_Import::~Distribution_Import() {
 
 }
 
-void Distribution_Import::init(Particle* p)
+void Distribution_Import::init(shared_ptr<Particle> p)
 {
 	if (next_index < num_particles)
 	{

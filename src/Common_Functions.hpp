@@ -9,6 +9,7 @@
 #define COMMON_FUNCTIONS_HPP_
 
 #include <vector>
+#include <memory>
 #include <iostream>
 #include <sstream>
 #include <fstream>

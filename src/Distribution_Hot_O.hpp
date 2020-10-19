@@ -14,7 +14,7 @@ class Distribution_Hot_O: public Distribution {
 public:
 	Distribution_Hot_O(Planet my_p, double ref_h, double ref_T);
 	virtual ~Distribution_Hot_O();
-	void init(Particle* p);
+	void init(shared_ptr<Particle> p);
 
 private:
 	double DR160;  // [cm^3/s] dissociative recombination rate at 200km

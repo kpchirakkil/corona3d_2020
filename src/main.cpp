@@ -12,29 +12,29 @@
 using namespace std;
 
 //subroutine to set particle types from main
-Particle* set_particle_type(string type)
+shared_ptr<Particle> set_particle_type(string type)
 {
-	Particle* p;
+	shared_ptr<Particle> p;
 
 	if (type == "H")
 	{
-		p = new Particle_H();
+		p = make_shared<Particle_H>();
 	}
 	else if (type == "O")
 	{
-		p = new Particle_O();
+		p = make_shared<Particle_O>();
 	}
 	else if (type == "N2")
 	{
-		p = new Particle_N2();
+		p = make_shared<Particle_N2>();
 	}
 	else if (type == "CO")
 	{
-		p = new Particle_CO();
+		p = make_shared<Particle_CO>();
 	}
 	else if (type == "CO2")
 	{
-		p = new Particle_CO2();
+		p = make_shared<Particle_CO2>();
 	}
 	else
 	{
@@ -73,8 +73,8 @@ int main(int argc, char* argv[])
 	double planet_mass = 0.0;
 	double planet_radius = 0.0;
 	Planet my_planet;
-	vector<Particle*> parts;
-	Distribution* dist;
+	vector<shared_ptr<Particle>> parts;
+	shared_ptr<Distribution> dist;
 	int num_bgparts = 0;
 	int bg_params_index = 0;
 
@@ -221,19 +221,19 @@ int main(int argc, char* argv[])
 	//instantiate the Distribution class to be used
 	if (dist_type == "Hot_H")
 	{
-		dist = new Distribution_Hot_H(my_planet, ref_height, ref_temp);
+		dist = make_shared<Distribution_Hot_H>(my_planet, ref_height, ref_temp);
 	}
 	else if (dist_type == "Hot_O")
 	{
-		dist = new Distribution_Hot_O(my_planet, ref_height, ref_temp);
+		dist = make_shared<Distribution_Hot_O>(my_planet, ref_height, ref_temp);
 	}
 	else if (dist_type == "MB")
 	{
-		dist = new Distribution_MB(my_planet, ref_height, ref_temp);
+		dist = make_shared<Distribution_MB>(my_planet, ref_height, ref_temp);
 	}
 	else if (dist_type == "Import")
 	{
-		dist = new Distribution_Import(my_planet, ref_height, ref_temp, pos_infile, vel_infile);
+		dist = make_shared<Distribution_Import>(my_planet, ref_height, ref_temp, pos_infile, vel_infile);
 	}
 	else
 	{
@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
 		{
 			shell_output_dir = output_dir;
 		}
-		my_atmosphere.init_shell(my_planet.get_radius()+shell_bottom, my_planet.get_radius()+shell_top, 300, 10000.0, shell_output_dir);
+		my_atmosphere.init_shell(my_planet.get_radius()+shell_bottom, my_planet.get_radius()+shell_top, 400, 10000.0, shell_output_dir);
 	}
 
 	my_atmosphere.run_simulation(dt, timesteps);
