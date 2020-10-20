@@ -56,10 +56,13 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 
 	bg_parts.resize(num_species);
 	bg_densities.resize(num_species);
+	dens_interp.resize(num_species);
 	bg_sigma_defaults.resize(num_species);
 	bg_sigma_tables.resize(num_species);
+	sigma_interp.resize(num_species);
 	bg_scaleheights.resize(num_species);
 	bg_avg_v.resize(num_species);
+	avg_v_interp.resize(num_species);
 	diff_sigma_energies.resize(num_species);
 	diff_sigma_CDFs.resize(num_species);
 	for (int i=0; i<num_species; i++)
@@ -120,6 +123,7 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 				{
 					bg_sigma_defaults[i] = 0.0;
 					common::import_csv(values[j], bg_sigma_tables[i][0], bg_sigma_tables[i][1]);
+					sigma_interp[i] = make_shared<Interpolator>(bg_sigma_tables[i][0], bg_sigma_tables[i][1]);
 				}
 			}
 			else if (parameters[j] == "num_diff_energies")
@@ -129,7 +133,7 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 				diff_sigma_CDFs[i].resize(num_energies);
 			}
 		}
-		bg_scaleheights[i] = constants::k_b*ref_temp/(bg_parts[i]->get_mass()*ref_g);
+		bg_scaleheights[i].push_back(constants::k_b*ref_temp/(bg_parts[i]->get_mass()*ref_g));
 		bg_avg_v[i].push_back(sqrt(constants::k_b*ref_temp/bg_parts[i]->get_mass()));
 
 		for (int j=0; j<num_energies; j++)
@@ -147,15 +151,22 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 	if (use_temp_profile)
 	{
 		common::import_csv(temp_profile_filename, temp_alt_bins, Tn, Ti, Te);
+		Tn_interp = make_shared<Interpolator>(temp_alt_bins, Tn);
+		Ti_interp = make_shared<Interpolator>(temp_alt_bins, Ti);
+		Te_interp = make_shared<Interpolator>(temp_alt_bins, Te);
 		int num_alt_bins = temp_alt_bins.size();
 		for (int i=0; i<num_species; i++)
 		{
+			// clear avg_v based on ref_temp and populate with values based on temp profile
 			bg_avg_v[i].clear();
 			double mass = bg_parts[i]->get_mass();
 			for (int j=0; j<num_alt_bins; j++)
 			{
 				bg_avg_v[i].push_back(sqrt(constants::k_b*Tn[j]/mass));
 			}
+
+			// generate interpolator for bg_avg_v for each species
+			avg_v_interp[i] = make_shared<Interpolator>(temp_alt_bins, bg_avg_v[i]);
 		}
 	}
 
@@ -164,7 +175,10 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 	{
 		for (int i=0; i<num_species; i++)
 		{
+			// clear out default densities and scale heights in order to use profile derived values
 			bg_densities[i].clear();
+			bg_scaleheights[i].clear();
+			bg_scaleheights[i].resize(2);
 		}
 		if (num_species == 5)
 		{
@@ -185,6 +199,18 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 		else if (num_species == 1)
 		{
 			common::import_csv(dens_profile_filename, dens_alt_bins, bg_densities[0]);
+		}
+
+		double bottom_local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+profile_bottom_alt, 2.0));
+		double top_local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+profile_top_alt, 2.0));
+		for (int i=0; i<num_species; i++)
+		{
+			// generate interpolator for each density profile
+			dens_interp[i] = make_shared<Interpolator>(dens_alt_bins, bg_densities[i]);
+
+			// calc top and bottom scale height to be used for extrapolating densities
+			bg_scaleheights[i][0] = constants::k_b*Tn_interp->linterp(profile_bottom_alt)/(bg_parts[i]->get_mass()*bottom_local_g);
+			bg_scaleheights[i][1] = constants::k_b*Tn_interp->linterp(profile_top_alt)/(bg_parts[i]->get_mass()*top_local_g);
 		}
 	}
 }
@@ -237,14 +263,14 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 	{
 		for (int i=0; i<num_species; i++)
 		{
-			dens[i] = get_density(alt, bg_densities[i], bg_parts[i]->get_mass());
+			dens[i] = get_density(alt, i);
 		}
 	}
 	else  // calculate new density based on reference scale height
 	{
 		for (int i=0; i<num_species; i++)
 		{
-			dens[i] = calc_new_density(bg_densities[i][0], bg_scaleheights[i], r_moved);
+			dens[i] = calc_new_density(bg_densities[i][0], bg_scaleheights[i][0], r_moved);
 		}
 	}
 
@@ -270,7 +296,7 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 				}
 				else
 				{
-					avg_v = common::interpolate(temp_alt_bins, bg_avg_v[i], alt);
+					avg_v = avg_v_interp[i]->linterp(alt);
 				}
 			}
 			else  // use reference temp avg_v
@@ -287,7 +313,7 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 
 			// calculate collision energy and look up cross section
 			energy[i] = calc_collision_e(p, bg_parts[i]);
-			total_sig[i] = common::interpolate(bg_sigma_tables[i][0], bg_sigma_tables[i][1], energy[i]);
+			total_sig[i] = sigma_interp[i]->linterp(energy[i]);
 
 			//cout << "test_energy: " << test_energy << "\t" << "energy: " << energy << "\n";
 		}
@@ -343,7 +369,7 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 				}
 				else
 				{
-					avg_v = common::interpolate(temp_alt_bins, bg_avg_v[collision_target], alt);
+					avg_v = avg_v_interp[collision_target]->linterp(alt);
 				}
 				my_dist->init_vonly(bg_parts[collision_target], avg_v);
 			}
@@ -361,121 +387,6 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 		collision_target = -1;
 		return false;
 	}
-
-	/* experimental
-	// determine if test particle collided, and if so, initialize target and pick theta
-	double u = common::get_rand();
-	double tau = 0.0;
-	collision_target = -1;
-	int i = 0;
-	while (collision_target == -1 && i < num_species)
-	{
-		// get density at current location
-		double dens = 0.0;
-
-		if (use_dens_profile)  // get new density from imported density profile
-		{
-			dens = get_density(alt, bg_densities[i], bg_parts[i]->get_mass());
-		}
-		else  // calculate new density based on reference scale height
-		{
-			dens = calc_new_density(bg_densities[i][0], bg_scaleheights[i], r_moved);
-		}
-
-		// look up total cross section to use for this species, or use default if no table available
-		double sig = 0.0;
-		double avg_v = 0.0;
-
-		// if default sigma is zero, then table is available, must initialize a particle to get energy
-		if (bg_sigma_defaults[i] == 0.0)
-		{
-			if (use_temp_profile)
-			{
-				if (alt < profile_bottom_alt)
-				{
-					avg_v = bg_avg_v[i][0];
-				}
-				else if (alt > profile_top_alt)
-				{
-					avg_v = bg_avg_v[i].back();
-				}
-				else
-				{
-					avg_v = common::interpolate(temp_alt_bins, bg_avg_v[i], alt);
-				}
-			}
-			else  // use reference temp avg_v
-			{
-				avg_v = bg_avg_v[i][0];
-			}
-			my_dist->init_vonly(bg_parts[i], avg_v);
-
-			//double my_mass = p->get_mass();
-			//double targ_mass = bg_parts[i]->get_mass();
-			//double dm = my_mass*targ_mass / (my_mass + targ_mass);
-			//double dv = my_total_v - avg_v;
-			//double test_energy = 0.5*dm*dv*dv / constants::ergev;
-			//double test_energy = 0.5*p->get_mass()*my_total_v*my_total_v / constants::ergev;
-
-			// calculate collision energy and look up cross section
-			double energy = calc_collision_e(p, bg_parts[i]);
-			sig = common::interpolate(bg_sigma_tables[i][0], bg_sigma_tables[i][1], energy);
-
-			//ofstream outfile;
-			//outfile.open("/home/rodney/Documents/coronaTest/energy_compare_HotH_2.out", ios::out | ios::app);
-			//outfile << bg_parts[i]->get_name() << "\t" << alt*1e-5 << "km\t" << test_energy << "eV\t" << energy << "eV\n";
-			//outfile.close();
-		}
-		else  // just use default sigma if no lookup table available
-		{
-			sig = bg_sigma_defaults[i];
-		}
-
-		// increase tau and check for collision, move on to next particle if no collision yet
-		tau += 	my_total_v*dt*sig*dens;
-		if (u > exp(-tau))
-		{
-			num_collisions++;
-			collision_target = i;
-			collision_theta = find_new_theta();
-			if (bg_sigma_defaults[collision_target] != 0.0)  // particle needs to be initialized
-			{
-				if (use_temp_profile)
-				{
-					double avg_v = 0.0;
-					if (alt < profile_bottom_alt)
-					{
-						avg_v = bg_avg_v[collision_target][0];
-					}
-					else if (alt > profile_top_alt)
-					{
-						avg_v = bg_avg_v[collision_target].back();
-					}
-					else
-					{
-						avg_v = common::interpolate(temp_alt_bins, bg_avg_v[collision_target], alt);
-					}
-					my_dist->init_vonly(bg_parts[collision_target], avg_v);
-				}
-				else
-				{
-					my_dist->init_vonly(bg_parts[collision_target], bg_avg_v[collision_target][0]);
-				}
-			}
-		}
-		i++;
-	}
-
-	// outside while loop now, check if collision detected
-	if (collision_target == -1)
-	{
-		return false;
-	}
-	else
-	{
-		return true;
-	}
-	*/
 }
 
 // scans imported differential scattering CDF for new collision theta
@@ -517,24 +428,22 @@ double Background_Species::find_new_theta(int part_index, double energy)
 }
 
 // get density from imported density profile
-double Background_Species::get_density(double alt, vector<double> &dens_bins, double targ_mass)
+double Background_Species::get_density(double alt, int index)
 {
 	double current_dens = 0.0;
 
 	// if outside of profile boundaries, need to extrapolate using a scale height
 	if (alt < profile_bottom_alt)
 	{
-		double local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+profile_bottom_alt, 2.0));
-		current_dens = calc_new_density(dens_bins[0], constants::k_b*common::interpolate(temp_alt_bins, Tn, profile_bottom_alt)/(targ_mass*local_g), profile_bottom_alt - alt);
+		current_dens = calc_new_density(bg_densities[index][0], bg_scaleheights[index][0], profile_bottom_alt - alt);
 	}
 	else if (alt > profile_top_alt)
 	{
-		double local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+profile_top_alt, 2.0));
-		current_dens = calc_new_density(dens_bins.back(), constants::k_b*common::interpolate(temp_alt_bins, Tn, profile_top_alt)/(targ_mass*local_g), profile_top_alt - alt);
+		current_dens = calc_new_density(bg_densities[index].back(), bg_scaleheights[index][1], profile_top_alt - alt);
 	}
 	else
 	{
-		current_dens = common::interpolate(dens_alt_bins, dens_bins, alt);
+		current_dens = dens_interp[index]->linterp(alt);
 	}
 
 	return current_dens;
@@ -555,7 +464,7 @@ double Background_Species::get_collision_theta()
 	return collision_theta;
 }
 
-// make a new differential cross section CDF and store at diff_sigma_CDFs[index]
+// make a new differential cross section CDF and store at diff_sigma_CDFs[part_index][energy_index]
 void Background_Species::make_new_CDF(int part_index, int energy_index, vector<double> &angle, vector<double> &sigma)
 {
 	int num_angles = angle.size();

@@ -20,6 +20,7 @@
 #include "Distribution_MB.hpp"
 #include "Planet.hpp"
 #include "Common_Functions.hpp"
+#include "Interpolator.hpp"
 using namespace std;
 
 class Background_Species {
@@ -45,18 +46,24 @@ private:
 	double ref_g;                // acceleration due to gravity (G*M/r^2) at reference height
 	shared_ptr<Distribution_MB> my_dist;    // distribution to be used for initialization of bg particles
 	vector<shared_ptr<Particle>> bg_parts;  // array of pointers to child particle classes
-	double profile_bottom_alt;            //altitude above surface (cm) where atmospheric profiles begin
-	double profile_top_alt;               //altitude above surface (cm) where atmospheric profiles end
+	double profile_bottom_alt;            // altitude above surface (cm) where atmospheric profiles begin
+	double profile_top_alt;               // altitude above surface (cm) where atmospheric profiles end
 	vector<double> temp_alt_bins;         // altitude bins from imported temperature profile
 	vector<double> Tn;                    // neutral species temperature profile
+	shared_ptr<Interpolator> Tn_interp;   // interpolator for neutral temp profile
 	vector<double> Ti;                    // ionic species temperature profile
+	shared_ptr<Interpolator> Ti_interp;   // interpolator for ion temp profile
 	vector<double> Te;                    // electron temperature profile
+	shared_ptr<Interpolator> Te_interp;   // interpolator for electron temp profile
 	vector<double> dens_alt_bins;         // array of altitude bins imported along with densities
 	vector<vector<double>> bg_densities;  // array of densities for each particle in bg_parts
+	vector<shared_ptr<Interpolator>> dens_interp;  // density interpolator objects
 	vector<double> bg_sigma_defaults;     // array of default total cross sections for each particle
 	vector<vector<vector<double>>> bg_sigma_tables;  // lookup tables for total cross sections
-	vector<double> bg_scaleheights;       // array of scale heights for each particle type
-	vector<vector <double>> bg_avg_v;     // array of average (thermal) velocities for each particle
+	vector<shared_ptr<Interpolator>> sigma_interp;  // total sigma interpolator objects
+	vector<vector<double>> bg_scaleheights;       // array of scale heights for each particle type
+	vector<vector<double>> bg_avg_v;      // array of average (thermal) velocities for each particle
+	vector<shared_ptr<Interpolator>> avg_v_interp;   // avg_v interpolator objects
 	vector<vector<double>> diff_sigma_energies;              // array of available differential cross section energies for each species
 	vector<vector<vector<vector<double>>>> diff_sigma_CDFs;  // CDFs built from imported differential cross section tables; used for looking up scattering angles
 
@@ -70,7 +77,7 @@ private:
 	double find_new_theta(int part_index, double energy);
 
 	// get density from imported density profile if available
-	double get_density(double alt, vector<double> &dens, double targ_mass);
+	double get_density(double alt, int index);
 
 	// make a new differential cross section CDF and store at diff_sigma_CDFs[index]
 	void make_new_CDF(int part_index, int energy_index, vector<double> &angle, vector<double> &sigma);
