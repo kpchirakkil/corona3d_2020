@@ -25,9 +25,12 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	H_Hplus_CDF.resize(2);
 	HCOplus_DR_CDF.resize(2);
 
-	string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/MarsTemp_Fox2014.csv";
-	string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_Fox2014.csv";
-	string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H+_density_profile_Fox2014.csv";
+	string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/VenusTemp_LSA_FoxSung2001.csv";
+	string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/H_density_profile_LSA_FoxSung01.csv";
+	string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/H+_density_profile_LSA_FoxSung01.csv";
+	//string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/MarsTemp_Fox2014.csv";
+	//string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_Fox2014.csv";
+	//string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H+_density_profile_Fox2014.csv";
 	string HCOplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/HCO+_density_profile_Fox2014.csv";
 	string electron_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/electron_density_profile_Fox2014.csv";
 
@@ -37,7 +40,8 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	common::import_csv(HCOplus_prof_filename, HCOplus_profile[0], HCOplus_profile[1]);
 	common::import_csv(electron_prof_filename, electron_profile[0], electron_profile[1]);
 
-	make_H_Hplus_CDF(80e5, 700.103333e5);
+	//make_H_Hplus_CDF(80e5, 700.103333e5);
+	make_H_Hplus_CDF(150e5, 400e5);
 	make_HCOplus_DR_CDF(80e5, 400e5);
 }
 
@@ -47,8 +51,8 @@ Distribution_Hot_H::~Distribution_Hot_H() {
 
 void Distribution_Hot_H::init(shared_ptr<Particle> p)
 {
-	//init_H_Hplus_particle(p);
-	init_HCOplus_DR_particle(p);
+	init_H_Hplus_particle(p);
+	//init_HCOplus_DR_particle(p);
 }
 
 // init particle using H_Hplus mechanism
@@ -117,26 +121,107 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
 		Ei = 1.3;
 		we = 1743.41;
 		wexe = 14.36;
+		double randnum2 = common::get_rand();
+		if (randnum2 < 0.45)
+		{
+			vib_lvl = 0.0;
+		}
+		else if (randnum2 < 0.45+0.21)
+		{
+			vib_lvl = 1.0;
+		}
+		else if (randnum2 < 0.45+0.21+0.13)
+		{
+			vib_lvl = 2.0;
+		}
+		else if (randnum2 < 0.45+0.21+0.13+0.1)
+		{
+			vib_lvl = 3.0;
+		}
+		else if (randnum2 < 0.45+0.21+0.13+0.1+0.1)
+		{
+			vib_lvl = 4.0;
+		}
+		else
+		{
+			vib_lvl = 5.0;
+		}
 	}
 	else if (randnum < (0.23+0.385))
 	{
 		Ei = 0.44;
 		we = 1228.6;
 		wexe = 10.468;
+		double randnum2 = common::get_rand();
+		if (randnum2 < 0.5)
+		{
+			vib_lvl = 0.0;
+		}
+		else if (randnum2 < 0.5+0.25)
+		{
+			vib_lvl = 1.0;
+		}
+		else if (randnum2 < 0.5+0.25+0.125)
+		{
+			vib_lvl = 2.0;
+		}
+		else
+		{
+			vib_lvl = 3.0;
+		}
 	}
 	else
 	{
 		Ei = 7.31;
 		we = 2169.81358;
 		wexe = 13.28831;
+		double randnum2 = common::get_rand();
+		if (randnum2 < 0.5)
+		{
+			vib_lvl = 0.0;
+		}
+		else if (randnum2 < 0.5+0.25)
+		{
+			vib_lvl = 1.0;
+		}
+		else if (randnum2 < 0.5+0.25+0.125)
+		{
+			vib_lvl = 2.0;
+		}
+		else if (randnum2 < 0.5+0.25+0.125+0.0625)
+		{
+			vib_lvl = 3.0;
+		}
+		else if (randnum2 < 0.5+0.25+0.125+0.0625+0.03125)
+		{
+			vib_lvl = 4.0;
+		}
+		else if (randnum2 < 0.5+0.25+0.125+0.0625+0.03125+0.015625)
+		{
+			vib_lvl = 5.0;
+		}
+		else if (randnum2 < 0.5+0.25+0.125+0.0625+0.03125+0.015625+0.0078125)
+		{
+			vib_lvl = 6.0;
+		}
+		else
+		{
+			vib_lvl = 7.0;
+		}
 	}
 
 	// subtract vibrational energy from excess if vib_lvl above 0 (convert inverse cm to eV before subtracting)
 	if (vib_lvl > 0.0)
 	{
+		Ei = Ei + ((we*0.5 - wexe*0.25) * 1.239841984e-4);
 		cout << "Ei = " << Ei << "\n";
+		cout << "v = " << vib_lvl << "\n";
 		Ei = Ei - ((we*(vib_lvl + 0.5) - (wexe*(vib_lvl + 0.5)*(vib_lvl + 0.5))) * 1.239841984e-4);
 		cout << "Ei - vib = " << Ei << "\n";
+		if (Ei < 0.0)
+		{
+			Ei = 0.0;
+		}
 	}
 
 	// convert energy to ergs
@@ -198,7 +283,7 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 	ofstream outfile;
 	outfile.open("/home/rodney/Documents/coronaTest/rodney_hplh.dat");
 
-	int num_alt_bins = (int)((upper_alt - lower_alt) / 10333.3);
+	int num_alt_bins = (int)((upper_alt - lower_alt) / 10000.0);
 	vector<double> H_Hplus_rate;
 	H_Hplus_rate.resize(num_alt_bins);
 	H_Hplus_CDF[0].resize(num_alt_bins);
@@ -221,7 +306,7 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 	double rate_sum = 0.0;
 	for (int i=0; i<num_alt_bins; i++)
 	{
-		H_Hplus_CDF[1][i] = lower_alt + 10333.3*i;
+		H_Hplus_CDF[1][i] = lower_alt + 10000.0*i;
 
 		// get new H density by either interpolation or extrapolation
 		double H_dens = 0.0;
