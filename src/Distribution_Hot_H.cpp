@@ -25,12 +25,12 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	H_Hplus_CDF.resize(2);
 	HCOplus_DR_CDF.resize(2);
 
-	string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/VenusTemp_LSA_FoxSung2001.csv";
-	string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/H_density_profile_LSA_FoxSung01.csv";
-	string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/H+_density_profile_LSA_FoxSung01.csv";
-	//string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/MarsTemp_Fox2014.csv";
-	//string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_Fox2014.csv";
-	//string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H+_density_profile_Fox2014.csv";
+	//string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/VenusTemp_LSA_FoxSung2001.csv";
+	//string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/H_density_profile_LSA_FoxSung01.csv";
+	//string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/H+_density_profile_LSA_FoxSung01.csv";
+	string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/MarsTemp_Fox2014.csv";
+	string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_Fox2014.csv";
+	string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H+_density_profile_Fox2014.csv";
 	string HCOplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/HCO+_density_profile_Fox2014.csv";
 	string electron_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/electron_density_profile_Fox2014.csv";
 
@@ -40,8 +40,8 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	common::import_csv(HCOplus_prof_filename, HCOplus_profile[0], HCOplus_profile[1]);
 	common::import_csv(electron_prof_filename, electron_profile[0], electron_profile[1]);
 
-	//make_H_Hplus_CDF(80e5, 700.103333e5);
-	make_H_Hplus_CDF(150e5, 400e5);
+	make_H_Hplus_CDF(80e5, 700e5);
+	//make_H_Hplus_CDF(150e5, 700e5);
 	make_HCOplus_DR_CDF(80e5, 400e5);
 }
 
@@ -62,7 +62,7 @@ void Distribution_Hot_H::init_H_Hplus_particle(shared_ptr<Particle> p)
 	double r = get_new_radius_H_Hplus();
 	double alt = r - my_planet.get_radius();
 	double temp_ion = common::interpolate(temp_profile[0], temp_profile[2], alt);
-	//double temp_neut = common::interpolate(temp_profile[0], temp_profile[1], alt);
+	double temp_neut = common::interpolate(temp_profile[0], temp_profile[1], alt);
 
 	double phi = constants::twopi*(common::get_rand());
 	double u = 2.0*common::get_rand() - 1.0;
@@ -78,11 +78,35 @@ void Distribution_Hot_H::init_H_Hplus_particle(shared_ptr<Particle> p)
 	}
 	*/
 
-	double vavg = sqrt(constants::k_b*temp_ion/m_Hplus);  // average thermal H+ velocity
+	double ion_vavg = sqrt(constants::k_b*temp_ion/m_Hplus);  // average thermal H+ velocity
+	double neut_vavg = sqrt(constants::k_b*temp_neut/m_H);    // average thermal H velocity
 	double v_ion[] = {0.0, 0.0, 0.0};
-	gen_mb(vavg, v_ion);
+	double v_neut[] = {0.0, 0.0, 0.0};
+	gen_mb(ion_vavg, v_ion);
+	gen_mb(neut_vavg, v_neut);
 
-	p->init_particle(x, y, z, v_ion[0], v_ion[1], v_ion[2]);
+	double e = 0.0;
+	Matrix<double, 3, 1> p1_v = {v_neut[0], v_neut[1], v_neut[2]};
+	Matrix<double, 3, 1> p2_v = {v_ion[0], v_ion[1], v_ion[2]};
+	Matrix<double, 3, 1> vcm;
+	vcm = (m_H*p1_v.array() + m_Hplus*p2_v.array()) / (m_H + m_Hplus);
+	Matrix<double, 3, 1> p1_vcm = p1_v.array() - vcm.array();    // particle 1 c-o-m velocity
+	Matrix<double, 3, 1> p2_vcm = p2_v.array() - vcm.array();    // particle 2 c-o-m velocity
+	double p1_vcm_tot = sqrt(p1_vcm[0]*p1_vcm[0] + p1_vcm[1]*p1_vcm[1] + p1_vcm[2]*p1_vcm[2]);  // particle 1 c-o-m scalar velocity
+	double p2_vcm_tot = sqrt(p2_vcm[0]*p2_vcm[0] + p2_vcm[1]*p2_vcm[1] + p2_vcm[2]*p2_vcm[2]);  // particle 2 c-o-m scalar velocity
+	e = 0.5*m_H*p1_vcm_tot*p1_vcm_tot + 0.5*m_Hplus*p2_vcm_tot*p2_vcm_tot;
+
+	double v = sqrt(2.0*e / (m_H + (m_H*m_H/m_Hplus)));
+
+	// spherically isotropic velocity vector
+	phi = constants::twopi*common::get_rand();
+	u = 2.0*common::get_rand() - 1.0;
+	double vx = v*sqrt(1-u*u)*cos(phi);
+	double vy = v*sqrt(1-u*u)*sin(phi);
+	double vz = v*u;
+
+	//p->init_particle(x, y, z, v_ion[0], v_ion[1], v_ion[2]);
+	p->init_particle(x, y, z, vx, vy, vz);
 }
 
 // init particle using HCOplus_DR mechanism
@@ -147,6 +171,7 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
 			vib_lvl = 5.0;
 		}
 	}
+	/* assuming negligible chance of going to CO(a') state
 	else if (randnum < (0.23+0.385))
 	{
 		Ei = 0.44;
@@ -170,6 +195,7 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
 			vib_lvl = 3.0;
 		}
 	}
+	*/
 	else
 	{
 		Ei = 7.31;
@@ -214,11 +240,8 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
 	if (vib_lvl > 0.0)
 	{
 		Ei = Ei + ((we*0.5 - wexe*0.25) * 1.239841984e-4);
-		cout << "Ei = " << Ei << "\n";
-		cout << "v = " << vib_lvl << "\n";
 		Ei = Ei - ((we*(vib_lvl + 0.5) - (wexe*(vib_lvl + 0.5)*(vib_lvl + 0.5))) * 1.239841984e-4);
-		cout << "Ei - vib = " << Ei << "\n";
-		if (Ei < 0.0)
+		if (Ei < 0.0)  // this only happens when considering CO(a') state but leaving in just in case...
 		{
 			Ei = 0.0;
 		}
