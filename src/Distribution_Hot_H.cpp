@@ -40,7 +40,7 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	common::import_csv(HCOplus_prof_filename, HCOplus_profile[0], HCOplus_profile[1]);
 	common::import_csv(electron_prof_filename, electron_profile[0], electron_profile[1]);
 
-	make_H_Hplus_CDF(80e5, 700e5);
+	make_H_Hplus_CDF(80e5, 400e5);
 	//make_H_Hplus_CDF(150e5, 700e5);
 	make_HCOplus_DR_CDF(80e5, 400e5);
 }
@@ -51,8 +51,8 @@ Distribution_Hot_H::~Distribution_Hot_H() {
 
 void Distribution_Hot_H::init(shared_ptr<Particle> p)
 {
-	init_H_Hplus_particle(p);
-	//init_HCOplus_DR_particle(p);
+	//init_H_Hplus_particle(p);
+	init_HCOplus_DR_particle(p);
 }
 
 // init particle using H_Hplus mechanism
@@ -125,13 +125,11 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
 	double y = r*sqrt(1-(u*u))*sin(phi);
 	double z = r*u;
 
-	/*
 	// Hemispherical Adjustment For Dayside Photochemical Process
-	if (x < 0)
+	if (x > 0)
 	{
 		x = -x;
 	}
-	*/
 
 	// Select HCO+ DR Electronic Channel
 	double Ei = 0.0;       // excess energy from DR (eV)
@@ -171,7 +169,7 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
 			vib_lvl = 5.0;
 		}
 	}
-	/* assuming negligible chance of going to CO(a') state
+	/* assuming negligible chance of going to CO(a') state, but leaving code in for possible future use
 	else if (randnum < (0.23+0.385))
 	{
 		Ei = 0.44;
@@ -306,7 +304,8 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 	ofstream outfile;
 	outfile.open("/home/rodney/Documents/coronaTest/rodney_hplh.dat");
 
-	int num_alt_bins = (int)((upper_alt - lower_alt) / 10000.0);
+	double bin_size = 10000.0; // [cm]
+	int num_alt_bins = (int)((upper_alt - lower_alt) / bin_size);
 	vector<double> H_Hplus_rate;
 	H_Hplus_rate.resize(num_alt_bins);
 	H_Hplus_CDF[0].resize(num_alt_bins);
@@ -329,7 +328,7 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 	double rate_sum = 0.0;
 	for (int i=0; i<num_alt_bins; i++)
 	{
-		H_Hplus_CDF[1][i] = lower_alt + 10000.0*i;
+		H_Hplus_CDF[1][i] = lower_alt + bin_size*i;
 
 		// get new H density by either interpolation or extrapolation
 		double H_dens = 0.0;
@@ -378,6 +377,8 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 			H_Hplus_CDF[0][i] = (H_Hplus_rate[i] / rate_sum) + H_Hplus_CDF[0][i-1];
 		}
 	}
+	double global_rate_H_Hplus = rate_sum*bin_size * 4.0 * constants::pi * pow(my_planet.get_radius()+upper_alt, 2.0);
+	cout << "Global hot H production rate from H+ + H:\n" << global_rate_H_Hplus << " per second\n";
 }
 
 // generate HCOplus_DR_CDF for given altitude range using imported density/temp profiles
@@ -386,7 +387,8 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 	ofstream outfile;
 	outfile.open("/home/rodney/Documents/coronaTest/rodney_hcopl.dat");
 
-	int num_alt_bins = (int)((upper_alt - lower_alt) / 10000.0);
+	double bin_size = 10000.0; // [cm]
+	int num_alt_bins = (int)((upper_alt - lower_alt) / bin_size);
 	vector<double> HCOplus_DR_rate;
 	HCOplus_DR_rate.resize(num_alt_bins);
 	HCOplus_DR_CDF[0].resize(num_alt_bins);
@@ -409,7 +411,7 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 	double rate_sum = 0.0;
 	for (int i=0; i<num_alt_bins; i++)
 	{
-		HCOplus_DR_CDF[1][i] = lower_alt + 10000.0*i;
+		HCOplus_DR_CDF[1][i] = lower_alt + bin_size*i;
 
 		// get new e density by either interpolation or extrapolation
 		double e_dens = 0.0;
@@ -466,4 +468,6 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 			HCOplus_DR_CDF[0][i] = (HCOplus_DR_rate[i] / rate_sum) + HCOplus_DR_CDF[0][i-1];
 		}
 	}
+	double global_rate_HCOplus_DR = rate_sum*bin_size * 4.0 * constants::pi * pow(my_planet.get_radius()+upper_alt, 2.0);
+	cout << "Global hot H production rate from HCO+ DR:\n" << global_rate_HCOplus_DR << " per second\n";
 }

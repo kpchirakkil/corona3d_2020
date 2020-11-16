@@ -26,6 +26,12 @@ void Distribution_MB::init(shared_ptr<Particle> p)
 	double y = ref_radius*sqrt(1-(u*u))*sin(phi);
 	double z = ref_radius*u;
 
+	// Hemispherical Adjustment For Dayside Photochemical Process
+	if (x > 0)
+	{
+		x = -x;
+	}
+
 	double v[] = {0.0, 0.0, 0.0};
 	gen_mb(v_avg, v);
 

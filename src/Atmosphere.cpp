@@ -227,18 +227,26 @@ void Atmosphere::output_velocity_distro(double bin_width, string datapath)
 // a lot of stuff in here needs to be changed to be dynamically determined at runtime
 void Atmosphere::run_simulation(double dt, int num_steps)
 {
+	double upper_bound = my_planet.get_radius() + 400e5;
+	double lower_bound = my_planet.get_radius() + 80e5;
+	double v_esc_upper = sqrt(2.0 * constants::G * my_planet.get_mass() / upper_bound);
+	//double v_esc_lower = sqrt(2.0 * constants::G * my_planet.get_mass() / lower_bound);
+	int escape_count = 0;
+	int added_particles = 0;  // increment this if re-initializing deactivated particles
+
 	double k = my_planet.get_k_g();
-	double v_Obg = sqrt(8.0*constants::k_b*277.6 / (constants::pi*15.9994*constants::amu));
-	//double v_Obg = 0;
-	//double thresh_v = sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[0]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e3)));
+	//double v_Obg = sqrt(8.0*constants::k_b*277.6 / (constants::pi*15.9994*constants::amu));
 	cout << "Simulating Particle Transport...\n";
 
 	for (int i=0; i<num_steps; i++)
 	{
 		if (output_pos_freq > 0 && (i+1) % output_pos_freq == 0)
 		{
-			cout << i+1 << "\t" << active_parts << endl;
-			output_positions(output_pos_dir + "positions" + to_string(i+1) + ".out");
+			double hrs = (i+1)*dt/3600.0;
+			double min = (hrs - (int)hrs)*60.0;
+			double sec = (min - (int)min)*60.0;
+			cout << (int)hrs << "h "<< (int)min << "m " << (int)sec << "s " << "\t Active: " << active_parts << "\t Escaped: " << escape_count << "\t Escape fraction: " << (double)escape_count / (double)(num_parts+added_particles) <<endl;
+			//output_positions(output_pos_dir + "positions" + to_string(i+1) + ".out");
 		}
 
 		if (num_traced > 0)
@@ -258,9 +266,26 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 				}
 
 				// deactivation criteria...need to incorporate into configuration file
-				if (my_parts[j]->get_radius() < (my_planet.get_radius() + 900e5) && (my_parts[j]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[j]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e5))))
+				//if (my_parts[j]->get_radius() < (my_planet.get_radius() + 900e5) && (my_parts[j]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[j]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e5))))
+				//{
+				//	my_parts[j]->deactivate();
+				//	active_parts--;
+				//}
+
+				if (my_parts[j]->get_radius() >= upper_bound && my_parts[j]->get_total_v() > v_esc_upper)
 				{
 					my_parts[j]->deactivate();
+					//my_dist->init(my_parts[j]);
+					//added_particles++;
+					active_parts--;
+					escape_count++;
+				}
+				else if (my_parts[j]->get_radius() <= lower_bound || my_parts[j]->get_total_v() < v_esc_upper)
+				//else if (my_parts[j]->get_total_v() < v_esc_upper)
+				{
+					my_parts[j]->deactivate();
+					//my_dist->init(my_parts[j]);
+					//added_particles++;
 					active_parts--;
 				}
 			}
@@ -284,6 +309,8 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 
 	cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;
 	cout << "Active particles remaining: " << active_parts << endl;
+	cout << "Number of escaped particles: " << escape_count << endl;
+	cout << "Fraction of escaped particles: " << (double)escape_count / (double)(num_parts+added_particles) << endl;
 }
 
 // update shell numbers (velocity distro, etc.)
