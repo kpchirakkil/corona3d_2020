@@ -30,9 +30,15 @@ Particle::~Particle()
 }
 
 // deactivate this particle
-void Particle::deactivate()
+void Particle::deactivate(string fate)
 {
 	active = false;
+
+	// record fate of particle at bottom of collision log
+	if (traced)
+	{
+		collision_log.push_back(fate);
+	}
 }
 
 // perform collision on a particle and update velocity vector

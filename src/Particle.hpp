@@ -19,7 +19,7 @@ public:
 	virtual double get_mass() = 0;  //must be implemented in derived classes
 	virtual string get_name() = 0;  //must be implemented in derived classes
 
-	void deactivate();
+	void deactivate(string fate);
 	void do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r);
 	void do_timestep(double dt, double k_g);
 	void dump_collision_log(string filename);

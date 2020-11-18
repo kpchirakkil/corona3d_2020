@@ -28,11 +28,11 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	//string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/VenusTemp_LSA_FoxSung2001.csv";
 	//string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/H_density_profile_LSA_FoxSung01.csv";
 	//string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/H+_density_profile_LSA_FoxSung01.csv";
-	string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/MarsTemp_Fox2014.csv";
-	string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_Fox2014.csv";
-	string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H+_density_profile_Fox2014.csv";
-	string HCOplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/HCO+_density_profile_Fox2014.csv";
-	string electron_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/electron_density_profile_Fox2014.csv";
+	string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/MarsTempLSA_Fox2015.csv";
+	string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_LSA_Fox2015.csv";
+	string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H+_density_profile_LSA_eroded_Fox2015.csv";
+	string HCOplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/HCO+_density_profile_LSA_eroded_Fox2015.csv";
+	string electron_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/electron_density_profile_LSA_eroded_Fox2015.csv";
 
 	common::import_csv(temp_prof_filename, temp_profile[0], temp_profile[1], temp_profile[2], temp_profile[3]);
 	common::import_csv(H_prof_filename, H_profile[0], H_profile[1]);
@@ -61,8 +61,8 @@ void Distribution_Hot_H::init_H_Hplus_particle(shared_ptr<Particle> p)
 	// altitude distribution for hot H
 	double r = get_new_radius_H_Hplus();
 	double alt = r - my_planet.get_radius();
-	double temp_ion = common::interpolate(temp_profile[0], temp_profile[2], alt);
-	double temp_neut = common::interpolate(temp_profile[0], temp_profile[1], alt);
+	double temp_ion = common::interpolate_logy(temp_profile[0], temp_profile[2], alt);
+	double temp_neut = common::interpolate_logy(temp_profile[0], temp_profile[1], alt);
 
 	double phi = constants::twopi*(common::get_rand());
 	double u = 2.0*common::get_rand() - 1.0;
@@ -70,13 +70,11 @@ void Distribution_Hot_H::init_H_Hplus_particle(shared_ptr<Particle> p)
 	double y = r*sqrt(1-(u*u))*sin(phi);
 	double z = r*u;
 
-	/*
 	// Hemispherical Adjustment For Dayside Photochemical Process
-	if (x < 0)
+	if (x > 0)
 	{
 		x = -x;
 	}
-	*/
 
 	double ion_vavg = sqrt(constants::k_b*temp_ion/m_Hplus);  // average thermal H+ velocity
 	double neut_vavg = sqrt(constants::k_b*temp_neut/m_H);    // average thermal H velocity
@@ -115,9 +113,9 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
 	// altitude distribution for hot H
 	double r = get_new_radius_HCOplus_DR();
 	double alt = r - my_planet.get_radius();
-	double temp_ion = common::interpolate(temp_profile[0], temp_profile[2], alt);
-	//double temp_neut = common::interpolate(temp_profile[0], temp_profile[1], alt);
-	double temp_e = common::interpolate(temp_profile[0], temp_profile[3], alt);
+	double temp_ion = common::interpolate_logy(temp_profile[0], temp_profile[2], alt);
+	//double temp_neut = common::interpolate_logy(temp_profile[0], temp_profile[1], alt);
+	double temp_e = common::interpolate_logy(temp_profile[0], temp_profile[3], alt);
 
 	double phi = constants::twopi*(common::get_rand());
 	double u = 2.0*common::get_rand() - 1.0;
@@ -317,13 +315,13 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 	double top_H = H_profile[0].back();
 
 	double local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+bottom_Hplus, 2.0));
-	double Hplus_bottom_scaleheight = constants::k_b*common::interpolate(temp_profile[0], temp_profile[2], bottom_Hplus)/(m_Hplus*local_g);
+	double Hplus_bottom_scaleheight = constants::k_b*common::interpolate_logy(temp_profile[0], temp_profile[2], bottom_Hplus)/(m_Hplus*local_g);
 	local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+top_Hplus, 2.0));
-	double Hplus_top_scaleheight = constants::k_b*common::interpolate(temp_profile[0], temp_profile[2], top_Hplus)/(m_Hplus*local_g);
+	double Hplus_top_scaleheight = constants::k_b*common::interpolate_logy(temp_profile[0], temp_profile[2], top_Hplus)/(m_Hplus*local_g);
 	local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+bottom_H, 2.0));
-	double H_bottom_scaleheight = constants::k_b*common::interpolate(temp_profile[0], temp_profile[1], bottom_H)/(m_H*local_g);
+	double H_bottom_scaleheight = constants::k_b*common::interpolate_logy(temp_profile[0], temp_profile[1], bottom_H)/(m_H*local_g);
 	local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+top_H, 2.0));
-	double H_top_scaleheight = constants::k_b*common::interpolate(temp_profile[0], temp_profile[1], top_H)/(m_H*local_g);
+	double H_top_scaleheight = constants::k_b*common::interpolate_logy(temp_profile[0], temp_profile[1], top_H)/(m_H*local_g);
 
 	double rate_sum = 0.0;
 	for (int i=0; i<num_alt_bins; i++)
@@ -342,7 +340,7 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 		}
 		else
 		{
-			H_dens = common::interpolate(H_profile[0], H_profile[1], H_Hplus_CDF[1][i]);
+			H_dens = common::interpolate_logy(H_profile[0], H_profile[1], H_Hplus_CDF[1][i]);
 		}
 
 		// get new Hplus density by either interpolation or extrapolation
@@ -357,10 +355,10 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 		}
 		else
 		{
-			Hplus_dens = common::interpolate(Hplus_profile[0], Hplus_profile[1], H_Hplus_CDF[1][i]);
+			Hplus_dens = common::interpolate_logy(Hplus_profile[0], Hplus_profile[1], H_Hplus_CDF[1][i]);
 		}
 
-		double Ti = common::interpolate(temp_profile[0], temp_profile[2], H_Hplus_CDF[1][i]);
+		double Ti = common::interpolate_logy(temp_profile[0], temp_profile[2], H_Hplus_CDF[1][i]);
 		H_Hplus_rate[i] = H_Hplus_rate_coeff * sqrt(Ti) * H_dens * Hplus_dens;
 		outfile << H_Hplus_CDF[1][i]*1e-5 << "\t" << H_Hplus_rate[i] << "\n";
 		rate_sum = rate_sum + H_Hplus_rate[i];
@@ -400,13 +398,13 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 	double top_e = electron_profile[0].back();
 
 	double local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+bottom_HCOplus, 2.0));
-	double HCOplus_bottom_scaleheight = constants::k_b*common::interpolate(temp_profile[0], temp_profile[2], bottom_HCOplus)/(m_HCOplus*local_g);
+	double HCOplus_bottom_scaleheight = constants::k_b*common::interpolate_logy(temp_profile[0], temp_profile[2], bottom_HCOplus)/(m_HCOplus*local_g);
 	local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+top_HCOplus, 2.0));
-	double HCOplus_top_scaleheight = constants::k_b*common::interpolate(temp_profile[0], temp_profile[2], top_HCOplus)/(m_HCOplus*local_g);
+	double HCOplus_top_scaleheight = constants::k_b*common::interpolate_logy(temp_profile[0], temp_profile[2], top_HCOplus)/(m_HCOplus*local_g);
 	local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+bottom_e, 2.0));
-	double e_bottom_scaleheight = constants::k_b*common::interpolate(temp_profile[0], temp_profile[3], bottom_e)/(constants::m_e*local_g);
+	double e_bottom_scaleheight = constants::k_b*common::interpolate_logy(temp_profile[0], temp_profile[3], bottom_e)/(constants::m_e*local_g);
 	local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+top_e, 2.0));
-	double e_top_scaleheight = constants::k_b*common::interpolate(temp_profile[0], temp_profile[3], top_e)/(constants::m_e*local_g);
+	double e_top_scaleheight = constants::k_b*common::interpolate_logy(temp_profile[0], temp_profile[3], top_e)/(constants::m_e*local_g);
 
 	double rate_sum = 0.0;
 	for (int i=0; i<num_alt_bins; i++)
@@ -425,7 +423,7 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 		}
 		else
 		{
-			e_dens = common::interpolate(electron_profile[0], electron_profile[1], HCOplus_DR_CDF[1][i]);
+			e_dens = common::interpolate_logy(electron_profile[0], electron_profile[1], HCOplus_DR_CDF[1][i]);
 		}
 
 		// get new HCOplus density by either interpolation or extrapolation
@@ -440,11 +438,11 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 		}
 		else
 		{
-			HCOplus_dens = common::interpolate(HCOplus_profile[0], HCOplus_profile[1], HCOplus_DR_CDF[1][i]);
+			HCOplus_dens = common::interpolate_logy(HCOplus_profile[0], HCOplus_profile[1], HCOplus_DR_CDF[1][i]);
 		}
 
 		// calculate HCOplus_DR_rate at current alt using rate coefficient from Fox 2015
-		double Te = common::interpolate(temp_profile[0], temp_profile[3], HCOplus_DR_CDF[1][i]);
+		double Te = common::interpolate_logy(temp_profile[0], temp_profile[3], HCOplus_DR_CDF[1][i]);
 		if (Te <= 300.0)
 		{
 			HCOplus_DR_rate[i] = HCOplus_DR_rate_coeff * pow((Te/300.0), -1.25) * e_dens * HCOplus_dens;

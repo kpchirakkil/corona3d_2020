@@ -209,8 +209,8 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 			dens_interp[i] = make_shared<Interpolator>(dens_alt_bins, bg_densities[i]);
 
 			// calc top and bottom scale height to be used for extrapolating densities
-			bg_scaleheights[i][0] = constants::k_b*Tn_interp->linterp(profile_bottom_alt)/(bg_parts[i]->get_mass()*bottom_local_g);
-			bg_scaleheights[i][1] = constants::k_b*Tn_interp->linterp(profile_top_alt)/(bg_parts[i]->get_mass()*top_local_g);
+			bg_scaleheights[i][0] = constants::k_b*Tn_interp->loglinterp(profile_bottom_alt)/(bg_parts[i]->get_mass()*bottom_local_g);
+			bg_scaleheights[i][1] = constants::k_b*Tn_interp->loglinterp(profile_top_alt)/(bg_parts[i]->get_mass()*top_local_g);
 		}
 	}
 }
@@ -296,7 +296,7 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 				}
 				else
 				{
-					avg_v = avg_v_interp[i]->linterp(alt);
+					avg_v = avg_v_interp[i]->loglinterp(alt);
 				}
 			}
 			else  // use reference temp avg_v
@@ -305,17 +305,9 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 			}
 			my_dist->init_vonly(bg_parts[i], avg_v);
 
-			//double my_mass = p->get_mass();
-			//double targ_mass = bg_parts[i]->get_mass();
-			//double dm = my_mass*targ_mass / (my_mass + targ_mass);
-			//double dv = p->get_total_v() - avg_v;
-			//double test_energy = 0.5*dm*dv*dv / constants::ergev;
-
 			// calculate collision energy and look up cross section
 			energy[i] = calc_collision_e(p, bg_parts[i]);
 			total_sig[i] = sigma_interp[i]->linterp(energy[i]);
-
-			//cout << "test_energy: " << test_energy << "\t" << "energy: " << energy << "\n";
 		}
 		else  // just use default sigma if no lookup table available
 		{
@@ -369,7 +361,7 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 				}
 				else
 				{
-					avg_v = avg_v_interp[collision_target]->linterp(alt);
+					avg_v = avg_v_interp[collision_target]->loglinterp(alt);
 				}
 				my_dist->init_vonly(bg_parts[collision_target], avg_v);
 			}
@@ -443,7 +435,7 @@ double Background_Species::get_density(double alt, int index)
 	}
 	else
 	{
-		current_dens = dens_interp[index]->linterp(alt);
+		current_dens = dens_interp[index]->loglinterp(alt);
 	}
 
 	return current_dens;

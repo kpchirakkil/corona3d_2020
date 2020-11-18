@@ -256,6 +256,26 @@ namespace common {
 		}
 	}
 
+	// returns interpolated value at x from arrays x_data, y_data, when y_data is log-scaled
+	double interpolate_logy(vector<double> &x_data, vector<double> &y_data, double x)
+	{
+		if (x <= x_data[0])
+		{
+			return y_data[0];
+		}
+		else if (x >= x_data.back())
+		{
+			return y_data.back();
+		}
+		else
+		{
+			int i = lower_bound(x_data.begin(), x_data.end(), x) - x_data.begin();
+			double x_left = x_data[i-1], x_right = x_data[i], y_left = log10(y_data[i-1]), y_right = log10(y_data[i]);
+			double dydx = (y_right - y_left) / (x_right - x_left);   // gradient
+			return pow(10.0, y_left + dydx * (x - x_left));   // linear interpolation
+		}
+	}
+
 	// returns uniformly distributed random number from interval [0, 1)
 	double get_rand()
 	{

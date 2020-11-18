@@ -43,6 +43,9 @@ namespace common {
 	// returns interpolated value at x from parallel arrays (x_data, y_data)
 	double interpolate(vector<double> &x_data, vector<double> &y_data, double x);
 
+	// returns interpolated value at x from arrays x_data, y_data, when y_data is log-scaled
+	double interpolate_logy(vector<double> &x_data, vector<double> &y_data, double x);
+
 	// returns uniformly distributed random number from interval [0, 1)
 	double get_rand();
 

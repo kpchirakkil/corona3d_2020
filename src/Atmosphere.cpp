@@ -240,6 +240,11 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 
 	for (int i=0; i<num_steps; i++)
 	{
+		if (active_parts == 0)
+		{
+			break;
+		}
+
 		if (output_pos_freq > 0 && (i+1) % output_pos_freq == 0)
 		{
 			double hrs = (i+1)*dt/3600.0;
@@ -274,18 +279,22 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 
 				if (my_parts[j]->get_radius() >= upper_bound && my_parts[j]->get_total_v() > v_esc_upper)
 				{
-					my_parts[j]->deactivate();
+					my_parts[j]->deactivate(to_string(i*dt) + "\t\tReached upper bound with escape velocity.\n\n");
 					//my_dist->init(my_parts[j]);
 					//added_particles++;
 					active_parts--;
 					escape_count++;
 				}
-				else if (my_parts[j]->get_radius() <= lower_bound || my_parts[j]->get_total_v() < v_esc_upper)
-				//else if (my_parts[j]->get_total_v() < v_esc_upper)
+				else if (my_parts[j]->get_radius() <= lower_bound)
 				{
-					my_parts[j]->deactivate();
+					my_parts[j]->deactivate(to_string(i*dt) + "\t\tDropped below lower bound.\n\n");
 					//my_dist->init(my_parts[j]);
 					//added_particles++;
+					active_parts--;
+				}
+				else if (my_parts[j]->get_total_v() < v_esc_upper)
+				{
+					my_parts[j]->deactivate(to_string(i*dt) + "\t\tVelocity dropped below upper bound escape velocity.\n\n");
 					active_parts--;
 				}
 			}
