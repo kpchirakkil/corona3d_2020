@@ -53,6 +53,11 @@ private:
 	vector<int> shell_velbins;
 	string shell_output_dir;
 
+	vector<int> stats_alt_bins;
+	vector<int> stats_dens_counts;
+	void update_stats();
+	void output_stats();
+
 	// output test particle trace data for selected particles
 	void output_collision_data();
 	void output_trace_data();

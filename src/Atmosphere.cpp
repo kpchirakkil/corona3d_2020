@@ -36,6 +36,14 @@ Atmosphere::Atmosphere(int n, int num_to_trace, Planet p, vector<shared_ptr<Part
 		my_dist->init(my_parts[i]);
 	}
 
+	stats_alt_bins.resize(60001);
+	stats_dens_counts.resize(60001);
+	for (int i=0; i<60001; i++)
+	{
+		stats_alt_bins[i] = i;
+		stats_dens_counts[i] = 0;
+	}
+
 	// pick trace particles if any
 	if (num_traced > 0)
 	{
@@ -227,7 +235,7 @@ void Atmosphere::output_velocity_distro(double bin_width, string datapath)
 // a lot of stuff in here needs to be changed to be dynamically determined at runtime
 void Atmosphere::run_simulation(double dt, int num_steps)
 {
-	double upper_bound = my_planet.get_radius() + 400e5;
+	double upper_bound = my_planet.get_radius() + 60000e5;
 	double lower_bound = my_planet.get_radius() + 80e5;
 	double v_esc_upper = sqrt(2.0 * constants::G * my_planet.get_mass() / upper_bound);
 	//double v_esc_lower = sqrt(2.0 * constants::G * my_planet.get_mass() / lower_bound);
@@ -250,9 +258,11 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 			double hrs = (i+1)*dt/3600.0;
 			double min = (hrs - (int)hrs)*60.0;
 			double sec = (min - (int)min)*60.0;
-			cout << (int)hrs << "h "<< (int)min << "m " << (int)sec << "s " << "\t Active: " << active_parts << "\t Escaped: " << escape_count << "\t Escape fraction: " << (double)escape_count / (double)(num_parts+added_particles) <<endl;
+			cout << (int)hrs << "h "<< (int)min << "m " << sec << "s " << "\t Active: " << active_parts << "\t Escaped: " << escape_count << "\t Escape fraction: " << (double)escape_count / (double)(num_parts+added_particles) <<endl;
 			//output_positions(output_pos_dir + "positions" + to_string(i+1) + ".out");
 		}
+
+		update_stats();
 
 		if (num_traced > 0)
 		{
@@ -292,9 +302,11 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 					//added_particles++;
 					active_parts--;
 				}
-				else if (my_parts[j]->get_total_v() < v_esc_upper)
+				else if (my_parts[j]->get_total_v() < 3e5) //v_esc_upper)
 				{
-					my_parts[j]->deactivate(to_string(i*dt) + "\t\tVelocity dropped below upper bound escape velocity.\n\n");
+					my_parts[j]->deactivate(to_string(i*dt) + "\t\tVelocity dropped below 3 km/s.\n\n"); //upper bound escape velocity.\n\n");
+					//my_dist->init(my_parts[j]);
+					//added_particles++;
 					active_parts--;
 				}
 			}
@@ -315,6 +327,8 @@ void Atmosphere::run_simulation(double dt, int num_steps)
 	{
 		output_shell_data();
 	}
+
+	output_stats();
 
 	cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;
 	cout << "Active particles remaining: " << active_parts << endl;
@@ -364,4 +378,34 @@ void Atmosphere::update_shell_data()
 			}
 		}
 	}
+}
+
+void Atmosphere::update_stats()
+{
+	for (int i=0; i<num_parts; i++)
+	{
+		if (my_parts[i]->get_active())
+		{
+			int index = int(1e-5*(my_parts[i]->get_radius()-my_planet.get_radius()));
+			if (index >= stats_alt_bins[0] && index <= stats_alt_bins.back() && my_parts[i]->get_x() > 0.0)
+			{
+				stats_dens_counts[index]++;
+			}
+		}
+	}
+}
+
+void Atmosphere::output_stats()
+{
+	//double volume = 4.0*constants::pi/3.0 * (pow(r_in_cm+1e5, 3.0) - pow(r_in_cm, 3.0));
+	//double weight = (rate * time_in_seconds) / double(total_spawned);
+
+	ofstream dens_out;
+	dens_out.open(output_pos_dir + "density1d.out");
+	int size = stats_alt_bins.size();
+	for (int i=0; i<size; i++)
+	{
+		dens_out << stats_alt_bins[i] << "\t" << stats_dens_counts[i] << "\n";
+	}
+	dens_out.close();
 }

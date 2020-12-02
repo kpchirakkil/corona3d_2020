@@ -71,7 +71,7 @@ void Distribution_Hot_H::init_H_Hplus_particle(shared_ptr<Particle> p)
 	double z = r*u;
 
 	// Hemispherical Adjustment For Dayside Photochemical Process
-	if (x > 0)
+	if (x < 0)
 	{
 		x = -x;
 	}
@@ -124,7 +124,7 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
 	double z = r*u;
 
 	// Hemispherical Adjustment For Dayside Photochemical Process
-	if (x > 0)
+	if (x < 0)
 	{
 		x = -x;
 	}
