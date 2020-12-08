@@ -20,53 +20,36 @@ using namespace std;
 
 class Atmosphere {
 public:
-	Atmosphere(int n, int num_to_trace, Planet p, vector<shared_ptr<Particle>> parts, shared_ptr<Distribution> dist, Background_Species bg, int pos_out_freq, string pos_out_dir);
+	Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet p, vector<shared_ptr<Particle>> parts, shared_ptr<Distribution> dist, Background_Species bg, int num_EDFs, int EDF_alts[]);
 	virtual ~Atmosphere();
 
-	void init_shell(double bottom_r, double top_r, int num_bins, double bin_width, string output_dir);
 	void output_positions(string datapath);
 	void output_altitude_distro(double bin_width, string datapath);
 	void output_velocity_distro(double bin_width, string datapath);
-	void run_simulation(double dt, int num_steps);
+	void run_simulation(double dt, int num_steps, double lower_bound, double upper_bound, int print_status_freq, int output_pos_freq, string output_pos_dir);
 
 private:
 	int num_parts;                      // number of particles initially spawned
 	int num_traced;                     // number of particles to output trace data on
+	string trace_dir;                   // directory to output particle trace data to
 	int active_parts;                   // number of active particles
 	Planet my_planet;                   // contains planet mass and radius
 	vector<shared_ptr<Particle>> my_parts;         // array of particles to be tracked
 	shared_ptr<Distribution> my_dist;              // distribution class to initialize particles
 	Background_Species bg_species;      // background species used for collisions
 	vector<int> traced_parts;           // indices of randomly selected trace particles
-	int output_pos_freq;                // number of timesteps between outputting all active particle positions
 	string output_pos_dir;              // directory to output active particles positions to
 
-	bool shell_active;
-	double shell_bottom;
-	double shell_top;
-	int shell_enter_top;
-	int shell_enter_bottom;
-	int shell_exit_top;
-	int shell_exit_bottom;
-	int shell_numvelbins;
-	int shell_velbinwidth;
-	vector<int> shell_velbins;
-	string shell_output_dir;
-
-	vector<int> stats_alt_bins;
 	vector<int> stats_dens_counts;
+	int stats_num_EDFs;
+	vector<int> stats_EDF_alts;
+	vector<vector<int>> stats_EDFs;
 	void update_stats();
-	void output_stats();
+	void output_stats(double dt, double rate, int total_parts);
 
 	// output test particle trace data for selected particles
 	void output_collision_data();
 	void output_trace_data();
-
-	// output accumulated shell data
-	void output_shell_data();
-
-	// update shell numbers (velocity distro, etc.)
-	void update_shell_data();
 };
 
 #endif /* ATMOSPHERE_HPP_ */

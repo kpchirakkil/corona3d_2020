@@ -56,11 +56,12 @@ int main(int argc, char* argv[])
 	string vel_infile = "";
 	string output_dir = "";
 	int num_traced = 0;
+	string trace_output_dir = "";
+	int num_EDFs = 0;
+	int EDF_alts_index = 0;
+	int print_status_freq = 0;
 	int output_pos_freq = 0;
 	string output_pos_dir = "";
-	double shell_bottom = 0.0;
-	double shell_top = 0.0;
-	string shell_output_dir = "";
 	double profile_bottom_alt = 0.0;
 	double profile_top_alt = 0.0;
 	string temp_profile_filename = "";
@@ -72,6 +73,8 @@ int main(int argc, char* argv[])
 	double ref_temp = 0.0;
 	double planet_mass = 0.0;
 	double planet_radius = 0.0;
+	double sim_lower_bound = 0.0;
+	double sim_upper_bound = 0.0;
 	Planet my_planet;
 	vector<shared_ptr<Particle>> parts;
 	shared_ptr<Distribution> dist;
@@ -139,6 +142,14 @@ int main(int argc, char* argv[])
 		{
 			num_traced = stoi(values[i]);
 		}
+		else if (parameters[i] == "trace_output_dir")
+		{
+			trace_output_dir = values[i];
+		}
+		else if (parameters[i] == "print_status_freq")
+		{
+			print_status_freq = stoi(values[i]);
+		}
 		else if (parameters[i] == "output_pos_freq")
 		{
 			output_pos_freq = stoi(values[i]);
@@ -146,18 +157,6 @@ int main(int argc, char* argv[])
 		else if (parameters[i] == "output_pos_dir")
 		{
 			output_pos_dir = values[i];
-		}
-		else if (parameters[i] == "shell_bottom")
-		{
-			shell_bottom = stod(values[i]);
-		}
-		else if (parameters[i] == "shell_top")
-		{
-			shell_top = stod(values[i]);
-		}
-		else if (parameters[i] == "shell_output_dir")
-		{
-			shell_output_dir = values[i];
 		}
 		else if (parameters[i] == "profile_bottom_alt")
 		{
@@ -203,10 +202,23 @@ int main(int argc, char* argv[])
 		{
 			planet_radius = stod(values[i]);
 		}
+		else if (parameters[i] == "sim_lower_bound")
+		{
+			sim_lower_bound = stod(values[i]);
+		}
+		else if (parameters[i] == "sim_upper_bound")
+		{
+			sim_upper_bound = stod(values[i]);
+		}
 		else if (parameters[i] == "num_bgparts")
 		{
 			num_bgparts = stoi(values[i]);
 			bg_params_index = i+1;
+		}
+		else if (parameters[i] == "num_EDFs")
+		{
+			num_EDFs = stoi(values[i]);
+			EDF_alts_index = i+1;
 		}
 	}
 
@@ -249,25 +261,28 @@ int main(int argc, char* argv[])
 	}
 	Background_Species bg_spec(num_bgparts, bg_config_files, my_planet, ref_temp, ref_height, temp_profile_filename, neut_densities_filename, profile_bottom_alt, profile_top_alt);
 
-	// initialize atmosphere and run simulation
+	//set up EDF altitudes to be passed to atmosphere class
+	int EDF_alts[num_EDFs];
+	for (int i=0; i<num_EDFs; i++)
+	{
+		EDF_alts[i] = stoi(values[EDF_alts_index + i]);
+	}
+
+	//set output directory paths to default if necessary
 	if (output_pos_dir == "")
 	{
 		output_pos_dir = output_dir;
 	}
-	Atmosphere my_atmosphere(num_testparts, num_traced, my_planet, parts, dist, bg_spec, output_pos_freq, output_pos_dir);
-	my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist.out");
-	my_atmosphere.output_altitude_distro(100000.0, output_dir + "altdist.out");
-
-	if (shell_bottom != 0.0 && shell_top != 0.0)
+	if (trace_output_dir == "")
 	{
-		if (shell_output_dir == "")
-		{
-			shell_output_dir = output_dir;
-		}
-		my_atmosphere.init_shell(my_planet.get_radius()+shell_bottom, my_planet.get_radius()+shell_top, 400, 10000.0, shell_output_dir);
+		trace_output_dir = output_dir;
 	}
 
-	my_atmosphere.run_simulation(dt, timesteps);
+	// initialize atmosphere and run simulation
+	Atmosphere my_atmosphere(num_testparts, num_traced, trace_output_dir, my_planet, parts, dist, bg_spec, num_EDFs, EDF_alts);
+	my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist.out");
+	my_atmosphere.output_altitude_distro(100000.0, output_dir + "altdist.out");
+	my_atmosphere.run_simulation(dt, timesteps, sim_lower_bound, sim_upper_bound, print_status_freq, output_pos_freq, output_pos_dir);
 	my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist2.out");
 	my_atmosphere.output_altitude_distro(100000000.0, output_dir + "altdist2.out");
 

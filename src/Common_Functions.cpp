@@ -38,7 +38,7 @@ static uniform_real_distribution<double> rand_dist(0.0, 1.0);  // dist to be use
 namespace constants {
 	const double pi    = M_PIl;            // pi [unitless]
 	const double twopi = 2*pi;             // 2*pi [unitless]
-	const double k_b   = 1.3806504e-16;    // Boltzmann's Constant [erg/K]
+	const double k_b   = 1.380649e-16;     // Boltzmann's Constant [erg/K]
 	const double c     = 29979245800.0;    // Speed of Light in Vacuum [cm/s]
 	const double G     = 6.67430e-8;       // Gravitational Constant [cm^3/g/s^2]
 	const double amu   = 1.660538782e-24;  // Atomic Mass Unit [g]
