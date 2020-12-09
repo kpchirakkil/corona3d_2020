@@ -62,6 +62,7 @@ int main(int argc, char* argv[])
 	int print_status_freq = 0;
 	int output_pos_freq = 0;
 	string output_pos_dir = "";
+	string output_stats_dir = "";
 	double profile_bottom_alt = 0.0;
 	double profile_top_alt = 0.0;
 	string temp_profile_filename = "";
@@ -157,6 +158,10 @@ int main(int argc, char* argv[])
 		else if (parameters[i] == "output_pos_dir")
 		{
 			output_pos_dir = values[i];
+		}
+		else if (parameters[i] == "output_stats_dir")
+		{
+			output_stats_dir = values[i];
 		}
 		else if (parameters[i] == "profile_bottom_alt")
 		{
@@ -277,12 +282,16 @@ int main(int argc, char* argv[])
 	{
 		trace_output_dir = output_dir;
 	}
+	if (output_stats_dir == "")
+	{
+		output_stats_dir = output_dir;
+	}
 
 	// initialize atmosphere and run simulation
 	Atmosphere my_atmosphere(num_testparts, num_traced, trace_output_dir, my_planet, parts, dist, bg_spec, num_EDFs, EDF_alts);
 	my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist.out");
 	my_atmosphere.output_altitude_distro(100000.0, output_dir + "altdist.out");
-	my_atmosphere.run_simulation(dt, timesteps, sim_lower_bound, sim_upper_bound, print_status_freq, output_pos_freq, output_pos_dir);
+	my_atmosphere.run_simulation(dt, timesteps, sim_lower_bound, sim_upper_bound, print_status_freq, output_pos_freq, output_pos_dir, output_stats_dir);
 	my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist2.out");
 	my_atmosphere.output_altitude_distro(100000000.0, output_dir + "altdist2.out");
 

@@ -16,6 +16,7 @@ public:
 	virtual ~Distribution_MB();
 	void init(shared_ptr<Particle> p);
 	void init_vonly(shared_ptr<Particle> p, double v_avg);
+	double get_global_rate();
 
 };
 

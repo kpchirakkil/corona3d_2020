@@ -15,6 +15,7 @@ public:
 	Distribution_Hot_H(Planet my_p, double ref_h, double ref_T);
 	virtual ~Distribution_Hot_H();
 	void init(shared_ptr<Particle> p);
+	double get_global_rate();
 
 private:
 	double m_H;                // [g] neutral H mass
@@ -23,6 +24,7 @@ private:
 	double m_CO;               // [g] CO mass
 	double H_Hplus_rate_coeff; // [cm^3/s] rate coefficient for H+ + H -> H* + H+
 	double HCOplus_DR_rate_coeff;  // [cm^3/s] rate coefficient for HCO+ + e -> H* + CO
+	double global_rate;    // [s^-1] set by chosen production method; calling function needs to divide this by 2 to get hemispherical rate
 	vector<vector<double>> H_profile;
 	vector<vector<double>> Hplus_profile;
 	vector<vector<double>> HCOplus_profile;

@@ -16,6 +16,7 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	m_CO = 28.0101*constants::amu;
 	H_Hplus_rate_coeff = 8.7e-10;
 	HCOplus_DR_rate_coeff = 2.7e-7;
+	global_rate = 0.0;
 
 	temp_profile.resize(4);
 	H_profile.resize(2);
@@ -296,6 +297,13 @@ double Distribution_Hot_H::get_new_radius_H_Hplus()
 	return H_Hplus_CDF[1][k] + my_planet.get_radius();
 }
 
+// returns global production rate (needs to be set by chosen production method)
+// calling function must divide this by 2 if only hemispherical rate is needed
+double Distribution_Hot_H::get_global_rate()
+{
+	return global_rate;
+}
+
 // generate H_Hplus_CDF for given altitude range using imported density/temp profiles
 void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 {
@@ -468,4 +476,5 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 	}
 	double global_rate_HCOplus_DR = rate_sum*bin_size * 4.0 * constants::pi * pow(my_planet.get_radius()+upper_alt, 2.0);
 	cout << "Global hot H production rate from HCO+ DR:\n" << global_rate_HCOplus_DR << " per second\n";
+	global_rate = global_rate_HCOplus_DR;
 }

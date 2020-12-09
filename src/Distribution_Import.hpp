@@ -19,6 +19,7 @@ public:
 	Distribution_Import(Planet my_p, double ref_h, double ref_T, string pos_file, string vel_file);
 	virtual ~Distribution_Import();
 	void init(shared_ptr<Particle> p);
+	double get_global_rate();
 
 private:
 	int num_particles;

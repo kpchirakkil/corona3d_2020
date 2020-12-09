@@ -45,3 +45,8 @@ void Distribution_MB::init_vonly(shared_ptr<Particle> p, double v_avg)
 
 	p->init_particle_vonly(v[0], v[1], v[2]);
 }
+
+double Distribution_MB::get_global_rate()
+{
+	return 0.0;
+}

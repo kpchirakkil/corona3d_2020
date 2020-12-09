@@ -17,6 +17,7 @@ public:
 	Distribution(Planet my_p, double ref_h, double ref_T);
 	virtual ~Distribution();
 	virtual void init(shared_ptr<Particle> p) = 0;
+	virtual double get_global_rate() = 0;
 
 protected:
 	Planet my_planet;

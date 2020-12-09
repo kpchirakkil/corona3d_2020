@@ -10,7 +10,7 @@
 Distribution_Hot_O::Distribution_Hot_O(Planet my_p, double ref_h, double ref_T)
 	: Distribution(my_p, ref_h, ref_T) {
 
-	DR160 = 600e12;
+	DR160 = 600.0;
 	H_DR = 19e5;
 	T_ion = 400.0;
 	T_e = 1600.0;
@@ -113,4 +113,9 @@ double Distribution_Hot_O::E_rot(double B, double T)
 		}
 	}
 	return j*(j+1.0)*B;
+}
+
+double Distribution_Hot_O::get_global_rate()
+{
+	return H_DR*DR160*4.0*constants::pi*pow((3557e5+H_DR), 2.0);
 }

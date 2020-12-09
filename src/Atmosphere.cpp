@@ -191,21 +191,21 @@ void Atmosphere::output_velocity_distro(double bin_width, string datapath)
 
 // iterate equation of motion and check for collisions for each active particle being tracked
 // a lot of stuff in here needs to be changed to be dynamically determined at runtime
-void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, double upper_bound, int print_status_freq, int output_pos_freq, string output_pos_dir)
+void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, double upper_bound, int print_status_freq, int output_pos_freq, string output_pos_dir, string output_stats_dir)
 {
 	upper_bound = my_planet.get_radius() + upper_bound;
 	lower_bound = my_planet.get_radius() + lower_bound;
 	double v_esc_upper = sqrt(2.0 * constants::G * my_planet.get_mass() / upper_bound);
 	//double v_esc_lower = sqrt(2.0 * constants::G * my_planet.get_mass() / lower_bound);
 	int escape_count = 0;
-	int added_particles = 0;  // increment this if re-initializing deactivated particles
-
+	int added_parts = 0;  // increment this if re-initializing deactivated particles
+	double global_rate = my_dist->get_global_rate();
 	double k = my_planet.get_k_g();
 	//double v_Obg = sqrt(8.0*constants::k_b*277.6 / (constants::pi*15.9994*constants::amu));
 	cout << "Simulating Particle Transport...\n";
 
-	double vol_at_400 = 2.0*constants::pi/3.0 * (pow(my_planet.get_radius() + 401e5, 3.0) - pow(my_planet.get_radius() + 400e5, 3.0));
-    double dens_at_400 = 0.0;
+	//double vol_at_400 = 2.0*constants::pi/3.0 * (pow(my_planet.get_radius() + 401e5, 3.0) - pow(my_planet.get_radius() + 400e5, 3.0));
+    //double dens_at_400 = 0.0;
 	for (int i=0; i<num_steps; i++)
 	{
 		if (active_parts == 0)
@@ -218,10 +218,10 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 			double hrs = (i+1)*dt/3600.0;
 			double min = (hrs - (int)hrs)*60.0;
 			double sec = (min - (int)min)*60.0;
-			cout << (int)hrs << "h "<< (int)min << "m " << sec << "s " << "\t Active: " << active_parts << "\t Escaped: " << escape_count << "\t Escape fraction: " << (double)escape_count / (double)(num_parts+added_particles) <<endl;
+			cout << (int)hrs << "h "<< (int)min << "m " << sec << "s " << "\t Active: " << active_parts << "\t Escaped: " << escape_count << "\t Escape fraction: " << (double)escape_count / (double)(num_parts+added_parts) <<endl;
 
-			dens_at_400 = (dt*(1.9097e26/2.0)/(double)(num_parts+added_particles)*stats_dens_counts[400]) / vol_at_400;
-			cout << "Average density at 400km: " << dens_at_400 << " per cubic cm\n";
+			//dens_at_400 = (dt*(global_rate/2.0)/(double)(num_parts+added_parts)*stats_dens_counts[400]) / vol_at_400;
+			//cout << "Average density at 400km: " << dens_at_400 << " per cubic cm\n";
 		}
 
 		if (output_pos_freq > 0 && (i+1) % output_pos_freq == 0)
@@ -258,7 +258,7 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 				{
 					my_parts[j]->deactivate(to_string(i*dt) + "\t\tReached upper bound with escape velocity.\n\n");
 					//my_dist->init(my_parts[j]);
-					//added_particles++;
+					//added_parts++;
 					active_parts--;
 					escape_count++;
 				}
@@ -266,14 +266,14 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 				{
 					my_parts[j]->deactivate(to_string(i*dt) + "\t\tDropped below lower bound.\n\n");
 					//my_dist->init(my_parts[j]);
-					//added_particles++;
+					//added_parts++;
 					active_parts--;
 				}
 				else if (my_parts[j]->get_total_v() < v_esc_upper)
 				{
 					my_parts[j]->deactivate(to_string(i*dt) + "\t\tVelocity dropped below upper bound escape velocity.\n\n");
 					//my_dist->init(my_parts[j]);
-					//added_particles++;
+					//added_parts++;
 					active_parts--;
 				}
 			}
@@ -285,12 +285,14 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 		output_collision_data();
 	}
 
-	output_stats(dt, 1.9097e26/2, num_parts+added_particles);
+	output_stats(dt, (my_dist->get_global_rate() / 2.0), num_parts+added_parts, output_stats_dir);
 
 	cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;
 	cout << "Active particles remaining: " << active_parts << endl;
 	cout << "Number of escaped particles: " << escape_count << endl;
-	cout << "Fraction of escaped particles: " << (double)escape_count / (double)(num_parts+added_particles) << endl;
+	cout << "Total particles spawned: " << num_parts + added_parts << endl;
+	cout << "Fraction of escaped particles: " << (double)escape_count / (double)(num_parts+added_parts) << endl;
+	cout << "Global production rate: " << my_dist->get_global_rate() << endl;
 }
 
 void Atmosphere::update_stats()
@@ -324,14 +326,13 @@ void Atmosphere::update_stats()
 	}
 }
 
-void Atmosphere::output_stats(double dt, double rate, int total_parts)
+void Atmosphere::output_stats(double dt, double rate, int total_parts, string output_dir)
 {
 	double volume = 0.0;
 	double r_in_cm = 0.0;
 	double dens = 0.0;
 	ofstream dens_out, EDF_out;
-	dens_out.open(output_pos_dir + "density1d.out");
-	EDF_out.open(output_pos_dir + "EDF_1.out");
+	dens_out.open(output_dir + "density1d.out");
 
 	dens_out << "#alt[km]\tdensity[cm-3]\n";
 	int size = stats_dens_counts.size();
@@ -347,11 +348,11 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts)
 
 	for (int i=0; i<stats_num_EDFs; i++)
 	{
-		EDF_out.open(output_pos_dir + "EDF_" + to_string(stats_EDF_alts[i]) + "km.out");
+		EDF_out.open(output_dir + "EDF_" + to_string(stats_EDF_alts[i]) + "km.out");
 		size = stats_EDFs[i].size();
 		for (int j=0; j<size; j++)
 		{
-			EDF_out << (double)i*0.01 << "\t" << stats_EDFs[i][j] << "\n";
+			EDF_out << (double)j*0.01 << "\t" << stats_EDFs[i][j] << "\n";
 		}
 		EDF_out.close();
 	}

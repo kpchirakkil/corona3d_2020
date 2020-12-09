@@ -26,7 +26,7 @@ public:
 	void output_positions(string datapath);
 	void output_altitude_distro(double bin_width, string datapath);
 	void output_velocity_distro(double bin_width, string datapath);
-	void run_simulation(double dt, int num_steps, double lower_bound, double upper_bound, int print_status_freq, int output_pos_freq, string output_pos_dir);
+	void run_simulation(double dt, int num_steps, double lower_bound, double upper_bound, int print_status_freq, int output_pos_freq, string output_pos_dir, string output_stats_dir);
 
 private:
 	int num_parts;                      // number of particles initially spawned
@@ -38,14 +38,13 @@ private:
 	shared_ptr<Distribution> my_dist;              // distribution class to initialize particles
 	Background_Species bg_species;      // background species used for collisions
 	vector<int> traced_parts;           // indices of randomly selected trace particles
-	string output_pos_dir;              // directory to output active particles positions to
 
 	vector<int> stats_dens_counts;
 	int stats_num_EDFs;
 	vector<int> stats_EDF_alts;
 	vector<vector<int>> stats_EDFs;
 	void update_stats();
-	void output_stats(double dt, double rate, int total_parts);
+	void output_stats(double dt, double rate, int total_parts, string output_dir);
 
 	// output test particle trace data for selected particles
 	void output_collision_data();

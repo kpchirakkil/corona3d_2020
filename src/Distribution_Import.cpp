@@ -49,3 +49,8 @@ void Distribution_Import::init(shared_ptr<Particle> p)
 		cout << "End of available particles in imported distribution met!" << endl;
 	}
 }
+
+double Distribution_Import::get_global_rate()
+{
+	return 0.0;
+}
