@@ -73,7 +73,7 @@ void Atmosphere::output_altitude_distro(double bin_width, string datapath)
 	double max_radius = 0.0;
 	for (int i=0; i<num_parts; i++)
 	{
-		if (my_parts[i]->get_active())
+		if (my_parts[i]->is_active())
 		{
 			if (my_parts[i]->get_radius() > max_radius)
 			{
@@ -86,7 +86,7 @@ void Atmosphere::output_altitude_distro(double bin_width, string datapath)
 
 	for (int i=0; i<num_parts; i++)
 	{
-		if (my_parts[i]->get_active())
+		if (my_parts[i]->is_active())
 		{
 			alt = my_parts[i]->get_radius() - my_planet.get_radius();
 			nb = (int)(alt / bin_width);
@@ -133,7 +133,7 @@ void Atmosphere::output_trace_data()
 {
 	for (int i=0; i<num_traced; i++)
 	{
-		if (my_parts[traced_parts[i]]->get_active())
+		if (my_parts[traced_parts[i]]->is_active())
 		{
 			ofstream position_file;
 			position_file.open(trace_dir + "part" + to_string(traced_parts[i]) + "_positions.out", ios::out | ios::app);
@@ -157,7 +157,7 @@ void Atmosphere::output_velocity_distro(double bin_width, string datapath)
 	double max_v = 0.0;
 	for (int i=0; i<num_parts; i++)
 	{
-		if (my_parts[i]->get_active())
+		if (my_parts[i]->is_active())
 		{
 			double total_v = my_parts[i]->get_total_v();
 			if (total_v > max_v)
@@ -171,7 +171,7 @@ void Atmosphere::output_velocity_distro(double bin_width, string datapath)
 
 	for (int i=0; i<num_parts; i++)
 	{
-		if (my_parts[i]->get_active())
+		if (my_parts[i]->is_active())
 		{
 			v = my_parts[i]->get_total_v();
 			nb = (int)(v / bin_width);
@@ -191,8 +191,11 @@ void Atmosphere::output_velocity_distro(double bin_width, string datapath)
 
 // iterate equation of motion and check for collisions for each active particle being tracked
 // a lot of stuff in here needs to be changed to be dynamically determined at runtime
-void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, double upper_bound, int print_status_freq, int output_pos_freq, string output_pos_dir, string output_stats_dir)
+void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, double upper_bound, double avg_thermal_v, int print_status_freq, int output_pos_freq, string output_pos_dir, string output_stats_dir)
 {
+	int thermalized_count = 0;
+	int thermal_escape_count = 0;
+
 	upper_bound = my_planet.get_radius() + upper_bound;
 	lower_bound = my_planet.get_radius() + lower_bound;
 	double v_esc_upper = sqrt(2.0 * constants::G * my_planet.get_mass() / upper_bound);
@@ -238,7 +241,7 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 
 		for (int j=0; j<num_parts; j++)
 		{
-			if (my_parts[j]->get_active())
+			if (my_parts[j]->is_active())
 			{
 				my_parts[j]->do_timestep(dt, k);
 
@@ -247,7 +250,7 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 					my_parts[j]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta(), i*dt, my_planet.get_radius());
 				}
 
-				// deactivation criteria...need to incorporate into configuration file
+				// deactivation criteria from Justin's original Hot O simulation code (must also uncomment v_Obg declaration above to use)
 				//if (my_parts[j]->get_radius() < (my_planet.get_radius() + 900e5) && (my_parts[j]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[j]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e5))))
 				//{
 				//	my_parts[j]->deactivate();
@@ -261,6 +264,11 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 					//added_parts++;
 					active_parts--;
 					escape_count++;
+
+					if (my_parts[j]->is_thermalized())
+					{
+						thermal_escape_count++;
+					}
 				}
 				else if (my_parts[j]->get_radius() <= lower_bound)
 				{
@@ -269,12 +277,23 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 					//added_parts++;
 					active_parts--;
 				}
-				else if (my_parts[j]->get_total_v() < v_esc_upper)
+				else if (my_parts[j]->get_total_v() < avg_thermal_v)
 				{
 					my_parts[j]->deactivate(to_string(i*dt) + "\t\tVelocity dropped below upper bound escape velocity.\n\n");
 					//my_dist->init(my_parts[j]);
 					//added_parts++;
 					active_parts--;
+
+					// for tracking thermalized particles instead of deactivating
+					if (my_parts[j]->is_thermalized())
+					{
+						continue;
+					}
+					else
+					{
+						my_parts[j]->set_thermalized();
+						thermalized_count++;
+					}
 				}
 			}
 		}
@@ -285,14 +304,17 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 		output_collision_data();
 	}
 
-	output_stats(dt, (my_dist->get_global_rate() / 2.0), num_parts+added_parts, output_stats_dir);
+	output_stats(dt, (global_rate / 2.0), num_parts+added_parts, output_stats_dir);
 
 	cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;
 	cout << "Active particles remaining: " << active_parts << endl;
 	cout << "Number of escaped particles: " << escape_count << endl;
 	cout << "Total particles spawned: " << num_parts + added_parts << endl;
 	cout << "Fraction of escaped particles: " << (double)escape_count / (double)(num_parts+added_parts) << endl;
-	cout << "Global production rate: " << my_dist->get_global_rate() << endl;
+	cout << "Global production rate: " << global_rate << endl;
+
+	cout << "Total thermalized particles: " << thermalized_count << endl;
+	cout << "Escaped thermalized particles: " << thermal_escape_count << endl;
 }
 
 void Atmosphere::update_stats()
@@ -303,7 +325,7 @@ void Atmosphere::update_stats()
 
 	for (int i=0; i<num_parts; i++)
 	{
-		if (my_parts[i]->get_active())
+		if (my_parts[i]->is_active())
 		{
 			index = (int)(1e-5*(my_parts[i]->get_radius()-my_planet.get_radius()));
 			if (index >= 0 && index <= 100000 && my_parts[i]->get_x() > 0.0)
@@ -328,9 +350,11 @@ void Atmosphere::update_stats()
 
 void Atmosphere::output_stats(double dt, double rate, int total_parts, string output_dir)
 {
+	vector<double> normed_EDF;
 	double volume = 0.0;
 	double r_in_cm = 0.0;
 	double dens = 0.0;
+	int sum = 0;
 	ofstream dens_out, EDF_out;
 	dens_out.open(output_dir + "density1d.out");
 
@@ -349,10 +373,28 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 	for (int i=0; i<stats_num_EDFs; i++)
 	{
 		EDF_out.open(output_dir + "EDF_" + to_string(stats_EDF_alts[i]) + "km.out");
+		EDF_out << "#energy[eV]\tdistribution[cm-3 eV-1]\n";
+		sum = 0;
+
 		size = stats_EDFs[i].size();
+		normed_EDF.clear();
+		normed_EDF.reserve(size);
 		for (int j=0; j<size; j++)
 		{
-			EDF_out << (double)j*0.01 << "\t" << stats_EDFs[i][j] << "\n";
+			sum += stats_EDFs[i][j];
+		}
+		for (int j=0; j<size; j++)
+		{
+			normed_EDF[j] = (double)stats_EDFs[i][j] / (double)sum;
+		}
+
+		r_in_cm = 1e5*(double)stats_EDF_alts[i] + my_planet.get_radius();
+		volume = 2.0*constants::pi/3.0 * (pow(r_in_cm+1e5, 3.0) - pow(r_in_cm, 3.0));
+		dens = (dt*rate/(double)total_parts*sum) / volume;
+
+		for (int j=0; j<size; j++)
+		{
+			EDF_out << (double)j*0.01 << "\t\t" << normed_EDF[j]*(dens/0.01) << "\n";
 		}
 		EDF_out.close();
 	}

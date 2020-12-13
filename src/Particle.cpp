@@ -15,6 +15,7 @@
 
 Particle::Particle()
 {
+	thermalized = false;
 	active = true;
 	traced = false;
 	radius = 0.0;
@@ -142,12 +143,17 @@ void Particle::dump_collision_log(string filename)
 	outfile.close();
 }
 
-bool Particle::get_active()
+bool Particle::is_thermalized()
+{
+	return thermalized;
+}
+
+bool Particle::is_active()
 {
 	return active;
 }
 
-bool Particle::get_traced()
+bool Particle::is_traced()
 {
 	return traced;
 }
@@ -273,4 +279,9 @@ void Particle::init_particle_vonly_MB(double v_avg)
 void Particle::set_traced()
 {
 	traced = true;
+}
+
+void Particle::set_thermalized()
+{
+	thermalized = true;
 }

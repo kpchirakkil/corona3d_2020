@@ -287,11 +287,14 @@ int main(int argc, char* argv[])
 		output_stats_dir = output_dir;
 	}
 
+	// used to determine when test particles are thermalized
+	double avg_thermal_v = sqrt(8.0*constants::k_b*ref_temp/(constants::pi*parts[0]->get_mass()));
+
 	// initialize atmosphere and run simulation
 	Atmosphere my_atmosphere(num_testparts, num_traced, trace_output_dir, my_planet, parts, dist, bg_spec, num_EDFs, EDF_alts);
 	my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist.out");
 	my_atmosphere.output_altitude_distro(100000.0, output_dir + "altdist.out");
-	my_atmosphere.run_simulation(dt, timesteps, sim_lower_bound, sim_upper_bound, print_status_freq, output_pos_freq, output_pos_dir, output_stats_dir);
+	my_atmosphere.run_simulation(dt, timesteps, sim_lower_bound, sim_upper_bound, avg_thermal_v, print_status_freq, output_pos_freq, output_pos_dir, output_stats_dir);
 	my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist2.out");
 	my_atmosphere.output_altitude_distro(100000000.0, output_dir + "altdist2.out");
 

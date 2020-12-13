@@ -23,8 +23,9 @@ public:
 	void do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r);
 	void do_timestep(double dt, double k_g);
 	void dump_collision_log(string filename);
-	bool get_active();
-	bool get_traced();
+	bool is_active();
+	bool is_thermalized();
+	bool is_traced();
 	double get_radius();
 	double get_inverse_radius();
 	double get_previous_radius();
@@ -40,8 +41,10 @@ public:
 	void init_particle_MB(double r, double v_avg); // init particle from MB distribution
 	void init_particle_vonly_MB(double v_avg);     // init with velocity only for collision partners
 	void set_traced();
+	void set_thermalized();
 
 protected:
+	bool thermalized;               // flag for whether particle has been thermalized
 	bool active;                    // flag for whether particle is active, i.e. should still be considered in the simulation
 	bool traced;                    // flag for whether particle is traced through simulation
 	double radius;                  // radius from center of planet	[cm]
