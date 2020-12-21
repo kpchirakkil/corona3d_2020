@@ -195,6 +195,7 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 {
 	int thermalized_count = 0;
 	int thermal_escape_count = 0;
+	int night_escape_count = 0;
 	double v_esc_current = 0.0;
 	upper_bound = my_planet.get_radius() + upper_bound;
 	lower_bound = my_planet.get_radius() + lower_bound;
@@ -261,13 +262,22 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 				// escape velocity at current radius
 				v_esc_current = sqrt(2.0 * constants::G * my_planet.get_mass() / my_parts[j]->get_radius());
 
-				if (my_parts[j]->get_radius() >= upper_bound && my_parts[j]->get_total_v() > v_esc_upper)
+				if (my_parts[j]->get_radius() >= upper_bound && my_parts[j]->get_total_v() >= v_esc_upper)
 				{
-					my_parts[j]->deactivate(to_string(i*dt) + "\t\tReached upper bound with escape velocity.\n\n");
-					//my_dist->init(my_parts[j]);
-					//added_parts++;
-					active_parts--;
-					escape_count++;
+					if (my_parts[j]->get_x() > 0.0)
+					{
+						my_parts[j]->deactivate(to_string(i*dt) + "\t\tReached upper bound with escape velocity.\n\n");
+						//my_dist->init(my_parts[j]);
+						//added_parts++;
+						active_parts--;
+						escape_count++;
+					}
+					else
+					{
+						my_parts[j]->deactivate(to_string(i*dt) + "\t\tEscaped from night side.\n\n");
+						active_parts--;
+						night_escape_count++;
+					}
 
 					if (my_parts[j]->is_thermalized())
 					{
@@ -319,6 +329,7 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 
 	cout << "Total thermalized particles: " << thermalized_count << endl;
 	cout << "Escaped thermalized particles: " << thermal_escape_count << endl;
+	cout << "Number of night side escaping particles: " << night_escape_count << endl;
 }
 
 void Atmosphere::update_stats()
