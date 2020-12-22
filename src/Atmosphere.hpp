@@ -39,10 +39,10 @@ private:
 	Background_Species bg_species;      // background species used for collisions
 	vector<int> traced_parts;           // indices of randomly selected trace particles
 
-	vector<int> stats_dens_counts;
+	vector<vector<int>> stats_dens_counts;
 	int stats_num_EDFs;
 	vector<int> stats_EDF_alts;
-	vector<vector<int>> stats_EDFs;
+	vector<vector<vector<int>>> stats_EDFs;
 	void update_stats();
 	void output_stats(double dt, double rate, int total_parts, string output_dir);
 

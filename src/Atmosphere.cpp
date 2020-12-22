@@ -28,21 +28,28 @@ Atmosphere::Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet 
 	//initialize stats tracking vectors
 	stats_num_EDFs = num_EDFs;
 	stats_EDF_alts.resize(stats_num_EDFs);
-	stats_EDFs.resize(stats_num_EDFs);
+	stats_EDFs.resize(2);   // index 0 is day side EDFs, 1 is night side
+	stats_EDFs[0].resize(stats_num_EDFs);
+	stats_EDFs[1].resize(stats_num_EDFs);
 	for (int i=0; i<stats_num_EDFs; i++)
 	{
 		stats_EDF_alts[i] = EDF_alts[i];
-		stats_EDFs[i].resize(1001);
+		stats_EDFs[0][i].resize(1001);
+		stats_EDFs[1][i].resize(1001);
 		for (int j=0; j<1001; j++)
 		{
-			stats_EDFs[i][j] = 0;
+			stats_EDFs[0][i][j] = 0;
+			stats_EDFs[1][i][j] = 0;
 		}
 	}
 
-	stats_dens_counts.resize(100001);
+	stats_dens_counts.resize(2);  // index 0 is day side, 1 is night side
+	stats_dens_counts[0].resize(100001);
+	stats_dens_counts[1].resize(100001);
 	for (int i=0; i<100001; i++)
 	{
-		stats_dens_counts[i] = 0;
+		stats_dens_counts[0][i] = 0;
+		stats_dens_counts[1][i] = 0;
 	}
 
 	// pick trace particles if any
@@ -196,12 +203,12 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 	int thermalized_count = 0;
 	int thermal_escape_count = 0;
 	int night_escape_count = 0;
+	int day_escape_count = 0;
 	double v_esc_current = 0.0;
 	upper_bound = my_planet.get_radius() + upper_bound;
 	lower_bound = my_planet.get_radius() + lower_bound;
 	double v_esc_upper = sqrt(2.0 * constants::G * my_planet.get_mass() / upper_bound);
 	//double v_esc_lower = sqrt(2.0 * constants::G * my_planet.get_mass() / lower_bound);
-	int escape_count = 0;
 	int added_parts = 0;  // increment this if re-initializing deactivated particles
 	double global_rate = my_dist->get_global_rate();
 	double k = my_planet.get_k_g();
@@ -209,8 +216,6 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 
 	cout << "Simulating Particle Transport...\n";
 
-	//double vol_at_400 = 2.0*constants::pi/3.0 * (pow(my_planet.get_radius() + 401e5, 3.0) - pow(my_planet.get_radius() + 400e5, 3.0));
-    //double dens_at_400 = 0.0;
 	for (int i=0; i<num_steps; i++)
 	{
 		if (active_parts == 0)
@@ -223,10 +228,7 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 			double hrs = (i+1)*dt/3600.0;
 			double min = (hrs - (int)hrs)*60.0;
 			double sec = (min - (int)min)*60.0;
-			cout << (int)hrs << "h "<< (int)min << "m " << sec << "s " << "\t Active: " << active_parts << "\t Escaped: " << escape_count << "\t Escape fraction: " << (double)escape_count / (double)(num_parts+added_parts) <<endl;
-
-			//dens_at_400 = (dt*(global_rate/2.0)/(double)(num_parts+added_parts)*stats_dens_counts[400]) / vol_at_400;
-			//cout << "Average density at 400km: " << dens_at_400 << " per cubic cm\n";
+			cout << (int)hrs << "h "<< (int)min << "m " << sec << "s " << "\t Active: " << active_parts << "\tDay escaped: " << day_escape_count << "\tDay fraction: " << (double)day_escape_count / (double)(num_parts+added_parts) << "\tNight escaped: " << night_escape_count <<  "\tNight fraction: " << (double)night_escape_count / (double)(num_parts+added_parts) <<endl;
 		}
 
 		if (output_pos_freq > 0 && (i+1) % output_pos_freq == 0)
@@ -266,15 +268,15 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 				{
 					if (my_parts[j]->get_x() > 0.0)
 					{
-						my_parts[j]->deactivate(to_string(i*dt) + "\t\tReached upper bound with escape velocity.\n\n");
+						my_parts[j]->deactivate(to_string(i*dt) + "\t\tReached upper bound on day side with at least escape velocity.\n\n");
 						//my_dist->init(my_parts[j]);
 						//added_parts++;
 						active_parts--;
-						escape_count++;
+						day_escape_count++;
 					}
 					else
 					{
-						my_parts[j]->deactivate(to_string(i*dt) + "\t\tEscaped from night side.\n\n");
+						my_parts[j]->deactivate(to_string(i*dt) + "\t\tReached upper bound on night side with at least escape velocity.\n\n");
 						active_parts--;
 						night_escape_count++;
 					}
@@ -322,14 +324,14 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 
 	cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;
 	cout << "Active particles remaining: " << active_parts << endl;
-	cout << "Number of escaped particles: " << escape_count << endl;
+	cout << "Number of day side escaped particles: " << day_escape_count << endl;
+	cout << "Number of night side escaped particles: " << night_escape_count << endl;
 	cout << "Total particles spawned: " << num_parts + added_parts << endl;
-	cout << "Fraction of escaped particles: " << (double)escape_count / (double)(num_parts+added_parts) << endl;
+	cout << "Day side fraction of escaped particles: " << (double)day_escape_count / (double)(num_parts+added_parts) << endl;
+	cout << "Night side fraction of escaped particles: " << (double)night_escape_count / (double)(num_parts+added_parts) << endl;
 	cout << "Global production rate: " << global_rate << endl;
-
 	cout << "Total thermalized particles: " << thermalized_count << endl;
 	cout << "Escaped thermalized particles: " << thermal_escape_count << endl;
-	cout << "Number of night side escaping particles: " << night_escape_count << endl;
 }
 
 void Atmosphere::update_stats()
@@ -343,9 +345,16 @@ void Atmosphere::update_stats()
 		if (my_parts[i]->is_active())
 		{
 			index = (int)(1e-5*(my_parts[i]->get_radius()-my_planet.get_radius()));
-			if (index >= 0 && index <= 100000 && my_parts[i]->get_x() > 0.0)
+			if (index >= 0 && index <= 100000)
 			{
-				stats_dens_counts[index]++;
+				if (my_parts[i]->get_x() > 0.0)
+				{
+					stats_dens_counts[0][index]++;
+				}
+				else
+				{
+					stats_dens_counts[1][index]++;
+				}
 			}
 			for (int j=0; j<stats_num_EDFs; j++)
 			{
@@ -353,9 +362,16 @@ void Atmosphere::update_stats()
 				{
 					e = 0.5*my_parts[i]->get_mass()*pow(my_parts[i]->get_total_v(), 2.0)/constants::ergev;
 					e_index = (int)(100.0*e);
-					if (e_index >= 0 && e_index <= 1000 && my_parts[i]->get_x() > 0.0)
+					if (e_index >= 0 && e_index <= 1000)
 					{
-						stats_EDFs[j][e_index]++;
+						if (my_parts[i]->get_x() > 0.0)
+						{
+							stats_EDFs[0][j][e_index]++;
+						}
+						else
+						{
+							stats_EDFs[1][j][e_index]++;
+						}
 					}
 				}
 			}
@@ -365,52 +381,70 @@ void Atmosphere::update_stats()
 
 void Atmosphere::output_stats(double dt, double rate, int total_parts, string output_dir)
 {
-	vector<double> normed_EDF;
+	vector<double> normed_EDF_day;
+	vector<double> normed_EDF_night;
 	double volume = 0.0;
 	double r_in_cm = 0.0;
-	double dens = 0.0;
-	int sum = 0;
-	ofstream dens_out, EDF_out;
-	dens_out.open(output_dir + "density1d.out");
+	double dens_day = 0.0;
+	double dens_night = 0.0;
+	int sum0 = 0;
+	int sum1 = 0;
+	ofstream dens_day_out, dens_night_out, EDF_day_out, EDF_night_out;
+	dens_day_out.open(output_dir + "density1d_day.out");
+	dens_night_out.open(output_dir + "density1d_night.out");
 
-	dens_out << "#alt[km]\tdensity[cm-3]\n";
-	int size = stats_dens_counts.size();
+	dens_day_out << "#alt[km]\tdensity[cm-3]\n";
+	dens_night_out << "#alt[km]\tdensity[cm-3]\n";
+	int size = stats_dens_counts[0].size();
 	for (int i=0; i<size; i++)
 	{
 		r_in_cm = my_planet.get_radius() + 1e5*(double)i;
 		volume = 2.0*constants::pi/3.0 * (pow(r_in_cm+1e5, 3.0) - pow(r_in_cm, 3.0));
-	    dens = (dt*rate/(double)total_parts*stats_dens_counts[i]) / volume;
+	    dens_day = (dt*rate/(double)total_parts*stats_dens_counts[0][i]) / volume;
+	    dens_night = (dt*rate/(double)total_parts*stats_dens_counts[1][i]) / volume;
 
-		dens_out << i << "\t\t" << dens << "\n";
+		dens_day_out << i << "\t\t" << dens_day << "\n";
+		dens_night_out << i << "\t\t" << dens_night << "\n";
 	}
-	dens_out.close();
+	dens_day_out.close();
+	dens_night_out.close();
 
 	for (int i=0; i<stats_num_EDFs; i++)
 	{
-		EDF_out.open(output_dir + "EDF_" + to_string(stats_EDF_alts[i]) + "km.out");
-		EDF_out << "#energy[eV]\tdistribution[cm-3 eV-1]\n";
-		sum = 0;
+		EDF_day_out.open(output_dir + "EDF_day_" + to_string(stats_EDF_alts[i]) + "km.out");
+		EDF_night_out.open(output_dir + "EDF_night_" + to_string(stats_EDF_alts[i]) + "km.out");
+		EDF_day_out << "#energy[eV]\tdistribution[cm-3 eV-1]\n";
+		EDF_night_out << "#energy[eV]\tdistribution[cm-3 eV-1]\n";
+		sum0 = 0;
+		sum1 = 0;
 
-		size = stats_EDFs[i].size();
-		normed_EDF.clear();
-		normed_EDF.reserve(size);
+		size = stats_EDFs[0][i].size();
+		normed_EDF_day.clear();
+		normed_EDF_night.clear();
+		normed_EDF_day.reserve(size);
+		normed_EDF_night.reserve(size);
 		for (int j=0; j<size; j++)
 		{
-			sum += stats_EDFs[i][j];
+			sum0 += stats_EDFs[0][i][j];
+			sum1 += stats_EDFs[1][i][j];
 		}
 		for (int j=0; j<size; j++)
 		{
-			normed_EDF[j] = (double)stats_EDFs[i][j] / (double)sum;
+			normed_EDF_day[j] = (double)stats_EDFs[0][i][j] / (double)sum0;
+			normed_EDF_night[j] = (double)stats_EDFs[1][i][j] / (double)sum1;
 		}
 
 		r_in_cm = 1e5*(double)stats_EDF_alts[i] + my_planet.get_radius();
 		volume = 2.0*constants::pi/3.0 * (pow(r_in_cm+1e5, 3.0) - pow(r_in_cm, 3.0));
-		dens = (dt*rate/(double)total_parts*sum) / volume;
+		dens_day = (dt*rate/(double)total_parts*sum0) / volume;
+		dens_night = (dt*rate/(double)total_parts*sum1) / volume;
 
 		for (int j=0; j<size; j++)
 		{
-			EDF_out << (double)j*0.01 << "\t\t" << normed_EDF[j]*(dens/0.01) << "\n";
+			EDF_day_out << (double)j*0.01 << "\t\t" << normed_EDF_day[j]*(dens_day/0.01) << "\n";
+			EDF_night_out << (double)j*0.01 << "\t\t" << normed_EDF_night[j]*(dens_night/0.01) << "\n";
 		}
-		EDF_out.close();
+		EDF_day_out.close();
+		EDF_night_out.close();
 	}
 }
