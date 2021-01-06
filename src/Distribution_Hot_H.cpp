@@ -205,6 +205,7 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
 		Ei = 7.31;
 		we = 2169.81358;
 		wexe = 13.28831;
+		/*
 		double randnum2 = common::get_rand();
 		if (randnum2 < 0.5)
 		{
@@ -238,6 +239,8 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
 		{
 			vib_lvl = 7.0;
 		}
+		*/
+		vib_lvl = 0.0;
 	}
 
 	// subtract vibrational energy from excess if vib_lvl above 0 (convert inverse cm to eV before subtracting)

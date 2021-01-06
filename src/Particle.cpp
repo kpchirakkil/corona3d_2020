@@ -23,6 +23,7 @@ Particle::Particle()
 	previous_radius = 0.0;
 	position[0] = position[1] = position[2] = 0.0;
 	velocity[0] = velocity[1] = velocity[2] = 0.0;
+	weight = 1.0;
 }
 
 Particle::~Particle()
@@ -158,6 +159,11 @@ bool Particle::is_traced()
 	return traced;
 }
 
+double Particle::get_energy_in_eV()
+{
+	return 0.5*get_mass()*pow(get_total_v(), 2.0)/constants::ergev;
+}
+
 double Particle::get_radius()
 {
 	return radius;
@@ -208,6 +214,11 @@ double Particle::get_total_v()
 	return sqrt(velocity[0]*velocity[0] +
 			    velocity[1]*velocity[1] +
 				velocity[2]*velocity[2]);
+}
+
+double Particle::get_weight()
+{
+	return weight;
 }
 
 // initialize particle using given position and velocity
@@ -284,4 +295,9 @@ void Particle::set_traced()
 void Particle::set_thermalized()
 {
 	thermalized = true;
+}
+
+void Particle::set_weight(double wt)
+{
+	weight = wt;
 }

@@ -26,6 +26,7 @@ public:
 	bool is_active();
 	bool is_thermalized();
 	bool is_traced();
+	double get_energy_in_eV();
 	double get_radius();
 	double get_inverse_radius();
 	double get_previous_radius();
@@ -36,12 +37,14 @@ public:
 	double get_vy();
 	double get_vz();
 	double get_total_v();
+	double get_weight();
 	void init_particle(double x, double y, double z, double vx, double vy, double vz);
 	void init_particle_vonly(double vx, double vy, double vz);
 	void init_particle_MB(double r, double v_avg); // init particle from MB distribution
 	void init_particle_vonly_MB(double v_avg);     // init with velocity only for collision partners
 	void set_traced();
 	void set_thermalized();
+	void set_weight(double wt);
 
 protected:
 	bool thermalized;               // flag for whether particle has been thermalized
@@ -53,6 +56,7 @@ protected:
 	Matrix<double, 3, 1> position;  // position vector [cm,cm,cm]
 	Matrix<double, 3, 1> velocity;  // velocity vector [cm/s,cm/s,cm/s]
 	vector<string> collision_log;   // log of collision data kept on traced particles
+	double weight;                  // statistical weight of particle to be used in calculating densities
 };
 
 #endif /* PARTICLE_HPP_ */
