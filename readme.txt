@@ -3,10 +3,7 @@ multiple particle types with a variety of initial distribution options and backg
 species profiles. See the sample 'corona3d_2020.cfg' file under the 'src' folder for
 details on the currently available configuration parameter options.
 
-This software is still in the early development stages, and there is much work yet to
-be done. Below is a non-comprehensive 'to-do' list:
-
-- change particle deactivation to particle replacement based on still-to-be-determined criteria
-- continue developing Hot_H distribution class (currently includes H + H+ -> H+ + H* and HCO+ DR)
-- figure out how to calculate and record escape flux of tracked particles
-- consider adding inelastic collisions for molecular collision partners (all collisions are currently elastic)
+The current version of this software is focused on calculating the escaping fraction of Hot H
+atoms from Mars due to the dissociative recombination of HCO+. However, with slight modifications
+to the configuration file, it can also use the symmetric charge exchange of H with H+ as the source
+of hot H. There are also atmospheric profiles for Venus available in the inputs folder.

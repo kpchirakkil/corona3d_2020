@@ -14,6 +14,7 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	m_Hplus = 1.00728*constants::amu;
 	m_HCOplus = 29.0175*constants::amu;
 	m_CO = 28.0101*constants::amu;
+	source = "";
 	H_Hplus_rate_coeff = 8.7e-10;
 	HCOplus_DR_rate_coeff = 2.7e-7;
 	global_rate = 0.0;
@@ -26,21 +27,90 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	H_Hplus_CDF.resize(2);
 	HCOplus_DR_CDF.resize(2);
 
-	//string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/VenusTemp_LSA_FoxSung2001.csv";
-	//string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/H_density_profile_LSA_FoxSung01.csv";
-	//string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Venus/H+_density_profile_LSA_FoxSung01.csv";
+	// import parameters from configuration file
+	// file must be named 'Hot_H.cfg' and be in same directory as executable
+	double profile_bottom = 0.0;
+	double profile_top = 0.0;
+	string temp_prof_filename = "";
+	string H_prof_filename = "";
+	string Hplus_prof_filename = "";
+	string HCOplus_prof_filename = "";
+	string electron_prof_filename = "";
 
-	string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/MarsTempLSA_Fox2015.csv";
-	string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_LSA_Fox2015.csv";
-	string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H+_density_profile_LSA_eroded_Fox2015.csv";
-	string HCOplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/HCO+_density_profile_LSA_eroded_Fox2015.csv";
-	string electron_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/electron_density_profile_LSA_eroded_Fox2015.csv";
+	ifstream infile;
+	infile.open("Hot_H.cfg");
+	if (!infile.good())
+	{
+		cout << "Hot H configuration file not found!\n";
+		exit(1);
+	}
+	string line, param, val;
+	vector<string> parameters;
+	vector<string> values;
+	int num_params = 0;
 
-	//string temp_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/MarsTempHSA_Fox2015.csv";
-	//string H_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H_density_profile_HSA_Fox2015.csv";
-	//string Hplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/H+_density_profile_HSA_eroded_Fox2015.csv";
-	//string HCOplus_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/HCO+_density_profile_HSA_eroded_Fox2015.csv";
-	//string electron_prof_filename = "/home/rodney/git/corona3d_2020/src/inputs/Mars/electron_density_profile_HSA_eroded_Fox2015.csv";
+	while (getline(infile, line))
+	{
+		if (line[0] == '#' || line.empty() || std::all_of(line.begin(), line.end(), ::isspace))
+		{
+			continue;
+		}
+		else
+		{
+			stringstream str(line);
+			str >> param >> val;
+			parameters.push_back(param);
+			values.push_back(val);
+			num_params++;
+			param = "";
+			val = "";
+		}
+	}
+	infile.close();
+
+	for (int i=0; i<num_params; i++)
+	{
+		if (parameters[i] == "H_Hplus_rate_coeff")
+		{
+			H_Hplus_rate_coeff = stod(values[i]);
+		}
+		else if (parameters[i] == "HCOplus_DR_rate_coeff")
+		{
+			HCOplus_DR_rate_coeff = stod(values[i]);
+		}
+		else if (parameters[i] == "source")
+		{
+			source = values[i];
+		}
+		else if (parameters[i] == "profile_bottom")
+		{
+			profile_bottom = stod(values[i]);
+		}
+		else if (parameters[i] == "profile_top")
+		{
+			profile_top = stod(values[i]);
+		}
+		else if (parameters[i] == "temp_prof_filename")
+		{
+			temp_prof_filename = values[i];
+		}
+		else if (parameters[i] == "H_prof_filename")
+		{
+			H_prof_filename = values[i];
+		}
+		else if (parameters[i] == "Hplus_prof_filename")
+		{
+			Hplus_prof_filename = values[i];
+		}
+		else if (parameters[i] == "HCOplus_prof_filename")
+		{
+			HCOplus_prof_filename = values[i];
+		}
+		else if (parameters[i] == "electron_prof_filename")
+		{
+			electron_prof_filename = values[i];
+		}
+	}
 
 	common::import_csv(temp_prof_filename, temp_profile[0], temp_profile[1], temp_profile[2], temp_profile[3]);
 	common::import_csv(H_prof_filename, H_profile[0], H_profile[1]);
@@ -48,9 +118,14 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	common::import_csv(HCOplus_prof_filename, HCOplus_profile[0], HCOplus_profile[1]);
 	common::import_csv(electron_prof_filename, electron_profile[0], electron_profile[1]);
 
-	make_H_Hplus_CDF(80e5, 400e5);
-	//make_H_Hplus_CDF(150e5, 700e5);
-	make_HCOplus_DR_CDF(80e5, 400e5);
+	if (source == "H_Hplus")
+	{
+		make_H_Hplus_CDF(profile_bottom, profile_top);
+	}
+	else if (source == "HCOplus_DR")
+	{
+		make_HCOplus_DR_CDF(profile_bottom, profile_top);
+	}
 }
 
 Distribution_Hot_H::~Distribution_Hot_H() {
@@ -59,8 +134,14 @@ Distribution_Hot_H::~Distribution_Hot_H() {
 
 void Distribution_Hot_H::init(shared_ptr<Particle> p)
 {
-	//init_H_Hplus_particle(p);
-	init_HCOplus_DR_particle(p);
+	if (source == "H_Hplus")
+	{
+		init_H_Hplus_particle(p);
+	}
+	else if (source == "HCOplus_DR")
+	{
+		init_HCOplus_DR_particle(p);
+	}
 }
 
 // init particle using H_Hplus mechanism
@@ -395,6 +476,7 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 	}
 	double global_rate_H_Hplus = rate_sum*bin_size * 4.0 * constants::pi * pow(my_planet.get_radius()+upper_alt, 2.0);
 	cout << "Global hot H production rate from H+ + H:\n" << global_rate_H_Hplus << " per second\n";
+	global_rate = global_rate_H_Hplus;
 }
 
 // generate HCOplus_DR_CDF for given altitude range using imported density/temp profiles

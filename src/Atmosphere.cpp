@@ -242,7 +242,8 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 			break;
 		}
 
-		wt = 1.0 / (double)(i+1);
+		wt = 1.0;
+		//wt = 1.0 / (double)((int)((double)(i+1)*dt) + 1);
 
 		if (print_status_freq > 0 && (i+1) % print_status_freq == 0)
 		{
@@ -339,10 +340,10 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 						thermalized_count++;
 					}
 				}
-				//else
-				//{
-				//	my_parts[j]->set_weight(wt);
-				//}
+				else
+				{
+					my_parts[j]->set_weight(wt);
+				}
 			}
 		}
 	}

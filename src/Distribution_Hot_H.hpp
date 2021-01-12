@@ -25,6 +25,7 @@ private:
 	double H_Hplus_rate_coeff; // [cm^3/s] rate coefficient for H+ + H -> H* + H+
 	double HCOplus_DR_rate_coeff;  // [cm^3/s] rate coefficient for HCO+ + e -> H* + CO
 	double global_rate;    // [s^-1] set by chosen production method; calling function needs to divide this by 2 to get hemispherical rate
+	string source;         // which source to use when initializing particles ('H_Hplus' or 'HCOplus_DR')
 	vector<vector<double>> H_profile;
 	vector<vector<double>> Hplus_profile;
 	vector<vector<double>> HCOplus_profile;
