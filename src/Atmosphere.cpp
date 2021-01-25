@@ -273,7 +273,7 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 			output_positions(output_pos_dir + "positions" + to_string(i+1) + ".out");
 		}
 
-		update_stats();
+		update_stats(dt);
 
 		if (num_traced > 0)
 		{
@@ -398,32 +398,34 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 	//}
 }
 
-void Atmosphere::update_stats()
+void Atmosphere::update_stats(double dt)
 {
 	int index = 0;
 	int prev_index = 0;
 	double e = 0.0;
 	int e_index = 0;
+	double inverse_v_r = 0.0;
 
 	for (int i=0; i<num_parts; i++)
 	{
 		if (my_parts[i]->is_active())
 		{
+			inverse_v_r = abs(dt / (my_parts[i]->get_radius() - my_parts[i]->get_previous_radius()));
 			index = (int)(1e-5*(my_parts[i]->get_radius()-my_planet.get_radius()));
 			prev_index = (int)(1e-5*(my_parts[i]->get_previous_radius()-my_planet.get_radius()));
-			if (index >= 0 && index <= 100000)// && prev_index == (index-1))
+			if (index >= 0 && index <= 100000 && (prev_index == (index-1) || prev_index == (index+1)))
 			{
 				if (my_parts[i]->get_x() > 0.0)
 				{
 					// if using weighting use second line below and comment out other
-					stats_dens_counts[0][index][0]++;
-					//stats_dens_counts[0][index][i]++;
+					stats_dens_counts[0][index][0] += inverse_v_r;
+					//stats_dens_counts[0][index][i] += inverse_v_r;
 				}
 				else
 				{
 					// if using weighting use second line below and comment out other
-					stats_dens_counts[1][index][0]++;
-					//stats_dens_counts[1][index][i]++;
+					stats_dens_counts[1][index][0] += inverse_v_r;
+					//stats_dens_counts[1][index][i] += inverse_v_r;
 				}
 			}
 
@@ -433,19 +435,19 @@ void Atmosphere::update_stats()
 				{
 					e = my_parts[i]->get_energy_in_eV();
 					e_index = (int)(100.0*e);
-					if (e_index >= 0 && e_index <= 1000)// && prev_index == (index-1))
+					if (e_index >= 0 && e_index <= 1000 && (prev_index == (index-1) || prev_index == (index+1)))
 					{
 						if (my_parts[i]->get_x() > 0.0)
 						{
 							// if using weighting use second line below and comment out other
-							stats_EDFs[0][j][e_index][0]++;
-							//stats_EDFs[0][j][e_index][i]++;
+							stats_EDFs[0][j][e_index][0] += inverse_v_r;
+							//stats_EDFs[0][j][e_index][i] += inverse_v_r;
 						}
 						else
 						{
 							// if using weighting use second line below and comment out other
-							stats_EDFs[1][j][e_index][0]++;
-							//stats_EDFs[1][j][e_index][i]++;
+							stats_EDFs[1][j][e_index][0] += inverse_v_r;
+							//stats_EDFs[1][j][e_index][i] += inverse_v_r;
 						}
 					}
 				}
@@ -459,6 +461,7 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 	vector<double> normed_EDF_day;
 	vector<double> normed_EDF_night;
 	double volume = 0.0;
+	double surface = 0.0;
 	double r_in_cm = 0.0;
 	double dens_day = 0.0;
 	double dens_night = 0.0;
@@ -476,7 +479,8 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 		weighted_sum_day = 0.0;
 		weighted_sum_night = 0.0;
 		r_in_cm = my_planet.get_radius() + 1e5*(double)i;
-		volume = 2.0*constants::pi/3.0 * (pow(r_in_cm+1e5, 3.0) - pow(r_in_cm, 3.0));
+		surface = 2.0*constants::pi * r_in_cm * r_in_cm;
+		//volume = 2.0*constants::pi/3.0 * (pow(r_in_cm+1e5, 3.0) - pow(r_in_cm, 3.0));
 
 		weighted_sum_day = (double)stats_dens_counts[0][i][0];
 		weighted_sum_night = (double)stats_dens_counts[1][i][0];
@@ -488,8 +492,13 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 			weighted_sum_night += (double)stats_dens_counts[1][i][j] * my_parts[j]->get_weight();
 		}
 		*/
-	    dens_day = (dt*rate/(double)total_parts*weighted_sum_day) / volume;
-	    dens_night = (dt*rate/(double)total_parts*weighted_sum_night) / volume;
+
+		dens_day = (rate/(double)total_parts*weighted_sum_day) / surface;
+		dens_night = (rate/(double)total_parts*weighted_sum_night) / surface;
+
+		// old way using volume
+		//dens_day = (dt*rate/(double)total_parts*weighted_sum_day) / volume;
+	    //dens_night = (dt*rate/(double)total_parts*weighted_sum_night) / volume;
 
 		dens_day_out << i << "\t\t" << dens_day << "\n";
 		dens_night_out << i << "\t\t" << dens_night << "\n";
@@ -535,9 +544,14 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 		}
 
 		r_in_cm = 1e5*(double)stats_EDF_alts[i] + my_planet.get_radius();
-		volume = 2.0*constants::pi/3.0 * (pow(r_in_cm+1e5, 3.0) - pow(r_in_cm, 3.0));
-		dens_day = (dt*rate/(double)total_parts*weighted_sum_day) / volume;
-		dens_night = (dt*rate/(double)total_parts*weighted_sum_night) / volume;
+		surface = 2.0*constants::pi * r_in_cm * r_in_cm;
+		//volume = 2.0*constants::pi/3.0 * (pow(r_in_cm+1e5, 3.0) - pow(r_in_cm, 3.0));
+
+		dens_day = (rate/(double)total_parts*weighted_sum_day) / surface;
+		dens_night = (rate/(double)total_parts*weighted_sum_night) / surface;
+		// old way using volume
+		//dens_day = (dt*rate/(double)total_parts*weighted_sum_day) / volume;
+		//dens_night = (dt*rate/(double)total_parts*weighted_sum_night) / volume;
 
 		for (int j=0; j<size; j++)
 		{
