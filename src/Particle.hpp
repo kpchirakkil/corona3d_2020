@@ -27,6 +27,7 @@ public:
 	bool is_thermalized();
 	bool is_traced();
 	double get_energy_in_eV();
+	double get_radial_energy_in_eV(double dt);
 	double get_radius();
 	double get_inverse_radius();
 	double get_previous_radius();

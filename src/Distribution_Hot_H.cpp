@@ -423,6 +423,7 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 	double H_top_scaleheight = constants::k_b*common::interpolate_logy(temp_profile[0], temp_profile[1], top_H)/(m_H*local_g);
 
 	double rate_sum = 0.0;
+	double rate_sum_times_r_sqrd = 0.0;
 	for (int i=0; i<num_alt_bins; i++)
 	{
 		H_Hplus_CDF[1][i] = lower_alt + bin_size*i;
@@ -461,6 +462,7 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 		H_Hplus_rate[i] = H_Hplus_rate_coeff * sqrt(Ti) * H_dens * Hplus_dens;
 		outfile << H_Hplus_CDF[1][i]*1e-5 << "\t" << H_Hplus_rate[i] << "\n";
 		rate_sum = rate_sum + H_Hplus_rate[i];
+		rate_sum_times_r_sqrd = rate_sum_times_r_sqrd + (H_Hplus_rate[i] * 4.0 * constants::pi * pow(my_planet.get_radius()+(lower_alt+bin_size*i), 2.0));
 	}
 	outfile.close();
 	for (int i=0; i<num_alt_bins; i++)
@@ -474,7 +476,8 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 			H_Hplus_CDF[0][i] = (H_Hplus_rate[i] / rate_sum) + H_Hplus_CDF[0][i-1];
 		}
 	}
-	double global_rate_H_Hplus = rate_sum*bin_size * 4.0 * constants::pi * pow(my_planet.get_radius()+upper_alt, 2.0);
+	//double global_rate_H_Hplus = rate_sum*bin_size * 4.0 * constants::pi * pow(my_planet.get_radius()+upper_alt, 2.0);
+	double global_rate_H_Hplus = rate_sum_times_r_sqrd*bin_size;
 	cout << "Global hot H production rate from H+ + H:\n" << global_rate_H_Hplus << " per second\n";
 	global_rate = global_rate_H_Hplus;
 }
@@ -507,6 +510,7 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 	double e_top_scaleheight = constants::k_b*common::interpolate_logy(temp_profile[0], temp_profile[3], top_e)/(constants::m_e*local_g);
 
 	double rate_sum = 0.0;
+	double rate_sum_times_r_sqrd = 0.0;
 	for (int i=0; i<num_alt_bins; i++)
 	{
 		HCOplus_DR_CDF[1][i] = lower_alt + bin_size*i;
@@ -553,6 +557,7 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 		}
 		outfile << HCOplus_DR_CDF[1][i]*1e-5 << "\t" << HCOplus_DR_rate[i] << "\n";
 		rate_sum = rate_sum + HCOplus_DR_rate[i];
+		rate_sum_times_r_sqrd = rate_sum_times_r_sqrd + (HCOplus_DR_rate[i] * 4.0 * constants::pi * pow(my_planet.get_radius()+(lower_alt+bin_size*i), 2.0));
 	}
 	outfile.close();
 	for (int i=0; i<num_alt_bins; i++)
@@ -566,7 +571,8 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 			HCOplus_DR_CDF[0][i] = (HCOplus_DR_rate[i] / rate_sum) + HCOplus_DR_CDF[0][i-1];
 		}
 	}
-	double global_rate_HCOplus_DR = rate_sum*bin_size * 4.0 * constants::pi * pow(my_planet.get_radius()+upper_alt, 2.0);
+	//double global_rate_HCOplus_DR = rate_sum*bin_size * 4.0 * constants::pi * pow(my_planet.get_radius()+upper_alt, 2.0);
+	double global_rate_HCOplus_DR = rate_sum_times_r_sqrd*bin_size;
 	cout << "Global hot H production rate from HCO+ DR:\n" << global_rate_HCOplus_DR << " per second\n";
 	global_rate = global_rate_HCOplus_DR;
 }

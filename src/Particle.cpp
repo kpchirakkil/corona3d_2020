@@ -164,6 +164,12 @@ double Particle::get_energy_in_eV()
 	return 0.5*get_mass()*pow(get_total_v(), 2.0)/constants::ergev;
 }
 
+double Particle::get_radial_energy_in_eV(double dt)
+{
+	double radial_v = abs(radius - previous_radius) / dt;
+	return 0.5*get_mass()*pow(radial_v, 2.0)/constants::ergev;
+}
+
 double Particle::get_radius()
 {
 	return radius;
