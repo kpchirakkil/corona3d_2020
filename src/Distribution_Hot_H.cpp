@@ -486,7 +486,7 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 {
 	ofstream outfile;
-	outfile.open("/home/rodney/Documents/coronaTest/rodney_hcopl.dat");
+	outfile.open("/home/rodney/Documents/coronaTest/rodney_hcopl_lsa.dat");
 
 	double bin_size = 10000.0; // [cm]
 	int num_alt_bins = (int)((upper_alt - lower_alt) / bin_size);

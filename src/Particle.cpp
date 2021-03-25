@@ -144,85 +144,91 @@ void Particle::dump_collision_log(string filename)
 	outfile.close();
 }
 
-bool Particle::is_thermalized()
+bool Particle::is_thermalized() const
 {
 	return thermalized;
 }
 
-bool Particle::is_active()
+bool Particle::is_active() const
 {
 	return active;
 }
 
-bool Particle::is_traced()
+bool Particle::is_traced() const
 {
 	return traced;
 }
 
-double Particle::get_energy_in_eV()
+// return cosine of angle between particle trajectory and normal
+double Particle::get_cos_theta(double dt) const
+{
+	return (abs(radius - previous_radius) / dt) / get_total_v();
+}
+
+double Particle::get_energy_in_eV() const
 {
 	return 0.5*get_mass()*pow(get_total_v(), 2.0)/constants::ergev;
 }
 
-double Particle::get_radial_energy_in_eV(double dt)
+double Particle::get_radial_energy_in_eV(double dt) const
 {
 	double radial_v = abs(radius - previous_radius) / dt;
 	return 0.5*get_mass()*pow(radial_v, 2.0)/constants::ergev;
 }
 
-double Particle::get_radius()
+double Particle::get_radius() const
 {
 	return radius;
 }
 
-double Particle::get_inverse_radius()
+double Particle::get_inverse_radius() const
 {
 	return inverse_radius;
 }
 
-double Particle::get_previous_radius()
+double Particle::get_previous_radius() const
 {
 	return previous_radius;
 }
 
-double Particle::get_x()
+double Particle::get_x() const
 {
 	return position[0];
 }
 
-double Particle::get_y()
+double Particle::get_y() const
 {
 	return position[1];
 }
 
-double Particle::get_z()
+double Particle::get_z() const
 {
 	return position[2];
 }
 
-double Particle::get_vx()
+double Particle::get_vx() const
 {
 	return velocity[0];
 }
 
-double Particle::get_vy()
+double Particle::get_vy() const
 {
 	return velocity[1];
 }
 
-double Particle::get_vz()
+double Particle::get_vz() const
 {
 	return velocity[2];
 }
 
-double Particle::get_total_v()
+double Particle::get_total_v() const
 {
 	return sqrt(velocity[0]*velocity[0] +
 			    velocity[1]*velocity[1] +
 				velocity[2]*velocity[2]);
 }
 
-double Particle::get_weight()
+double Particle::get_weight() const
 {
 	return weight;
 }

@@ -16,8 +16,8 @@ public:
 	virtual ~Particle_N2();
 	static const double mass;
 	static const string name;
-	double get_mass();
-	string get_name();
+	double get_mass() const;
+	string get_name() const;
 };
 
 #endif /* PARTICLE_N2_HPP_ */

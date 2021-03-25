@@ -17,12 +17,12 @@ Particle_H::Particle_H() {
 Particle_H::~Particle_H() {
 }
 
-double Particle_H::get_mass()
+double Particle_H::get_mass() const
 {
 	return mass;
 }
 
-string Particle_H::get_name()
+string Particle_H::get_name() const
 {
 	return name;
 }

@@ -43,9 +43,9 @@ private:
 	int stats_num_EDFs;
 	vector<int> stats_EDF_alts;
 	vector<vector<vector<vector<double>>>> stats_EDFs;
-	vector<int> stats_loss_rates;
+	vector<double> stats_loss_rates;
 
-	void update_stats(double dt);
+	void update_stats(double dt, int idx);
 	void output_stats(double dt, double rate, int total_parts, string output_dir);
 
 	// output test particle trace data for selected particles

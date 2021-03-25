@@ -16,29 +16,30 @@ class Particle {
 public:
 	Particle();
 	virtual ~Particle();
-	virtual double get_mass() = 0;  //must be implemented in derived classes
-	virtual string get_name() = 0;  //must be implemented in derived classes
+	virtual double get_mass() const = 0;  //must be implemented in derived classes
+	virtual string get_name() const = 0;  //must be implemented in derived classes
 
 	void deactivate(string fate);
 	void do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r);
 	void do_timestep(double dt, double k_g);
 	void dump_collision_log(string filename);
-	bool is_active();
-	bool is_thermalized();
-	bool is_traced();
-	double get_energy_in_eV();
-	double get_radial_energy_in_eV(double dt);
-	double get_radius();
-	double get_inverse_radius();
-	double get_previous_radius();
-	double get_x();
-	double get_y();
-	double get_z();
-	double get_vx();
-	double get_vy();
-	double get_vz();
-	double get_total_v();
-	double get_weight();
+	bool is_active() const;
+	bool is_thermalized() const;
+	bool is_traced() const;
+	double get_cos_theta(double dt) const;
+	double get_energy_in_eV() const;
+	double get_radial_energy_in_eV(double dt) const;
+	double get_radius() const;
+	double get_inverse_radius() const;
+	double get_previous_radius() const;
+	double get_x() const;
+	double get_y() const;
+	double get_z() const;
+	double get_vx() const;
+	double get_vy() const;
+	double get_vz() const;
+	double get_total_v() const;
+	double get_weight() const;
 	void init_particle(double x, double y, double z, double vx, double vy, double vz);
 	void init_particle_vonly(double vx, double vy, double vz);
 	void init_particle_MB(double r, double v_avg); // init particle from MB distribution

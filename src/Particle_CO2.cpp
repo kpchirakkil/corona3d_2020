@@ -18,12 +18,12 @@ Particle_CO2::~Particle_CO2() {
 
 }
 
-double Particle_CO2::get_mass()
+double Particle_CO2::get_mass() const
 {
 	return mass;
 }
 
-string Particle_CO2::get_name()
+string Particle_CO2::get_name() const
 {
 	return name;
 }

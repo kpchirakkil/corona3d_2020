@@ -35,7 +35,7 @@ Atmosphere::Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet 
 	for (int i=0; i<stats_num_EDFs; i++)
 	{
 		stats_EDF_alts[i] = EDF_alts[i];
-		stats_loss_rates[i] = 0;
+		stats_loss_rates[i] = 0.0;
 		stats_EDFs[0][i].resize(1001);
 		stats_EDFs[1][i].resize(1001);
 		for (int j=0; j<1001; j++)
@@ -170,7 +170,7 @@ void Atmosphere::output_trace_data()
 {
 	for (int i=0; i<num_traced; i++)
 	{
-		if (my_parts[traced_parts[i]]->is_active() && my_parts[traced_parts[i]]->get_radius() >= my_planet.get_radius()+14000e5 && my_parts[traced_parts[i]]->get_radius() <= my_planet.get_radius()+16000e5)
+		if (my_parts[traced_parts[i]]->is_active())
 		{
 			ofstream position_file;
 			position_file.open(trace_dir + "part" + to_string(traced_parts[i]) + "_positions.out", ios::out | ios::app);
@@ -243,7 +243,7 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 	int night_escape_count = 0;
 	int day_escape_count = 0;
 	double v_esc_current = 0.0;
-	double wt = 0.0;
+	//double wt = 1.0;
 	upper_bound = my_planet.get_radius() + upper_bound;
 	lower_bound = my_planet.get_radius() + lower_bound;
 	double v_esc_upper = sqrt(2.0 * constants::G * my_planet.get_mass() / upper_bound);
@@ -252,6 +252,13 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 	double global_rate = my_dist->get_global_rate();
 	double k = my_planet.get_k_g();
 	//double v_Obg = sqrt(8.0*constants::k_b*277.6 / (constants::pi*15.9994*constants::amu));
+
+	vector<int> active_indeces;
+	active_indeces.resize(num_parts);
+	for (int i=0; i<num_parts; i++)
+	{
+		active_indeces[i] = i;
+	}
 
 	cout << "Simulating Particle Transport...\n";
 
@@ -263,7 +270,7 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 		}
 
 		// if using weighting, set weight of current particle here
-		wt = 1.0;
+		//wt = 1.0;
 		//wt = 1.0 / (double)((int)((double)(i+1)*dt) + 1);
 
 		if (print_status_freq > 0 && (i+1) % print_status_freq == 0)
@@ -279,96 +286,101 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 			output_positions(output_pos_dir + "positions" + to_string(i+1) + ".out");
 		}
 
-		update_stats(dt);
-
 		if (num_traced > 0)
 		{
 			output_trace_data();
 		}
 
-		for (int j=0; j<num_parts; j++)
+		for (int j=0; j<active_parts; j++)
 		{
-			if (my_parts[j]->is_active())
-			{
-				my_parts[j]->do_timestep(dt, k);
+			update_stats(dt, active_indeces[j]);
+			my_parts[active_indeces[j]]->do_timestep(dt, k);
 
-				if (bg_species.check_collision(my_parts[j], dt))
-				{
-					//alt_idx = (int)(1e-5*(my_parts[j]->get_radius()-my_planet.get_radius()));
-					//if (alt_idx >=0 && alt_idx <=100000)
-					//{
-					//	collision_counts_by_alt[alt_idx]++;
-					//}
-					my_parts[j]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta(), i*dt, my_planet.get_radius());
-				}
+			if (bg_species.check_collision(my_parts[active_indeces[j]], dt))
+			{
+				//alt_idx = (int)(1e-5*(my_parts[active_indeces[j]]->get_radius()-my_planet.get_radius()));
+				//if (alt_idx >=0 && alt_idx <=100000)
+				//{
+				//	collision_counts_by_alt[alt_idx]++;
+				//}
+				my_parts[active_indeces[j]]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta(), i*dt, my_planet.get_radius());
+			}
 
 				// deactivation criteria from Justin's original Hot O simulation code (must also uncomment v_Obg declaration above to use)
-				//if (my_parts[j]->get_radius() < (my_planet.get_radius() + 900e5) && (my_parts[j]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[j]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e5))))
+				//if (my_parts[active_indeces[j]]->get_radius() < (my_planet.get_radius() + 900e5) && (my_parts[active_indeces[j]]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[active_indeces[j]]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e5))))
 				//{
-				//	my_parts[j]->deactivate();
+				//	my_parts[active_indeces[j]]->deactivate();
 				//	active_parts--;
 				//}
 
 				// escape velocity at current radius
-				v_esc_current = sqrt(2.0 * constants::G * my_planet.get_mass() / my_parts[j]->get_radius());
+				v_esc_current = sqrt(2.0 * constants::G * my_planet.get_mass() / my_parts[active_indeces[j]]->get_radius());
 
-				if (my_parts[j]->get_radius() >= upper_bound && my_parts[j]->get_total_v() >= v_esc_upper)
+				if (my_parts[active_indeces[j]]->get_total_v() < v_esc_current)
 				{
-					if (my_parts[j]->get_x() > 0.0)
+					my_parts[active_indeces[j]]->deactivate(to_string(i*dt) + "\t\tVelocity dropped below escape velocity.\n\n");
+					//my_dist->init(my_parts[active_indeces[j]]);
+					//added_parts++;
+					active_parts--;
+
+					// for tracking thermalized particles instead of deactivating
+					if (my_parts[active_indeces[j]]->is_thermalized())
 					{
-						my_parts[j]->deactivate(to_string(i*dt) + "\t\tReached upper bound on day side with at least escape velocity.\n\n");
-						//my_dist->init(my_parts[j]);
+						continue;
+					}
+					else
+					{
+						my_parts[active_indeces[j]]->set_thermalized();
+						thermalized_count++;
+					}
+
+					active_indeces.erase(active_indeces.begin() + j);
+					j--;
+				}
+				else if (my_parts[active_indeces[j]]->get_radius() >= upper_bound && my_parts[active_indeces[j]]->get_total_v() >= v_esc_upper)
+				{
+					if (my_parts[active_indeces[j]]->get_x() > 0.0)
+					{
+						my_parts[active_indeces[j]]->deactivate(to_string(i*dt) + "\t\tReached upper bound on day side with at least escape velocity.\n\n");
+						//my_dist->init(my_parts[active_indeces[j]]);
 						//added_parts++;
 						active_parts--;
 						day_escape_count++;
 					}
 					else
 					{
-						my_parts[j]->deactivate(to_string(i*dt) + "\t\tReached upper bound on night side with at least escape velocity.\n\n");
-						//my_dist->init(my_parts[j]);
+						my_parts[active_indeces[j]]->deactivate(to_string(i*dt) + "\t\tReached upper bound on night side with at least escape velocity.\n\n");
+						//my_dist->init(my_parts[active_indeces[j]]);
 						//added_parts++;
 						active_parts--;
 						night_escape_count++;
 					}
 
-					if (my_parts[j]->is_thermalized())
+					if (my_parts[active_indeces[j]]->is_thermalized())
 					{
 						thermal_escape_count++;
 					}
+
+					active_indeces.erase(active_indeces.begin() + j);
+					j--;
 				}
-				else if (my_parts[j]->get_radius() <= lower_bound)
+				else if (my_parts[active_indeces[j]]->get_radius() <= lower_bound)
 				{
-					my_parts[j]->deactivate(to_string(i*dt) + "\t\tDropped below lower bound.\n\n");
-					//my_dist->init(my_parts[j]);
-					//added_parts++;
-					active_parts--;
-				}
-				else if (my_parts[j]->get_total_v() < v_esc_current)
-				{
-					my_parts[j]->deactivate(to_string(i*dt) + "\t\tVelocity dropped below escape velocity.\n\n");
+					my_parts[active_indeces[j]]->deactivate(to_string(i*dt) + "\t\tDropped below lower bound.\n\n");
 					//my_dist->init(my_parts[j]);
 					//added_parts++;
 					active_parts--;
 
-					// for tracking thermalized particles instead of deactivating
-					if (my_parts[j]->is_thermalized())
-					{
-						continue;
-					}
-					else
-					{
-						my_parts[j]->set_thermalized();
-						thermalized_count++;
-					}
+					active_indeces.erase(active_indeces.begin() + j);
+					j--;
 				}
 
 				/* if using weighting uncomment this section
 				else
 				{
-					my_parts[j]->set_weight(wt);
+					my_parts[active_indeces[j]]->set_weight(wt);
 				}
 				*/
-			}
 		}
 	}
 
@@ -405,64 +417,64 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 	//}
 }
 
-void Atmosphere::update_stats(double dt)
+void Atmosphere::update_stats(double dt, int i)
 {
 	int index = 0;
-	int prev_index = 0;
+	//int prev_index = 0;
 	double e = 0.0;
 	int e_index = 0;
 	//double inverse_v_r = 0.0;
+	double cos_theta = 0.0;
 
-	for (int i=0; i<num_parts; i++)
+	//inverse_v_r = abs(dt / (my_parts[i]->get_radius() - my_parts[i]->get_previous_radius()));
+	index = (int)(1e-5*(my_parts[i]->get_radius()-my_planet.get_radius()));
+	//prev_index = (int)(1e-5*(my_parts[i]->get_previous_radius()-my_planet.get_radius()));
+	if (index >= 0 && index <= 100000)// && (prev_index == (index-1) || prev_index == (index+1)))
 	{
-		if (my_parts[i]->is_active())
+		if (my_parts[i]->get_x() > 0.0)
 		{
-			//inverse_v_r = abs(dt / (my_parts[i]->get_radius() - my_parts[i]->get_previous_radius()));
-			index = (int)(1e-5*(my_parts[i]->get_radius()-my_planet.get_radius()));
-			prev_index = (int)(1e-5*(my_parts[i]->get_previous_radius()-my_planet.get_radius()));
-			if (index >= 0 && index <= 100000)// && (prev_index == (index-1) || prev_index == (index+1)))
+			// if using weighting use second line below and comment out other
+			stats_dens_counts[0][index][0] += 1;// += inverse_v_r;
+			//stats_dens_counts[0][index][i] += inverse_v_r;
+		}
+		else
+		{
+			// if using weighting use second line below and comment out other
+			stats_dens_counts[1][index][0] += 1;// += inverse_v_r;
+			//stats_dens_counts[1][index][i] += inverse_v_r;
+		}
+	}
+
+	for (int j=0; j<stats_num_EDFs; j++)
+	{
+		if (index == stats_EDF_alts[j])
+		{
+			e = my_parts[i]->get_radial_energy_in_eV(dt);
+			e_index = (int)(100.0*e);
+
+			cos_theta = my_parts[i]->get_cos_theta(dt);
+			if (cos_theta < 0.1)
+			{
+				cos_theta = 0.05;
+			}
+
+			if (e_index >= 0 && e_index <= 1000)// && (prev_index == (index-1) || prev_index == (index+1)))
 			{
 				if (my_parts[i]->get_x() > 0.0)
 				{
 					// if using weighting use second line below and comment out other
-					stats_dens_counts[0][index][0] += 1;// += inverse_v_r;
-					//stats_dens_counts[0][index][i] += inverse_v_r;
+					stats_EDFs[0][j][e_index][0] += (1.0 / cos_theta);// += inverse_v_r;
+					//stats_EDFs[0][j][e_index][i] += inverse_v_r;
 				}
 				else
 				{
 					// if using weighting use second line below and comment out other
-					stats_dens_counts[1][index][0] += 1;// += inverse_v_r;
-					//stats_dens_counts[1][index][i] += inverse_v_r;
+					stats_EDFs[1][j][e_index][0] += (1.0 / cos_theta);// += inverse_v_r;
+					//stats_EDFs[1][j][e_index][i] += inverse_v_r;
 				}
 			}
-
-			for (int j=0; j<stats_num_EDFs; j++)
-			{
-				if (index == stats_EDF_alts[j])
-				{
-					e = my_parts[i]->get_radial_energy_in_eV(dt);
-					e_index = (int)(100.0*e);
-					if (e_index >= 0 && e_index <= 1000)// && (prev_index == (index-1) || prev_index == (index+1)))
-					{
-						if (my_parts[i]->get_x() > 0.0)
-						{
-							// if using weighting use second line below and comment out other
-							stats_EDFs[0][j][e_index][0] += 1;// += inverse_v_r;
-							//stats_EDFs[0][j][e_index][i] += inverse_v_r;
-						}
-						else
-						{
-							// if using weighting use second line below and comment out other
-							stats_EDFs[1][j][e_index][0] += 1;// += inverse_v_r;
-							//stats_EDFs[1][j][e_index][i] += inverse_v_r;
-						}
-					}
-					if (prev_index == (index-1))
-					{
-						stats_loss_rates[j] += 1;
-					}
-				}
-			}
+			double radial_v = abs((my_parts[i]->get_radius() - my_parts[i]->get_previous_radius()) / dt);
+			stats_loss_rates[j] = stats_loss_rates[j] + radial_v;
 		}
 	}
 }
@@ -472,7 +484,7 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 	vector<double> normed_EDF_day;
 	vector<double> normed_EDF_night;
 	double volume = 0.0;
-	//double surface = 0.0;
+	double surface = 0.0;
 	double r_in_cm = 0.0;
 	double dens_day = 0.0;
 	double dens_night = 0.0;
@@ -521,7 +533,6 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 	loss_rates_out << "#alt[km]\tloss rate[s-1]\n";
 	for (int i=0; i<stats_num_EDFs; i++)
 	{
-		loss_rates_out << stats_EDF_alts[i] << "\t" << (double)stats_loss_rates[i] * rate/(double)total_parts << "\n";
 		EDF_day_out.open(output_dir + "EDF_day_" + to_string(stats_EDF_alts[i]) + "km.out");
 		EDF_night_out.open(output_dir + "EDF_night_" + to_string(stats_EDF_alts[i]) + "km.out");
 		EDF_day_out << "#energy[eV]\tdistribution[cm-3 eV-1]\n";
@@ -569,7 +580,7 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 		}
 
 		r_in_cm = 1e5*(double)stats_EDF_alts[i] + my_planet.get_radius();
-		//surface = 2.0*constants::pi * r_in_cm * r_in_cm;
+		surface = 2.0*constants::pi * (r_in_cm+1e5) * (r_in_cm+1e5);
 		volume = 2.0*constants::pi/3.0 * (pow(r_in_cm+1e5, 3.0) - pow(r_in_cm, 3.0));
 
 		//dens_day = (rate/(double)total_parts*weighted_sum_day) / surface;
@@ -578,6 +589,8 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 		// old way using volume
 		dens_day = (dt*rate/(double)total_parts*weighted_sum_day) / volume;
 		dens_night = (dt*rate/(double)total_parts*weighted_sum_night) / volume;
+
+		loss_rates_out << stats_EDF_alts[i] << "\t\t" << (stats_loss_rates[i] / volume) * (dt*rate/(double)total_parts) * surface << "\n";
 
 		for (int j=0; j<size; j++)
 		{
