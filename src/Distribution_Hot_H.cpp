@@ -38,7 +38,7 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	string electron_prof_filename = "";
 
 	ifstream infile;
-	infile.open("Hot_H.cfg");
+	infile.open("/home/rodney/git/corona3d_2020/src/Hot_H.cfg");
 	if (!infile.good())
 	{
 		cout << "Hot H configuration file not found!\n";
@@ -557,7 +557,7 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 		}
 		outfile << HCOplus_DR_CDF[1][i]*1e-5 << "\t" << HCOplus_DR_rate[i] << "\n";
 		rate_sum = rate_sum + HCOplus_DR_rate[i];
-		rate_sum_times_r_sqrd = rate_sum_times_r_sqrd + (HCOplus_DR_rate[i] * 4.0 * constants::pi * pow(my_planet.get_radius()+(lower_alt+bin_size*i), 2.0));
+		rate_sum_times_r_sqrd = rate_sum_times_r_sqrd + (HCOplus_DR_rate[i] * 4.0 * constants::pi * pow(my_planet.get_radius()+(lower_alt+(bin_size*i)), 2.0));
 	}
 	outfile.close();
 	for (int i=0; i<num_alt_bins; i++)

@@ -162,7 +162,7 @@ bool Particle::is_traced() const
 // return cosine of angle between particle trajectory and normal
 double Particle::get_cos_theta(double dt) const
 {
-	return (abs(radius - previous_radius) / dt) / get_total_v();
+	return ((radius - previous_radius) / dt) / get_total_v();
 }
 
 double Particle::get_energy_in_eV() const
