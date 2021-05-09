@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 	int bg_params_index = 0;
 
 	ifstream infile;
-	infile.open("/home/rodney/git/corona3d_2020/src/corona3d_2020.cfg");
+	infile.open("corona3d_2020.cfg");
 	if (!infile.good())
 	{
 		cout << "Configuration file not found!\n";
@@ -292,11 +292,11 @@ int main(int argc, char* argv[])
 
 	// initialize atmosphere and run simulation
 	Atmosphere my_atmosphere(num_testparts, num_traced, trace_output_dir, my_planet, parts, dist, bg_spec, num_EDFs, EDF_alts);
-	my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist.out");
-	my_atmosphere.output_altitude_distro(100000.0, output_dir + "altdist.out");
+	//my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist.out");
+	//my_atmosphere.output_altitude_distro(100000.0, output_dir + "altdist.out");
 	my_atmosphere.run_simulation(dt, timesteps, sim_lower_bound, sim_upper_bound, avg_thermal_v, print_status_freq, output_pos_freq, output_pos_dir, output_stats_dir);
-	my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist2.out");
-	my_atmosphere.output_altitude_distro(100000000.0, output_dir + "altdist2.out");
+	//my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist2.out");
+	//my_atmosphere.output_altitude_distro(100000.0, output_dir + "altdist2.out");
 
 	return 0;
 }

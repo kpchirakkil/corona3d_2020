@@ -26,10 +26,11 @@ public:
 	bool is_active() const;
 	bool is_thermalized() const;
 	bool is_traced() const;
-	double get_cos_theta(double dt) const;
+	double get_cos_theta() const;
 	double get_energy_in_eV() const;
 	double get_radial_energy_in_eV(double dt) const;
 	double get_radius() const;
+	double get_radial_v() const;
 	double get_inverse_radius() const;
 	double get_previous_radius() const;
 	double get_x() const;

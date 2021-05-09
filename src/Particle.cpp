@@ -160,9 +160,20 @@ bool Particle::is_traced() const
 }
 
 // return cosine of angle between particle trajectory and normal
-double Particle::get_cos_theta(double dt) const
+double Particle::get_cos_theta() const
 {
-	return ((radius - previous_radius) / dt) / get_total_v();
+	double cos_theta = get_radial_v() / get_total_v();
+
+	if (cos_theta > 1.0)
+	{
+		cos_theta = 1.0;
+	}
+	else if (cos_theta < -1.0)
+	{
+		cos_theta = -1.0;
+	}
+
+	return cos_theta;
 }
 
 double Particle::get_energy_in_eV() const
@@ -179,6 +190,12 @@ double Particle::get_radial_energy_in_eV(double dt) const
 double Particle::get_radius() const
 {
 	return radius;
+}
+
+double Particle::get_radial_v() const
+{
+	double radial_v = (velocity[0]*position[0] + velocity[1]*position[1] + velocity[2]*position[2]) / radius;
+	return radial_v;
 }
 
 double Particle::get_inverse_radius() const

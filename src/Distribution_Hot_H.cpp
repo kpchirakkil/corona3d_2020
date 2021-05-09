@@ -38,7 +38,7 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	string electron_prof_filename = "";
 
 	ifstream infile;
-	infile.open("/home/rodney/git/corona3d_2020/src/Hot_H.cfg");
+	infile.open("Hot_H.cfg");
 	if (!infile.good())
 	{
 		cout << "Hot H configuration file not found!\n";
@@ -485,8 +485,8 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 // generate HCOplus_DR_CDF for given altitude range using imported density/temp profiles
 void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 {
-	ofstream outfile;
-	outfile.open("/home/rodney/Documents/coronaTest/rodney_hcopl_lsa.dat");
+	//ofstream outfile;
+	//outfile.open("/home/rodney/Documents/coronaTest/rodney_hcopl_lsa.dat");
 
 	double bin_size = 10000.0; // [cm]
 	int num_alt_bins = (int)((upper_alt - lower_alt) / bin_size);
@@ -555,11 +555,12 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 		{
 			HCOplus_DR_rate[i] = HCOplus_DR_rate_coeff * pow((Te/300.0), -1.0) * e_dens * HCOplus_dens;
 		}
-		outfile << HCOplus_DR_CDF[1][i]*1e-5 << "\t" << HCOplus_DR_rate[i] << "\n";
+		//outfile << HCOplus_DR_CDF[1][i]*1e-5 << "\t" << HCOplus_DR_rate[i] << "\n";
 		rate_sum = rate_sum + HCOplus_DR_rate[i];
 		rate_sum_times_r_sqrd = rate_sum_times_r_sqrd + (HCOplus_DR_rate[i] * 4.0 * constants::pi * pow(my_planet.get_radius()+(lower_alt+(bin_size*i)), 2.0));
 	}
-	outfile.close();
+	//outfile.close();
+
 	for (int i=0; i<num_alt_bins; i++)
 	{
 		if (i == 0)
