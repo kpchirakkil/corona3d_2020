@@ -166,12 +166,10 @@ double Particle::get_cos_theta() const
 
 	if (cos_theta > 1.0)
 	{
-		cout << cos_theta << "\n";
 		cos_theta = 1.0;
 	}
 	else if (cos_theta < -1.0)
 	{
-		cout << cos_theta << "\n";
 		cos_theta = -1.0;
 	}
 
