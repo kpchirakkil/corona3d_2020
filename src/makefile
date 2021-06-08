@@ -7,7 +7,7 @@ Atmosphere.o: Atmosphere.cpp
 Background_Species.o: Background_Species.cpp
 	g++ -O2 -c Background_Species.cpp
 	
-Common_Fuctions.o: Common_Functions.cpp
+Common_Functions.o: Common_Functions.cpp
 	g++ -O2 -c Common_Functions.cpp
 	
 Distribution_Hot_H.o: Distribution_Hot_H.cpp
