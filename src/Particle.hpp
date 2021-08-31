@@ -8,7 +8,7 @@
 #ifndef PARTICLE_HPP_
 #define PARTICLE_HPP_
 
-#include <eigen3/Eigen/Core>
+#include </usr/local/Cellar/eigen/3.3.9/include/eigen3/Eigen/Core>
 #include "Common_Functions.hpp"
 using namespace Eigen;
 
