@@ -46,11 +46,8 @@ public:
 	void init_particle_MB(double r, double v_avg); // init particle from MB distribution
 	void init_particle_vonly_MB(double v_avg);     // init with velocity only for collision partners
 	void set_traced();
-	void set_thermalized();
-	void set_weight(double wt);
 
 protected:
-	bool thermalized;               // flag for whether particle has been thermalized
 	bool active;                    // flag for whether particle is active, i.e. should still be considered in the simulation
 	bool traced;                    // flag for whether particle is traced through simulation
 	double radius;                  // radius from center of planet	[cm]
@@ -59,7 +56,6 @@ protected:
 	Matrix<double, 3, 1> position;  // position vector [cm,cm,cm]
 	Matrix<double, 3, 1> velocity;  // velocity vector [cm/s,cm/s,cm/s]
 	vector<string> collision_log;   // log of collision data kept on traced particles
-	double weight;                  // statistical weight of particle to be used in calculating densities
 };
 
 #endif /* PARTICLE_HPP_ */

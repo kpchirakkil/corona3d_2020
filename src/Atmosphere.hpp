@@ -39,12 +39,11 @@ private:
 	Background_Species bg_species;      // background species used for collisions
 	vector<int> traced_parts;           // indices of randomly selected trace particles
 
-	vector<vector<vector<double>>> stats_dens_counts;
-	int stats_num_EDFs;
-	vector<int> stats_EDF_alts;
-	vector<vector<vector<vector<double>>>> stats_EDFs;
-	vector<vector<vector<vector<double>>>> stats_newEDFs;
-	vector<double> stats_loss_rates;
+	vector<vector<int>> stats_dens_counts;  // vector for accumulating particle density counts
+	int stats_num_EDFs;  // number of altitude EDFs to track; populated from corona3d_2020.cfg
+	vector<int> stats_EDF_alts;  // holds list of altitudes that (in km above surface) that EDFs are tracked at
+	vector<vector<vector<vector<double>>>> stats_EDFs;  // EDF counts are accumulated here
+	vector<double> stats_loss_rates;  // loss rates at each EDF altitude are calculated and stored here
 
 	void update_stats(double dt, int idx);
 	void output_stats(double dt, double rate, int total_parts, string output_dir);
