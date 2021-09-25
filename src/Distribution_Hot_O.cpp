@@ -106,6 +106,10 @@ Distribution_Hot_O::Distribution_Hot_O(Planet my_p, double ref_h, double ref_T)
 	{
 		make_O2plus_DR_CDF(profile_bottom, profile_top);
 	}
+	else if (source == "O2plus_DR_old_method")
+	{
+		global_rate = H_DR*DR160*4.0*constants::pi*pow((3557e5+H_DR), 2.0);
+	}
 }
 
 Distribution_Hot_O::~Distribution_Hot_O() {
@@ -309,7 +313,6 @@ double Distribution_Hot_O::E_rot(double B, double T)
 double Distribution_Hot_O::get_global_rate()
 {
 	return global_rate;
-	//return H_DR*DR160*4.0*constants::pi*pow((3557e5+H_DR), 2.0);
 }
 
 // generate O2plus_DR_CDF for given altitude range using imported density/temp profiles
@@ -380,8 +383,7 @@ void Distribution_Hot_O::make_O2plus_DR_CDF(double lower_alt, double upper_alt)
 		// calculate O2plus_DR_rate at current alt using rate coefficient from configuration file
 		double Te = common::interpolate_logy(temp_profile[0], temp_profile[3], O2plus_DR_CDF[1][i]);
 
-		// update this line with proper calculation of rate using rate coefficient and densities (i.e., may be temp dependent)
-		O2plus_DR_rate[i] = O2plus_DR_rate_coeff * e_dens * O2plus_dens;
+		O2plus_DR_rate[i] = 2.0 * O2plus_DR_rate_coeff * pow((300.0/Te), 0.7) * e_dens * O2plus_dens;
 
 		outfile << O2plus_DR_CDF[1][i]*1e-5 << "\t" << O2plus_DR_rate[i] << "\n";
 		rate_sum = rate_sum + O2plus_DR_rate[i];
