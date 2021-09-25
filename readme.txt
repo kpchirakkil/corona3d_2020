@@ -7,3 +7,4 @@ The current version of this software is focused on calculating the escaping frac
 atoms from Mars due to the dissociative recombination of HCO+. However, with slight modifications
 to the configuration file, it can also use the symmetric charge exchange of H with H+ as the source
 of hot H. There are also atmospheric profiles for Venus available in the inputs folder.
+

@@ -15,7 +15,6 @@
 
 Particle::Particle()
 {
-	thermalized = false;
 	active = true;
 	traced = false;
 	radius = 0.0;
@@ -23,7 +22,6 @@ Particle::Particle()
 	previous_radius = 0.0;
 	position[0] = position[1] = position[2] = 0.0;
 	velocity[0] = velocity[1] = velocity[2] = 0.0;
-	weight = 1.0;
 }
 
 Particle::~Particle()
@@ -144,11 +142,6 @@ void Particle::dump_collision_log(string filename)
 	outfile.close();
 }
 
-bool Particle::is_thermalized() const
-{
-	return thermalized;
-}
-
 bool Particle::is_active() const
 {
 	return active;
@@ -245,11 +238,6 @@ double Particle::get_total_v() const
 				velocity[2]*velocity[2]);
 }
 
-double Particle::get_weight() const
-{
-	return weight;
-}
-
 // initialize particle using given position and velocity
 void Particle::init_particle(double x, double y, double z, double vx, double vy, double vz)
 {
@@ -319,14 +307,4 @@ void Particle::init_particle_vonly_MB(double v_avg)
 void Particle::set_traced()
 {
 	traced = true;
-}
-
-void Particle::set_thermalized()
-{
-	thermalized = true;
-}
-
-void Particle::set_weight(double wt)
-{
-	weight = wt;
 }
