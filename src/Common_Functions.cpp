@@ -36,7 +36,7 @@ static mt19937 rand_generator(seed);   // Mersenne Twister PRNG (apparently, pre
 static uniform_real_distribution<double> rand_dist(0.0, 1.0);  // dist to be used with get_rand()
 
 namespace constants {
-	const double pi    = M_PIl;            // pi [unitless]
+	const double pi    = M_PI;            // pi [unitless]
 	const double twopi = 2*pi;             // 2*pi [unitless]
 	const double k_b   = 1.380649e-16;     // Boltzmann's Constant [erg/K]
 	const double c     = 29979245800.0;    // Speed of Light in Vacuum [cm/s]
