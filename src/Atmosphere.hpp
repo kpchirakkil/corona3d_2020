@@ -26,6 +26,7 @@ public:
 	void output_positions(string datapath);
 	void output_altitude_distro(double bin_width, string datapath);
 	void output_velocity_distro(double bin_width, string datapath);
+	void output_alt_energy_distro(double alt_in_cm, double e_bin_width, string datapath);
 	void run_simulation(double dt, int num_steps, double lower_bound, double upper_bound, double avg_thermal_v, int print_status_freq, int output_pos_freq, string output_pos_dir, string output_stats_dir);
 
 private:

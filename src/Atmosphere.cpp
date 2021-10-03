@@ -206,6 +206,51 @@ void Atmosphere::output_velocity_distro(double bin_width, string datapath)
 	outfile.close();
 }
 
+// writes single-column output file of energy bin counts using active particles at given altitude
+// bin_width is in eV; first 2 numbers in output file are bin_width and num_bins
+void Atmosphere::output_alt_energy_distro(double alt_in_cm, double e_bin_width, string datapath)
+{
+	double r = my_planet.get_radius() + alt_in_cm;
+	ofstream outfile;
+	outfile.open(datapath);
+	double e = 0.0;             // particle energy [eV]
+	int nb = 0;                 // bin number
+
+	double max_e = 0.0;
+	for (int i=0; i<num_parts; i++)
+	{
+		if (my_parts[i]->is_active() && my_parts[i]->get_radius() >= r && my_parts[i]->get_radius() < r + 1e5)
+		{
+			double total_e = my_parts[i]->get_energy_in_eV();
+			if (total_e > max_e)
+			{
+				max_e = total_e;
+			}
+		}
+	}
+	int num_bins = (int)((max_e / e_bin_width) + 10);
+	int ebins[num_bins] = {0};  // array of energy bin counts
+
+	for (int i=0; i<num_parts; i++)
+	{
+		if (my_parts[i]->is_active() && my_parts[i]->get_radius() >= r && my_parts[i]->get_radius() < r + 1e5)
+		{
+			e = my_parts[i]->get_energy_in_eV();
+			nb = (int)(e / e_bin_width);
+			ebins[nb]++;
+		}
+	}
+
+	outfile << e_bin_width << "\n";
+	outfile << num_bins << "\n";
+
+	for (int i=0; i<num_bins; i++)
+	{
+		outfile << ebins[i] << '\n';
+	}
+	outfile.close();
+}
+
 // iterate equation of motion and check for collisions for each active particle being tracked
 // a lot of stuff in here needs to be changed to be dynamically determined at runtime
 void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, double upper_bound, double avg_thermal_v, int print_status_freq, int output_pos_freq, string output_pos_dir, string output_stats_dir)

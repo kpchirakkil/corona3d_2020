@@ -8,7 +8,8 @@
 #ifndef PARTICLE_HPP_
 #define PARTICLE_HPP_
 
-#include </usr/local/Cellar/eigen/3.3.9/include/eigen3/Eigen/Core>
+#include <eigen3/Eigen/Core>  // uncomment for Ubuntu
+//#include </usr/local/Cellar/eigen/3.3.9/include/eigen3/Eigen/Core>  // uncomment for Mac
 #include "Common_Functions.hpp"
 using namespace Eigen;
 

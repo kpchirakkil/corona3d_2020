@@ -294,6 +294,7 @@ int main(int argc, char* argv[])
 	Atmosphere my_atmosphere(num_testparts, num_traced, trace_output_dir, my_planet, parts, dist, bg_spec, num_EDFs, EDF_alts);
 	//my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist.out");
 	//my_atmosphere.output_altitude_distro(100000.0, output_dir + "altdist.out");
+	my_atmosphere.output_alt_energy_distro(133e5, 0.03, output_dir + "edist.out");
 	my_atmosphere.run_simulation(dt, timesteps, sim_lower_bound, sim_upper_bound, avg_thermal_v, print_status_freq, output_pos_freq, output_pos_dir, output_stats_dir);
 	//my_atmosphere.output_velocity_distro(10000.0, output_dir + "vdist2.out");
 	//my_atmosphere.output_altitude_distro(100000.0, output_dir + "altdist2.out");
