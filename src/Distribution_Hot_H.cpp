@@ -398,8 +398,8 @@ double Distribution_Hot_H::get_global_rate()
 // generate H_Hplus_CDF for given altitude range using imported density/temp profiles
 void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 {
-	ofstream outfile;
-	outfile.open("/home/rodney/Documents/coronaTest/rodney_hplh.dat");
+	//ofstream outfile;
+	//outfile.open("/home/rodney/Documents/coronaTest/rodney_hplh.dat");
 
 	double bin_size = 10000.0; // [cm]
 	int num_alt_bins = (int)((upper_alt - lower_alt) / bin_size);
@@ -460,11 +460,11 @@ void Distribution_Hot_H::make_H_Hplus_CDF(double lower_alt, double upper_alt)
 
 		double Ti = common::interpolate_logy(temp_profile[0], temp_profile[2], H_Hplus_CDF[1][i]);
 		H_Hplus_rate[i] = H_Hplus_rate_coeff * sqrt(Ti) * H_dens * Hplus_dens;
-		outfile << H_Hplus_CDF[1][i]*1e-5 << "\t" << H_Hplus_rate[i] << "\n";
+		//outfile << H_Hplus_CDF[1][i]*1e-5 << "\t" << H_Hplus_rate[i] << "\n";
 		rate_sum = rate_sum + H_Hplus_rate[i];
 		rate_sum_times_r_sqrd = rate_sum_times_r_sqrd + (H_Hplus_rate[i] * 4.0 * constants::pi * pow(my_planet.get_radius()+(lower_alt+bin_size*i), 2.0));
 	}
-	outfile.close();
+	//outfile.close();
 	for (int i=0; i<num_alt_bins; i++)
 	{
 		if (i == 0)

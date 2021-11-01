@@ -253,7 +253,7 @@ void Atmosphere::output_alt_energy_distro(double alt_in_cm, double e_bin_width, 
 
 // iterate equation of motion and check for collisions for each active particle being tracked
 // a lot of stuff in here needs to be changed to be dynamically determined at runtime
-void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, double upper_bound, double avg_thermal_v, int print_status_freq, int output_pos_freq, string output_pos_dir, string output_stats_dir)
+void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, double upper_bound, int print_status_freq, int output_pos_freq, string output_pos_dir, string output_stats_dir)
 {
 	int night_escape_count = 0;
 	int day_escape_count = 0;
@@ -265,11 +265,11 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 	double k = my_planet.get_k_g();
 	//double v_Obg = sqrt(8.0*constants::k_b*277.6 / (constants::pi*15.9994*constants::amu));
 
-	vector<int> active_indeces;  // list of indeces for active particles
-	active_indeces.resize(num_parts);
+	vector<int> active_indices;  // list of indices for active particles
+	active_indices.resize(num_parts);
 	for (int i=0; i<num_parts; i++)
 	{
-		active_indeces[i] = i;
+		active_indices[i] = i;
 	}
 
 	cout << "Simulating Particle Transport...\n";
@@ -301,56 +301,56 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 
 		for (int j=0; j<active_parts; j++)
 		{
-			update_stats(dt, active_indeces[j]);
-			my_parts[active_indeces[j]]->do_timestep(dt, k);
+			update_stats(dt, active_indices[j]);
+			my_parts[active_indices[j]]->do_timestep(dt, k);
 
-			if (bg_species.check_collision(my_parts[active_indeces[j]], dt))
+			if (bg_species.check_collision(my_parts[active_indices[j]], dt))
 			{
-				my_parts[active_indeces[j]]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta(), i*dt, my_planet.get_radius());
+				my_parts[active_indices[j]]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta(), i*dt, my_planet.get_radius());
 			}
 
-				// deactivation criteria from Justin's original Hot O simulation code (must also uncomment v_Obg declaration above to use)
-				//if (my_parts[active_indeces[j]]->get_radius() < (my_planet.get_radius() + 900e5) && (my_parts[active_indeces[j]]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[active_indeces[j]]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e5))))
-				//{
-				//	my_parts[active_indeces[j]]->deactivate();
-				//	active_parts--;
-				//}
+			// deactivation criteria from Justin's original Hot O simulation code (must also uncomment v_Obg declaration above to use)
+			//if (my_parts[active_indices[j]]->get_radius() < (my_planet.get_radius() + 900e5) && (my_parts[active_indices[j]]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[active_indices[j]]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e5))))
+			//{
+			//	my_parts[active_indices[j]]->deactivate();
+			//	active_parts--;
+			//}
 
-				// escape velocity at current radius
-				v_esc_current = sqrt(2.0 * constants::G * my_planet.get_mass() / my_parts[active_indeces[j]]->get_radius());
+			// escape velocity at current radius
+			v_esc_current = sqrt(2.0 * constants::G * my_planet.get_mass() / my_parts[active_indices[j]]->get_radius());
 
-				if (my_parts[active_indeces[j]]->get_total_v() < v_esc_current)
+			if (my_parts[active_indices[j]]->get_total_v() < v_esc_current)
+			{
+				my_parts[active_indices[j]]->deactivate(to_string(i*dt) + "\t\tVelocity dropped below escape velocity.\n\n");
+				active_parts--;
+				active_indices.erase(active_indices.begin() + j);
+				j--;
+			}
+			else if (my_parts[active_indices[j]]->get_radius() >= upper_bound && my_parts[active_indices[j]]->get_total_v() >= v_esc_upper)
+			{
+				if (my_parts[active_indices[j]]->get_x() > 0.0)
 				{
-					my_parts[active_indeces[j]]->deactivate(to_string(i*dt) + "\t\tVelocity dropped below escape velocity.\n\n");
+					my_parts[active_indices[j]]->deactivate(to_string(i*dt) + "\t\tReached upper bound on day side with at least escape velocity.\n\n");
 					active_parts--;
-					active_indeces.erase(active_indeces.begin() + j);
-					j--;
+					day_escape_count++;
 				}
-				else if (my_parts[active_indeces[j]]->get_radius() >= upper_bound && my_parts[active_indeces[j]]->get_total_v() >= v_esc_upper)
+				else
 				{
-					if (my_parts[active_indeces[j]]->get_x() > 0.0)
-					{
-						my_parts[active_indeces[j]]->deactivate(to_string(i*dt) + "\t\tReached upper bound on day side with at least escape velocity.\n\n");
-						active_parts--;
-						day_escape_count++;
-					}
-					else
-					{
-						my_parts[active_indeces[j]]->deactivate(to_string(i*dt) + "\t\tReached upper bound on night side with at least escape velocity.\n\n");
-						active_parts--;
-						night_escape_count++;
-					}
-
-					active_indeces.erase(active_indeces.begin() + j);
-					j--;
-				}
-				else if (my_parts[active_indeces[j]]->get_radius() <= lower_bound)
-				{
-					my_parts[active_indeces[j]]->deactivate(to_string(i*dt) + "\t\tDropped below lower bound.\n\n");
+					my_parts[active_indices[j]]->deactivate(to_string(i*dt) + "\t\tReached upper bound on night side with at least escape velocity.\n\n");
 					active_parts--;
-					active_indeces.erase(active_indeces.begin() + j);
-					j--;
+					night_escape_count++;
 				}
+
+				active_indices.erase(active_indices.begin() + j);
+				j--;
+			}
+			else if (my_parts[active_indices[j]]->get_radius() <= lower_bound)
+			{
+				my_parts[active_indices[j]]->deactivate(to_string(i*dt) + "\t\tDropped below lower bound.\n\n");
+				active_parts--;
+				active_indices.erase(active_indices.begin() + j);
+				j--;
+			}
 		}
 	}
 
