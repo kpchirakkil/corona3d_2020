@@ -56,10 +56,22 @@ Atmosphere::Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet 
 	stats_dens_counts.resize(2);  // index 0 is day side, 1 is night side
 	stats_dens_counts[0].resize(100001);
 	stats_dens_counts[1].resize(100001);
+	stats_coldens_counts.resize(100001);
 	for (int i=0; i<100001; i++)
 	{
 		stats_dens_counts[0][i] = 0;
 		stats_dens_counts[1][i] = 0;
+		stats_coldens_counts[i] = 0;
+	}
+
+	stats_dens2d_counts.resize(513);
+	for (int i=0; i<513; i++)
+	{
+		stats_dens2d_counts[i].resize(513);
+		for (int j=0; j<513; j++)
+		{
+			stats_dens2d_counts[i][j] = 0;
+		}
 	}
 
 	// pick trace particles if any
@@ -375,6 +387,9 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 void Atmosphere::update_stats(double dt, int i)
 {
 	int index = 0;
+	int ix = 0;
+	int jx = 0;
+	int kx = 0;
 	double e = 0.0;
 	int e_index = 0;
 	//double inverse_v_r = 0.0;
@@ -394,6 +409,24 @@ void Atmosphere::update_stats(double dt, int i)
 		{
 			stats_dens_counts[1][index] += 1;
 		}
+	}
+
+	ix = (int)(1e-5*(my_parts[i]->get_x()-my_planet.get_radius()));
+	if ((ix >= 0) && (ix <= 100000)) //&& (abs(my_parts[i]->get_y()) <= 500e5))
+	{
+		stats_coldens_counts[ix] += 1;
+	}
+
+	ix = (int)(1e-5*my_parts[i]->get_y()/200.0);
+	jx = (int)(1e-5*my_parts[i]->get_x()/200.0);
+	kx = (int)(1e-5*my_parts[i]->get_z()/200.0);
+	if ((abs(kx) <= 256) && ((abs(ix) <= 256) && (abs(jx) <= 256)))
+	{
+		jx = jx + 256;
+		stats_dens2d_counts[ix + 256][jx] = stats_dens2d_counts[ix + 256][jx] + 1;
+		stats_dens2d_counts[-ix + 256][jx] = stats_dens2d_counts[-ix + 256][jx] + 1;
+		stats_dens2d_counts[kx + 256][jx] = stats_dens2d_counts[kx + 256][jx] + 1;
+		stats_dens2d_counts[-kx + 256][jx] = stats_dens2d_counts[-kx + 256][jx] + 1;
 	}
 
 	for (int j=0; j<stats_num_EDFs; j++)
@@ -439,14 +472,20 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 	double r_in_cm = 0.0;
 	double dens_day = 0.0;
 	double dens_night = 0.0;
+	double coldens_day = 0.0;
 	double sum_day = 0.0;
 	double sum_night = 0.0;
-	ofstream dens_day_out, dens_night_out, EDF_day_out, EDF_night_out, loss_rates_out;
+	ofstream dens_day_out, dens_night_out, coldens_day_out, dens2d_out, EDF_day_out, EDF_night_out, loss_rates_out;
 	dens_day_out.open(output_dir + "density1d_day.out");
 	dens_night_out.open(output_dir + "density1d_night.out");
+	coldens_day_out.open(output_dir + "column_density_day.out");
+	dens2d_out.open(output_dir + "density2d.out");
 
 	dens_day_out << "#alt[km]\tdensity[cm-3]\n";
 	dens_night_out << "#alt[km]\tdensity[cm-3]\n";
+	coldens_day_out << "#alt[km]\tcol density[cm-2]\n";
+	dens2d_out << "#this file contains a 513 x 513 grid of 2d density counts\n";
+
 	int size = stats_dens_counts[0].size();
 	for (int i=0; i<size; i++)
 	{
@@ -460,12 +499,25 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 
 		dens_day = (dt*rate/(double)total_parts*sum_day) / volume;
 	    dens_night = (dt*rate/(double)total_parts*sum_night) / volume;
+	    coldens_day = (dt*rate/(double)total_parts*(double)stats_coldens_counts[i]) / 1e10;
 
 		dens_day_out << i << "\t\t" << dens_day << "\n";
 		dens_night_out << i << "\t\t" << dens_night << "\n";
+		coldens_day_out << i << "\t\t" << coldens_day << "\n";
 	}
 	dens_day_out.close();
 	dens_night_out.close();
+	coldens_day_out.close();
+
+	for (int i=0; i<513; i++)
+	{
+		for (int j=0; j<513; j++)
+		{
+			dens2d_out << stats_dens2d_counts[i][j] << "\t";
+		}
+		dens2d_out << "\n";
+	}
+	dens2d_out.close();
 
 	loss_rates_out.open(output_dir + "loss_rates.out");
 	loss_rates_out << "#alt[km]\tloss rate[s-1]\n";
