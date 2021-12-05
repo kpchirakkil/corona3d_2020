@@ -272,8 +272,14 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 	double v_esc_current = 0.0;
 	double v_thermal = 0.0;
 
+	// most probable MB velocity of test particle at 200K
+	//double v_mp = sqrt(2.0*constants::k_b*200.0/my_parts[0]->get_mass());
+
 	// RMS thermal velocity of test particle at 200K
-	//double v_RMS = sqrt(3.0*constants::k_b*200.0/my_parts[0]->get_mass());
+	//double v_rms = sqrt(3.0*constants::k_b*200.0/my_parts[0]->get_mass());
+
+	// average thermal velocity of test particle at 200K
+	//double v_avg = sqrt(8.0*constants::k_b*200.0/(constants::pi*my_parts[0]->get_mass()));
 
 	// background O velocity as defined in Justin's original code
 	//double v_Obg = sqrt(8.0*constants::k_b*277.6 / (constants::pi*15.9994*constants::amu));
@@ -331,7 +337,9 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 			// escape velocity at current radius
 			v_esc_current = sqrt(2.0 * constants::G * my_planet.get_mass() / my_parts[active_indices[j]]->get_radius());
 
-			v_thermal = v_esc_current; // = v_RMS;
+			// thermalized threshold velocity; set to either v_esc_current, v_mp, v_rms, or v_avg
+			// v_esc_current defined just above; others defined at beginning of run_simulation function
+			v_thermal = v_esc_current;
 
 			// deactivation criteria from Justin's original Hot O simulation code (must also uncomment v_Obg declaration above to use)
 			//if (my_parts[active_indices[j]]->get_radius() < (my_planet.get_radius() + 900e5) && (my_parts[active_indices[j]]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[active_indices[j]]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e5))))
