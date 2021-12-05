@@ -15,8 +15,8 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	m_HCOplus = 29.0175*constants::amu;
 	m_CO = 28.0101*constants::amu;
 	source = "";
-	H_Hplus_rate_coeff = 8.7e-10;
-	HCOplus_DR_rate_coeff = 2.7e-7;
+	H_Hplus_rate_coeff = 8.7e-10;  // default coeff from Rodriguez 1984
+	HCOplus_DR_rate_coeff = 2.0e-7;  // default coeff from Fox 2015
 	global_rate = 0.0;
 
 	temp_profile.resize(4);

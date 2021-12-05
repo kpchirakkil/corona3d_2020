@@ -270,12 +270,19 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 	int night_escape_count = 0;
 	int day_escape_count = 0;
 	double v_esc_current = 0.0;
+	double v_thermal = 0.0;
+
+	// RMS thermal velocity of test particle at 200K
+	//double v_RMS = sqrt(3.0*constants::k_b*200.0/my_parts[0]->get_mass());
+
+	// background O velocity as defined in Justin's original code
+	//double v_Obg = sqrt(8.0*constants::k_b*277.6 / (constants::pi*15.9994*constants::amu));
+
 	upper_bound = my_planet.get_radius() + upper_bound;
 	lower_bound = my_planet.get_radius() + lower_bound;
 	double v_esc_upper = sqrt(2.0 * constants::G * my_planet.get_mass() / upper_bound);
 	double global_rate = my_dist->get_global_rate();
 	double k = my_planet.get_k_g();
-	//double v_Obg = sqrt(8.0*constants::k_b*277.6 / (constants::pi*15.9994*constants::amu));
 
 	vector<int> active_indices;  // list of indices for active particles
 	active_indices.resize(num_parts);
@@ -321,19 +328,23 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 				my_parts[active_indices[j]]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta(), i*dt, my_planet.get_radius());
 			}
 
-			// deactivation criteria from Justin's original Hot O simulation code (must also uncomment v_Obg declaration above to use)
-			//if (my_parts[active_indices[j]]->get_radius() < (my_planet.get_radius() + 900e5) && (my_parts[active_indices[j]]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[active_indices[j]]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e5))))
-			//{
-			//	my_parts[active_indices[j]]->deactivate();
-			//	active_parts--;
-			//}
-
 			// escape velocity at current radius
 			v_esc_current = sqrt(2.0 * constants::G * my_planet.get_mass() / my_parts[active_indices[j]]->get_radius());
 
-			if (my_parts[active_indices[j]]->get_total_v() < v_esc_current)
+			v_thermal = v_esc_current; // = v_RMS;
+
+			// deactivation criteria from Justin's original Hot O simulation code (must also uncomment v_Obg declaration above to use)
+			//if (my_parts[active_indices[j]]->get_radius() < (my_planet.get_radius() + 900e5) && (my_parts[active_indices[j]]->get_total_v() + v_Obg) < sqrt(2.0*constants::G*my_planet.get_mass()*(my_parts[active_indices[j]]->get_inverse_radius()-1.0/(my_planet.get_radius()+900e5))))
+			//{
+			//	my_parts[active_indices[j]]->deactivate("\t\tParticle was thermalized.\n\n");
+			//	active_parts--;
+			//	active_indices.erase(active_indices.begin() + j);
+			//	j--;
+			//}
+
+			if (my_parts[active_indices[j]]->get_total_v() < v_thermal)
 			{
-				my_parts[active_indices[j]]->deactivate(to_string(i*dt) + "\t\tVelocity dropped below escape velocity.\n\n");
+				my_parts[active_indices[j]]->deactivate(to_string(i*dt) + "\t\tParticle was thermalized.\n\n");
 				active_parts--;
 				active_indices.erase(active_indices.begin() + j);
 				j--;
