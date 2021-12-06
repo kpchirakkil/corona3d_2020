@@ -436,16 +436,16 @@ void Atmosphere::update_stats(double dt, int i)
 		stats_coldens_counts[ix] += 1;
 	}
 
-	ix = (int)(1e-5*my_parts[i]->get_y()/200.0);
+	//ix = (int)(1e-5*my_parts[i]->get_y()/200.0);
 	jx = (int)(1e-5*my_parts[i]->get_x()/200.0);
 	kx = (int)(1e-5*my_parts[i]->get_z()/200.0);
-	if ((abs(kx) <= 256) && ((abs(ix) <= 256) && (abs(jx) <= 256)))
+	if ((abs(kx) <= 256) && ((abs(jx) <= 256)))// && (abs(ix) <= 256)))
 	{
 		jx = jx + 256;
-		stats_dens2d_counts[ix + 256][jx] = stats_dens2d_counts[ix + 256][jx] + 1;
-		stats_dens2d_counts[-ix + 256][jx] = stats_dens2d_counts[-ix + 256][jx] + 1;
+		//stats_dens2d_counts[ix + 256][jx] = stats_dens2d_counts[ix + 256][jx] + 1;
+		//stats_dens2d_counts[-ix + 256][jx] = stats_dens2d_counts[-ix + 256][jx] + 1;
 		stats_dens2d_counts[kx + 256][jx] = stats_dens2d_counts[kx + 256][jx] + 1;
-		stats_dens2d_counts[-kx + 256][jx] = stats_dens2d_counts[-kx + 256][jx] + 1;
+		//stats_dens2d_counts[-kx + 256][jx] = stats_dens2d_counts[-kx + 256][jx] + 1;
 	}
 
 	for (int j=0; j<stats_num_EDFs; j++)
