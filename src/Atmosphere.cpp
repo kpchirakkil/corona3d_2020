@@ -19,6 +19,8 @@ Atmosphere::Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet 
 	my_parts.resize(num_parts);
 	bg_species = bg;
 
+	coldens_area = 1.1e11;  // this value must match the area of observation set in update_stats below
+
 	for (int i=0; i<num_parts; i++)
 	{
 		my_parts[i] = parts[i];
@@ -407,7 +409,7 @@ void Atmosphere::update_stats(double dt, int i)
 {
 	int index = 0;
 	int ix = 0;
-	int jx = 0;
+	//int jx = 0;
 	int kx = 0;
 	double e = 0.0;
 	int e_index = 0;
@@ -430,22 +432,27 @@ void Atmosphere::update_stats(double dt, int i)
 		}
 	}
 
+	// be sure to update the next lines carefully to get the correct area
+	// the width in ix is always 1e5 cm; the length in kx is dependent on the number used in if statement below
+	// using abs(kx) <= 5, the area of column density measured is 1e5 cm by 11e5 cm = 1.1e11 cm^2
+	// IMPORTANT: if the area is changed, you must update the value of coldens_area near the beginning of this file
 	ix = (int)(1e-5*(my_parts[i]->get_x()-my_planet.get_radius()));
-	if ((ix >= 0) && (ix <= 100000)) //&& (abs(my_parts[i]->get_y()) <= 500e5))
+	kx = (int)(1e-5*(my_parts[i]->get_z()-my_planet.get_radius()));
+	if ((abs(kx) <= 5) && (ix >= 0) && (ix <= 100000)) //&& (abs(my_parts[i]->get_y()) <= 500e5))
 	{
 		stats_coldens_counts[ix] += 1;
 	}
 
-	//ix = (int)(1e-5*my_parts[i]->get_y()/200.0);
-	jx = (int)(1e-5*my_parts[i]->get_x()/200.0);
+	ix = (int)(1e-5*my_parts[i]->get_x()/200.0);
+	//jx = (int)(1e-5*my_parts[i]->get_y()/200.0);
 	kx = (int)(1e-5*my_parts[i]->get_z()/200.0);
-	if ((abs(kx) <= 256) && ((abs(jx) <= 256)))// && (abs(ix) <= 256)))
+	if ((abs(ix) <= 256) && ((abs(kx) <= 256)))// && (abs(jx) <= 256)))
 	{
-		jx = jx + 256;
-		//stats_dens2d_counts[ix + 256][jx] = stats_dens2d_counts[ix + 256][jx] + 1;
-		//stats_dens2d_counts[-ix + 256][jx] = stats_dens2d_counts[-ix + 256][jx] + 1;
-		stats_dens2d_counts[kx + 256][jx] = stats_dens2d_counts[kx + 256][jx] + 1;
-		//stats_dens2d_counts[-kx + 256][jx] = stats_dens2d_counts[-kx + 256][jx] + 1;
+		ix = ix + 256;
+		//stats_dens2d_counts[jx + 256][ix] = stats_dens2d_counts[jx + 256][ix] + 1;
+		//stats_dens2d_counts[-jx + 256][ix] = stats_dens2d_counts[-jx + 256][ix] + 1;
+		stats_dens2d_counts[kx + 256][ix] = stats_dens2d_counts[kx + 256][ix] + 1;
+		//stats_dens2d_counts[-kx + 256][ix] = stats_dens2d_counts[-kx + 256][ix] + 1;
 	}
 
 	for (int j=0; j<stats_num_EDFs; j++)
@@ -518,7 +525,9 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 
 		dens_day = (dt*rate/(double)total_parts*sum_day) / volume;
 	    dens_night = (dt*rate/(double)total_parts*sum_night) / volume;
-	    coldens_day = (dt*rate/(double)total_parts*(double)stats_coldens_counts[i]) / 1e10;
+
+	    // coldens_area must be properly set in update_stats
+	    coldens_day = (dt*rate/(double)total_parts*(double)stats_coldens_counts[i]) / coldens_area;
 
 		dens_day_out << i << "\t\t" << dens_day << "\n";
 		dens_night_out << i << "\t\t" << dens_night << "\n";
