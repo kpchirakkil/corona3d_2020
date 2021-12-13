@@ -19,7 +19,7 @@ Atmosphere::Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet 
 	my_parts.resize(num_parts);
 	bg_species = bg;
 
-	coldens_area = 1e12;  // this value must match the area of observation in cm^2 set in update_stats below
+	coldens_area = 1e14;  // this value must match the area of observation in cm^2 set in update_stats below
 
 	for (int i=0; i<num_parts; i++)
 	{
@@ -58,22 +58,22 @@ Atmosphere::Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet 
 	stats_dens_counts.resize(2);  // index 0 is day side, 1 is night side
 	stats_dens_counts[0].resize(100001);
 	stats_dens_counts[1].resize(100001);
-	stats_coldens_counts.resize(10001);
+	stats_coldens_counts.resize(1001);
 	for (int i=0; i<100001; i++)
 	{
 		stats_dens_counts[0][i] = 0;
 		stats_dens_counts[1][i] = 0;
 	}
-	for (int i=0; i<10001; i++)
+	for (int i=0; i<1001; i++)
 	{
 		stats_coldens_counts[i] = 0;
 	}
 
-	stats_dens2d_counts.resize(513);
-	for (int i=0; i<513; i++)
+	stats_dens2d_counts.resize(1025);
+	for (int i=0; i<1025; i++)
 	{
-		stats_dens2d_counts[i].resize(513);
-		for (int j=0; j<513; j++)
+		stats_dens2d_counts[i].resize(1025);
+		for (int j=0; j<1025; j++)
 		{
 			stats_dens2d_counts[i][j] = 0;
 		}
@@ -435,24 +435,24 @@ void Atmosphere::update_stats(double dt, int i)
 		}
 	}
 
-	// using 10.0 as the division factor for both indices, the area of column density measured is 10e5 cm by 10e5 cm = 1e12 cm^2
+	// using 100.0 as the division factor for both indices, the area of column density measured is 100e5 cm by 100e5 cm = 1e14 cm^2
 	// IMPORTANT: if the area is changed, you must update the value of coldens_area and the size of the stats_coldens_counts array near the beginning of this file
-	ix = (int)((1e-5*(my_parts[i]->get_x()-my_planet.get_radius()))/10.0);
-	kx = (int)(1e-5*(my_parts[i]->get_z())/10.0);
-	if ((kx == 0) && (ix >= 0) && (ix <= 10000)) //&& (abs(my_parts[i]->get_y()) <= 500e5))
+	ix = (int)((1e-5*(my_parts[i]->get_x()-my_planet.get_radius()))/100.0);
+	kx = (int)(1e-5*(my_parts[i]->get_z())/100.0);
+	if ((kx == 0) && (ix >= 0) && (ix <= 1000)) //&& (abs(my_parts[i]->get_y()) <= 500e5))
 	{
 		stats_coldens_counts[ix] += 1;
 	}
 
-	ix = (int)(1e-5*my_parts[i]->get_x()/200.0);
+	ix = (int)(1e-5*my_parts[i]->get_x()/100.0);
 	//jx = (int)(1e-5*my_parts[i]->get_y()/200.0);
-	kx = (int)(1e-5*my_parts[i]->get_z()/200.0);
-	if ((abs(ix) <= 256) && ((abs(kx) <= 256)))// && (abs(jx) <= 256)))
+	//kx = (int)(1e-5*my_parts[i]->get_z()/200.0);
+	if ((abs(ix) <= 512) && ((abs(kx) <= 512)))// && (abs(jx) <= 512)))
 	{
-		ix = ix + 256;
+		ix = ix + 512;
 		//stats_dens2d_counts[jx + 256][ix] = stats_dens2d_counts[jx + 256][ix] + 1;
 		//stats_dens2d_counts[-jx + 256][ix] = stats_dens2d_counts[-jx + 256][ix] + 1;
-		stats_dens2d_counts[kx + 256][ix] = stats_dens2d_counts[kx + 256][ix] + 1;
+		stats_dens2d_counts[kx + 512][ix] = stats_dens2d_counts[kx + 512][ix] + 1;
 		//stats_dens2d_counts[-kx + 256][ix] = stats_dens2d_counts[-kx + 256][ix] + 1;
 	}
 
@@ -511,7 +511,7 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 	dens_day_out << "#alt[km]\tdensity[cm-3]\n";
 	dens_night_out << "#alt[km]\tdensity[cm-3]\n";
 	coldens_day_out << "#alt[km]\tcol density[cm-2]\n";
-	dens2d_out << "#this file contains a 513 x 513 grid of 2d density counts\n";
+	dens2d_out << "#this file contains a 1025 x 1025 grid of 2d density counts\n";
 
 	int size = stats_dens_counts[0].size();
 	for (int i=0; i<size; i++)
@@ -534,17 +534,17 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 	dens_night_out.close();
 
 	// output altitude profile in integrated column densities
-	for (int i=0; i<10001; i++)
+	for (int i=0; i<1001; i++)
 	{
 		// coldens_area must be properly set at beginning of file based on observation area in update_stats
 		coldens_day = (dt*rate/(double)total_parts*(double)stats_coldens_counts[i]) / coldens_area;
-		coldens_day_out << i*10 << "\t\t" << coldens_day << "\n";
+		coldens_day_out << i*100 << "\t\t" << coldens_day << "\n";
 	}
 	coldens_day_out.close();
 
-	for (int i=0; i<513; i++)
+	for (int i=0; i<1025; i++)
 	{
-		for (int j=0; j<513; j++)
+		for (int j=0; j<1025; j++)
 		{
 			dens2d_out << stats_dens2d_counts[i][j] << "\t";
 		}
