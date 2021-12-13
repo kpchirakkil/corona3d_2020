@@ -19,7 +19,7 @@ Atmosphere::Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet 
 	my_parts.resize(num_parts);
 	bg_species = bg;
 
-	coldens_area = 1.1e11;  // this value must match the area of observation set in update_stats below
+	coldens_area = 1e12;  // this value must match the area of observation in cm^2 set in update_stats below
 
 	for (int i=0; i<num_parts; i++)
 	{
@@ -58,11 +58,14 @@ Atmosphere::Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet 
 	stats_dens_counts.resize(2);  // index 0 is day side, 1 is night side
 	stats_dens_counts[0].resize(100001);
 	stats_dens_counts[1].resize(100001);
-	stats_coldens_counts.resize(100001);
+	stats_coldens_counts.resize(10001);
 	for (int i=0; i<100001; i++)
 	{
 		stats_dens_counts[0][i] = 0;
 		stats_dens_counts[1][i] = 0;
+	}
+	for (int i=0; i<10001; i++)
+	{
 		stats_coldens_counts[i] = 0;
 	}
 
@@ -432,13 +435,11 @@ void Atmosphere::update_stats(double dt, int i)
 		}
 	}
 
-	// be sure to update the next lines carefully to get the correct area
-	// the width in ix is always 1e5 cm; the length in kx is dependent on the number used in if statement below
-	// using abs(kx) <= 5, the area of column density measured is 1e5 cm by 11e5 cm = 1.1e11 cm^2
-	// IMPORTANT: if the area is changed, you must update the value of coldens_area near the beginning of this file
-	ix = (int)(1e-5*(my_parts[i]->get_x()-my_planet.get_radius()));
-	kx = (int)(1e-5*(my_parts[i]->get_z()-my_planet.get_radius()));
-	if ((abs(kx) <= 5) && (ix >= 0) && (ix <= 100000)) //&& (abs(my_parts[i]->get_y()) <= 500e5))
+	// using 10.0 as the division factor for both indices, the area of column density measured is 10e5 cm by 10e5 cm = 1e12 cm^2
+	// IMPORTANT: if the area is changed, you must update the value of coldens_area and the size of the stats_coldens_counts array near the beginning of this file
+	ix = (int)((1e-5*(my_parts[i]->get_x()-my_planet.get_radius()))/10.0);
+	kx = (int)(1e-5*(my_parts[i]->get_z())/10.0);
+	if ((kx == 0) && (ix >= 0) && (ix <= 10000)) //&& (abs(my_parts[i]->get_y()) <= 500e5))
 	{
 		stats_coldens_counts[ix] += 1;
 	}
@@ -526,15 +527,19 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 		dens_day = (dt*rate/(double)total_parts*sum_day) / volume;
 	    dens_night = (dt*rate/(double)total_parts*sum_night) / volume;
 
-	    // coldens_area must be properly set in update_stats
-	    coldens_day = (dt*rate/(double)total_parts*(double)stats_coldens_counts[i]) / coldens_area;
-
 		dens_day_out << i << "\t\t" << dens_day << "\n";
 		dens_night_out << i << "\t\t" << dens_night << "\n";
-		coldens_day_out << i << "\t\t" << coldens_day << "\n";
 	}
 	dens_day_out.close();
 	dens_night_out.close();
+
+	// output altitude profile in integrated column densities
+	for (int i=0; i<10001; i++)
+	{
+		// coldens_area must be properly set at beginning of file based on observation area in update_stats
+		coldens_day = (dt*rate/(double)total_parts*(double)stats_coldens_counts[i]) / coldens_area;
+		coldens_day_out << i*10 << "\t\t" << coldens_day << "\n";
+	}
 	coldens_day_out.close();
 
 	for (int i=0; i<513; i++)
