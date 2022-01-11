@@ -19,8 +19,6 @@ Atmosphere::Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet 
 	my_parts.resize(num_parts);
 	bg_species = bg;
 
-	coldens_area = 1e14;  // this value must match the area of observation in cm^2 set in update_stats below
-
 	for (int i=0; i<num_parts; i++)
 	{
 		my_parts[i] = parts[i];
@@ -58,14 +56,11 @@ Atmosphere::Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet 
 	stats_dens_counts.resize(2);  // index 0 is day side, 1 is night side
 	stats_dens_counts[0].resize(100001);
 	stats_dens_counts[1].resize(100001);
-	stats_coldens_counts.resize(1001);
+	stats_coldens_counts.resize(100001);
 	for (int i=0; i<100001; i++)
 	{
 		stats_dens_counts[0][i] = 0;
 		stats_dens_counts[1][i] = 0;
-	}
-	for (int i=0; i<1001; i++)
-	{
 		stats_coldens_counts[i] = 0;
 	}
 
@@ -410,10 +405,15 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 
 void Atmosphere::update_stats(double dt, int i)
 {
-	int index = 0;
-	int ix = 0;
-	//int jx = 0;
-	int kx = 0;
+	double x = my_parts[i]->get_x();
+	//double y = my_parts[i]->get_y();
+	double z = my_parts[i]->get_z();
+	int x_index = 0;
+	//int y_index = 0;
+	int z_index = 0;
+	int r_xz_index = 0;
+	//int r_xy_index = 0;
+	int r_3d_index = 0;
 	double e = 0.0;
 	int e_index = 0;
 	//double inverse_v_r = 0.0;
@@ -421,44 +421,38 @@ void Atmosphere::update_stats(double dt, int i)
 	int cos_index = 0;
 
 	//inverse_v_r = abs(dt / (my_parts[i]->get_radius() - my_parts[i]->get_previous_radius()));
-	index = (int)(1e-5*(my_parts[i]->get_radius()-my_planet.get_radius()));
+	r_3d_index = (int)(1e-5*(my_parts[i]->get_radius()-my_planet.get_radius()));
 
-	if (index >= 0 && index <= 100000)
+	if (r_3d_index >= 0 && r_3d_index <= 100000)
 	{
-		if (my_parts[i]->get_x() > 0.0)  // increment dayside density count
+		if (x > 0.0)  // increment dayside density count
 		{
-			stats_dens_counts[0][index] += 1;
+			stats_dens_counts[0][r_3d_index] += 1;
 		}
 		else  // increment nightside density count
 		{
-			stats_dens_counts[1][index] += 1;
+			stats_dens_counts[1][r_3d_index] += 1;
 		}
 	}
 
-	// using 100.0 as the division factor for both indices, the area of column density measured is 100e5 cm by 100e5 cm = 1e14 cm^2
-	// IMPORTANT: if the area is changed, you must update the value of coldens_area and the size of the stats_coldens_counts array near the beginning of this file
-	ix = (int)((1e-5*(my_parts[i]->get_x()-my_planet.get_radius()))/100.0);
-	kx = (int)(1e-5*(my_parts[i]->get_z())/100.0);
-	if ((kx == 0) && (ix >= 0) && (ix <= 1000)) //&& (abs(my_parts[i]->get_y()) <= 500e5))
+	// update dayside integrated column density count for current altitude
+	r_xz_index = (int)(1e-5*(sqrt(x*x + z*z) - my_planet.get_radius()));
+	if ((x >= 0.0) && (r_xz_index >= 0) && (r_xz_index <= 100000)) //&& (abs(my_parts[i]->get_y()) <= 500e5))
 	{
-		stats_coldens_counts[ix] += 1;
+		stats_coldens_counts[r_xz_index] += 1;
 	}
 
-	ix = (int)(1e-5*my_parts[i]->get_x()/100.0);
-	//jx = (int)(1e-5*my_parts[i]->get_y()/200.0);
-	//kx = (int)(1e-5*my_parts[i]->get_z()/200.0);
-	if ((abs(ix) <= 512) && ((abs(kx) <= 512)))// && (abs(jx) <= 512)))
+	x_index = (int)(1e-5*x/100.0);
+	z_index = (int)(1e-5*z/100.0);
+	if ((abs(x_index) <= 512) && ((abs(z_index) <= 512)))
 	{
-		ix = ix + 512;
-		//stats_dens2d_counts[jx + 256][ix] = stats_dens2d_counts[jx + 256][ix] + 1;
-		//stats_dens2d_counts[-jx + 256][ix] = stats_dens2d_counts[-jx + 256][ix] + 1;
-		stats_dens2d_counts[kx + 512][ix] = stats_dens2d_counts[kx + 512][ix] + 1;
-		//stats_dens2d_counts[-kx + 256][ix] = stats_dens2d_counts[-kx + 256][ix] + 1;
+		x_index = x_index + 512;
+		stats_dens2d_counts[z_index + 512][x_index] = stats_dens2d_counts[z_index + 512][x_index] + 1;
 	}
 
 	for (int j=0; j<stats_num_EDFs; j++)
 	{
-		if (index == stats_EDF_alts[j])
+		if (r_3d_index == stats_EDF_alts[j])
 		{
 			e = my_parts[i]->get_energy_in_eV();
 			e_index = (int)(20.0*e);
@@ -478,7 +472,7 @@ void Atmosphere::update_stats(double dt, int i)
 			double radial_v = abs((my_parts[i]->get_radius() - my_parts[i]->get_previous_radius()) / dt);
 			if ((e_index >= 0 && e_index <= 200) && (cos_index >= 0 && cos_index <= 200))
 			{
-				if (my_parts[i]->get_x() > 0.0)
+				if (x > 0.0)
 				{
 					stats_EDFs[0][j][e_index][cos_index] += 1;
 				}
@@ -499,6 +493,7 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 	double r_in_cm = 0.0;
 	double dens_day = 0.0;
 	double dens_night = 0.0;
+	double coldens_area = 0.0;
 	double coldens_day = 0.0;
 	double sum_day = 0.0;
 	double sum_night = 0.0;
@@ -511,7 +506,7 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 	dens_day_out << "#alt[km]\tdensity[cm-3]\n";
 	dens_night_out << "#alt[km]\tdensity[cm-3]\n";
 	coldens_day_out << "#alt[km]\tcol density[cm-2]\n";
-	dens2d_out << "#this file contains a 1025 x 1025 grid of 2d density counts\n";
+	dens2d_out << "#this file contains a 1025 x 1025 grid of 2d integrated column densities for an observer viewing XZ plane from Y=infinity; each pixel represents a 100 square km area; density units are in particles per cm^2\n";
 
 	int size = stats_dens_counts[0].size();
 	for (int i=0; i<size; i++)
@@ -533,20 +528,22 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 	dens_day_out.close();
 	dens_night_out.close();
 
-	// output altitude profile in integrated column densities
-	for (int i=0; i<1001; i++)
+	// output altitude profile of integrated column densities
+	for (int i=0; i<100001; i++)
 	{
-		// coldens_area must be properly set at beginning of file based on observation area in update_stats
+		r_in_cm = my_planet.get_radius() + 1e5*(double)i;
+		coldens_area = 0.5 * constants::pi * (pow(r_in_cm+1e5, 2.0) - pow(r_in_cm, 2.0));
 		coldens_day = (dt*rate/(double)total_parts*(double)stats_coldens_counts[i]) / coldens_area;
-		coldens_day_out << i*100 << "\t\t" << coldens_day << "\n";
+		coldens_day_out << i << "\t\t" << coldens_day << "\n";
 	}
 	coldens_day_out.close();
 
+	// output 2d column density image data
 	for (int i=0; i<1025; i++)
 	{
 		for (int j=0; j<1025; j++)
 		{
-			dens2d_out << stats_dens2d_counts[i][j] << "\t";
+			dens2d_out << (dt*rate/(double)total_parts*(double)stats_dens2d_counts[i][j]) / 1.0e14 << "\t";
 		}
 		dens2d_out << "\n";
 	}
