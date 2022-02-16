@@ -336,10 +336,14 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
 	}
 
 	// convert energy to ergs
+	Ei = 5.0;
 	Ei = Ei*constants::ergev;
+	//Ei = Ei*constants::jev;
+	std::cout << constants::ergev << "\n";
 
 	// Translational Energy of H Resulting from Dissociative Recombination of HCO+
-	double v = sqrt(2.0*Ei / (m_H + (m_H*m_H/m_CO)));
+	double v = sqrt(2.0*Ei / (m_H));// + (m_H*m_H/m_CO)));
+	std::cout << 2*Ei << " " << m_H << " " << v << "\n";
 
 	// spherically isotropic velocity vector
 	phi = constants::twopi*common::get_rand();

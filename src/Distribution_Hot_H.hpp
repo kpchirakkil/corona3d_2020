@@ -46,11 +46,17 @@ private:
 	// init particle using HCOplus_DR mechanism
 	void init_HCOplus_DR_particle(shared_ptr<Particle> p);
 
+  	// init particle using any_mechanism_prob (to estimate escape probability)
+	void init_any_mechanism_prob_particle(shared_ptr<Particle> p);
+
 	// generate HCOplus_DR_CDF for given altitude range using imported density/temp profiles
 	void make_HCOplus_DR_CDF(double lower_alt, double upper_alt);
 
 	// generate H_Hplus_CDF for given altitude range using imported density/temp profiles
 	void make_H_Hplus_CDF(double lower_alt, double upper_alt);
+
+  	// generate any_mechanism_prob_CDF for given altitude range using imported density/temp profiles (to estimate escape probability)
+	void make_any_mechanism_prob_CDF(double lower_alt, double upper_alt);
 };
 
 #endif /* DISTRIBUTION_HOT_H_HPP_ */
