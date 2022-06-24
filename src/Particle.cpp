@@ -58,11 +58,11 @@ void Particle::do_collision(shared_ptr<Particle> target, double theta, double ti
 	// double v2 = sqrt(v2v[0]*v2v[0] + v2v[1]*v2v[1] + v2v[2]*v2v[2]);  // particle 2 c-o-m scalar velocity
 
 	// unit vector parallel to particle 1 velocity
-	Matrix<double, 3, 1> r = velocity.array() / sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1] + velocity[2]*velocity[2]);
+	Matrix<double, 3, 1> r = velocity.array() / sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1] + velocity[2]*velocity[2]); // velocity is a three-component vector: vx, vy, vz, so r is the velocity vector normalised to -1 to 1
 
 	double alpha = atan2(velocity[1], velocity[0]);
 	double phi = atan2(velocity[2], sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1]));
-	double gamma = constants::twopi*common::get_rand();
+	double gamma = constants::twopi*common::get_rand();  // bg temporary comment - gamma random no. from uniform distribution between 0 and 2pi
 
 	Matrix<double, 3, 1> vp;
 	vp[0] = v1*cos(alpha)*cos(phi-theta);
@@ -85,14 +85,15 @@ void Particle::do_collision(shared_ptr<Particle> target, double theta, double ti
 	Rrg(2, 1) = r[1]*r[2]*Vg-r[0]*Sg;
 	Rrg(2, 2) = r[2]*r[2]*Vg+Cg;
 
+
 	Matrix<double, 3, 1> vrel1 = Rrg * vp;
 
 	// update post-collision velocity
 	if (traced)
 	{
-		v_before = get_total_v()*1e-5;
+	  v_before = get_total_v()*1e-5; // bg temporary comment - thsi is sqrt(vx^2 + vy^2 + vz^2)
 	}
-	velocity = vcm.array() + vrel1.array();
+	velocity = vcm.array() + vrel1.array(); // bg temporary comment - here is where velocity changes
 
 	// in case you need the updated collision partner velocity for something
 	// targ_v = vcm.array() - ((my_mass / targ_mass) * vrel1.array());
