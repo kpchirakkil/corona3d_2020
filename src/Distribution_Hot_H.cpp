@@ -15,8 +15,6 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	m_HCOplus = 29.0175*constants::amu;
 	m_CO = 28.0101*constants::amu;
 	source = "";
-	H_Hplus_rate_coeff = 8.7e-10;  // default coeff from Rodriguez 1984
-	HCOplus_DR_rate_coeff = 2.0e-7;  // default coeff from Fox 2015
 	global_rate = 0.0;
 
 	temp_profile.resize(4);
@@ -111,8 +109,17 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 		{
 			electron_prof_filename = values[i];
 		}
+		else if (parameters[i] == "any_mechanism_energy")
+		{
+		  any_mechanism_energy = stod(values[i]);
+		}
+		else if (parameters[i] == "any_mechanism_alt_bin")
+		{
+		  any_mechanism_alt_bin = stoi(values[i]);
+		}
+		    
 	}
-
+	
 	common::import_csv(temp_prof_filename, temp_profile[0], temp_profile[1], temp_profile[2], temp_profile[3]);
 	common::import_csv(H_prof_filename, H_profile[0], H_profile[1]);
 	common::import_csv(Hplus_prof_filename, Hplus_profile[0], Hplus_profile[1]);
@@ -149,7 +156,7 @@ void Distribution_Hot_H::init(shared_ptr<Particle> p)
 	}
 	else if (source == "any_mechanism_prob")
 	{
-	        init_any_mechanism_prob_particle(p);
+	         init_any_mechanism_prob_particle(p);
 	}
 }
 
@@ -373,7 +380,7 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p)
 	p->init_particle(x, y, z, vx, vy, vz);
 }
 
-// init particle using any_mechanism_prob (to roughly estimate escape rate for any mechanism, for a 5eV distribution of particles produced at a certain altitude)
+// init particle using any_mechanism_prob (to compute  escape rate of H atoms born at a certain altitude)
 void Distribution_Hot_H::init_any_mechanism_prob_particle(shared_ptr<Particle> p)
 {
 	// altitude distribution for hot H
@@ -396,7 +403,7 @@ void Distribution_Hot_H::init_any_mechanism_prob_particle(shared_ptr<Particle> p
 	}
 
 	// Select Electronic Channel
-	double Ei = 5;       // (eV). Assume representative excess energy of x eV for all mechanisms, with none to electronic, vibrational or rotational levels
+	double Ei = any_mechanism_energy;       // (eV). Assume representative excess energy of x eV for all mechanisms, with none to electronic, vibrational or rotational levels
 
 	// convert energy to ergs
 	Ei = Ei*constants::ergev;
@@ -411,7 +418,7 @@ void Distribution_Hot_H::init_any_mechanism_prob_particle(shared_ptr<Particle> p
 	double vy = v*sqrt(1-u*u)*sin(phi);
 	double vz = v*u;
 
-       	std::cout << "alt " << alt/1e5 << "\t" << v << "\n"; // This line allows check that particles are being produced at the altitude (km) and with the velocity (cm/s) expected
+       	//std::cout << "alt " << alt/1e5 << "\t" << v << "\n"; // This line allows check that particles are being produced at the altitude (km) and with the velocity (cm/s) expected
 
 	// Don't add initial translational momentum of reactants -  this is acceptable because the velocities are isotropic, so there will be a net 0 effect on v
 	p->init_particle(x, y, z, vx, vy, vz);
@@ -657,7 +664,7 @@ void Distribution_Hot_H::make_any_mechanism_prob_CDF(double lower_alt, double up
 	{
 	        any_mechanism_prob_CDF[1][i] = lower_alt + bin_size*i;
 		// the section below produces all test particles in a single bin
-		if (i == 0) // Choose the altitude bin at which particles are produced. If using Mars, max i is 3199; if using Venus, max i is 3099
+                if (i == any_mechanism_alt_bin) // any_mechanism_alt_bin is the altitude bin at which particles are produced (set in Hot_H.cfg)
 		{
 		        any_mechanism_prob_CDF[0][i] = 1;
 		}

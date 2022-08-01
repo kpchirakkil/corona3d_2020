@@ -22,8 +22,10 @@ private:
 	double m_Hplus;            // [g] H+ ion mass
 	double m_HCOplus;          // [g] HCO+ ion mass
 	double m_CO;               // [g] CO mass
-	double H_Hplus_rate_coeff; // [cm^3/s] rate coefficient for H+ + H -> H* + H+
+  	double H_Hplus_rate_coeff; // [cm^3/s] rate coefficient for H+ + H -> H* + H+
 	double HCOplus_DR_rate_coeff;  // [cm^3/s] rate coefficient for HCO+ + e -> H* + CO
+        double any_mechanism_energy; // [eV] energy given to H atom when 'any_mechanism_prob' source chose (producing H at single altitude)
+        int any_mechanism_alt_bin; // altitude bin in which H atoms are produced when source is 'any_mechanism_prob'
 	double global_rate;    // [s^-1] set by chosen production method; calling function needs to divide this by 2 to get hemispherical rate
 	string source;         // which source to use when initializing particles ('H_Hplus' or 'HCOplus_DR')
         vector<vector<double>> H_profile;
