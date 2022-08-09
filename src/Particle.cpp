@@ -62,7 +62,7 @@ void Particle::do_collision(shared_ptr<Particle> target, double theta, double ti
 
 	double alpha = atan2(velocity[1], velocity[0]);
 	double phi = atan2(velocity[2], sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1]));
-	double gamma = constants::twopi*common::get_rand();  // bg temporary comment - gamma random no. from uniform distribution between 0 and 2pi
+	double gamma = constants::twopi*common::get_rand();  //  gamma random no. from uniform distribution between 0 and 2pi
 
 	Matrix<double, 3, 1> vp;
 	vp[0] = v1*cos(alpha)*cos(phi-theta);
@@ -91,9 +91,9 @@ void Particle::do_collision(shared_ptr<Particle> target, double theta, double ti
 	// update post-collision velocity
 	if (traced)
 	{
-	  v_before = get_total_v()*1e-5; // bg temporary comment - thsi is sqrt(vx^2 + vy^2 + vz^2)
+	  v_before = get_total_v()*1e-5; //  sqrt(vx^2 + vy^2 + vz^2)
 	}
-	velocity = vcm.array() + vrel1.array(); // bg temporary comment - here is where velocity changes
+	velocity = vcm.array() + vrel1.array(); // here is where velocity changes
 
 	// in case you need the updated collision partner velocity for something
 	// targ_v = vcm.array() - ((my_mass / targ_mass) * vrel1.array());
