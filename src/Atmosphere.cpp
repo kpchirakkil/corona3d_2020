@@ -302,7 +302,6 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 	{
 		active_indices[i] = i;
 	}
-
 	cout << "Simulating Particle Transport...\n";
 
 	for (int i=0; i<num_steps; i++)

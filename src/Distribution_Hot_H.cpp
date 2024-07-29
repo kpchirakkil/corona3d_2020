@@ -646,7 +646,7 @@ void Distribution_Hot_H::make_HCOplus_DR_CDF(double lower_alt, double upper_alt)
 	}
 	//double global_rate_HCOplus_DR = rate_sum*bin_size * 4.0 * constants::pi * pow(my_planet.get_radius()+upper_alt, 2.0);
 	double global_rate_HCOplus_DR = rate_sum_times_r_sqrd*bin_size;
-	cout << "Global hot H production rate from HCO+ DR:\n" << global_rate_HCOplus_DR << " per second\n";
+	cout << "Global hot H production rate from HCO+ DR:\n" << "Here_4" << global_rate_HCOplus_DR << " per second\n";
 	global_rate = global_rate_HCOplus_DR;
 }
 

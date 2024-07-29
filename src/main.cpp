@@ -20,6 +20,10 @@ shared_ptr<Particle> set_particle_type(string type)
 	{
 		p = make_shared<Particle_H>();
 	}
+	else if (type == "H2")
+	{
+		p = make_shared<Particle_H2>();
+	}
 	else if (type == "O")
 	{
 		p = make_shared<Particle_O>();
@@ -257,7 +261,6 @@ int main(int argc, char* argv[])
 		cout << "Invalid distribution type! Please check configuration file.\n";
 		return 1;
 	}
-
 	//initialize Background_Species
 	string bg_config_files[num_bgparts];
 	for (int i=0; i<num_bgparts; i++)
@@ -265,7 +268,6 @@ int main(int argc, char* argv[])
 		bg_config_files[i] = values[bg_params_index + i];
 	}
 	Background_Species bg_spec(num_bgparts, bg_config_files, my_planet, ref_temp, ref_height, temp_profile_filename, neut_densities_filename, profile_bottom_alt, profile_top_alt);
-
 	//set up EDF altitudes to be passed to atmosphere class
 	int EDF_alts[num_EDFs];
 	for (int i=0; i<num_EDFs; i++)

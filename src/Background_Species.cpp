@@ -53,7 +53,6 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 	{
 		use_dens_profile = false;
 	}
-
 	bg_parts.resize(num_species);
 	bg_densities.resize(num_species);
 	dens_interp.resize(num_species);
@@ -102,7 +101,6 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 			}
 		}
 		infile.close();
-
 		for (int j=0; j<num_params; j++)
 		{
 			if (parameters[j] == "type")
@@ -135,7 +133,6 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 		}
 		bg_scaleheights[i].push_back(constants::k_b*ref_temp/(bg_parts[i]->get_mass()*ref_g));
 		bg_avg_v[i].push_back(sqrt(constants::k_b*ref_temp/bg_parts[i]->get_mass()));
-
 		for (int j=0; j<num_energies; j++)
 		{
 			diff_sigma_CDFs[i][j].resize(2);
@@ -146,7 +143,6 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 			make_new_CDF(i, j, diff_sigma_PDF[0], diff_sigma_PDF[1]);
 		}
 	}
-
 	// read in temperature profile (if available) and set avg_v for each alt bin for each species
 	if (use_temp_profile)
 	{
@@ -179,6 +175,11 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 			bg_densities[i].clear();
 			bg_scaleheights[i].clear();
 			bg_scaleheights[i].resize(2);
+		}
+	
+		if (num_species == 6)
+		{
+			common::import_csv(dens_profile_filename, dens_alt_bins, bg_densities[0], bg_densities[1], bg_densities[2], bg_densities[3], bg_densities[4], bg_densities[5]);
 		}
 		if (num_species == 5)
 		{
@@ -491,6 +492,10 @@ shared_ptr<Particle> Background_Species::set_particle_type(string type)
 	if (type == "H")
 	{
 		p = make_shared<Particle_H>();
+	}
+	else if (type == "H2")
+	{
+		p = make_shared<Particle_H2>();
 	}
 	else if (type == "O")
 	{

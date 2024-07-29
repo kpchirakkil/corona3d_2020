@@ -13,6 +13,7 @@
 #include <sstream>
 #include <fstream>
 #include "Particle_CO.hpp"
+#include "Particle_H2.hpp"
 #include "Particle_CO2.hpp"
 #include "Particle_H.hpp"
 #include "Particle_N2.hpp"
