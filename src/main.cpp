@@ -266,6 +266,7 @@ int main(int argc, char* argv[])
 	for (int i=0; i<num_bgparts; i++)
 	{
 		bg_config_files[i] = values[bg_params_index + i];
+		std::cout << i << "\n";
 	}
 	Background_Species bg_spec(num_bgparts, bg_config_files, my_planet, ref_temp, ref_height, temp_profile_filename, neut_densities_filename, profile_bottom_alt, profile_top_alt);
 	//set up EDF altitudes to be passed to atmosphere class

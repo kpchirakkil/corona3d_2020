@@ -6,6 +6,7 @@
  */
 
 #include "Common_Functions.hpp"
+#include <iostream>
 
 // function to check if custom random seed exists in local file "rng_seed"
 // if file does not exist, uses system clock to generate seed
@@ -63,6 +64,7 @@ namespace common {
 		vector<string> row;
 		while (getline(infile, line))
 		{
+			row.clear();
 			if (line[0] == '#' || line.empty() || std::all_of(line.begin(), line.end(), ::isspace))
 			{
 				continue;
