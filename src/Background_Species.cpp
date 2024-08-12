@@ -176,7 +176,10 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 			bg_scaleheights[i].clear();
 			bg_scaleheights[i].resize(2);
 		}
-	
+		if (num_species == 7)
+		{
+			common::import_csv(dens_profile_filename, dens_alt_bins, bg_densities[0], bg_densities[1], bg_densities[2], bg_densities[3], bg_densities[4], bg_densities[5], bg_densities[6]);
+		}
 		if (num_species == 6)
 		{
 			common::import_csv(dens_profile_filename, dens_alt_bins, bg_densities[0], bg_densities[1], bg_densities[2], bg_densities[3], bg_densities[4], bg_densities[5]);
@@ -500,6 +503,10 @@ shared_ptr<Particle> Background_Species::set_particle_type(string type)
 	else if (type == "O")
 	{
 		p = make_shared<Particle_O>();
+	}
+	else if (type == "D")
+	{
+		p = make_shared<Particle_D>();
 	}
 	else if (type == "N2")
 	{

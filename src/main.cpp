@@ -28,6 +28,10 @@ shared_ptr<Particle> set_particle_type(string type)
 	{
 		p = make_shared<Particle_O>();
 	}
+	else if (type == "D")
+	{
+		p = make_shared<Particle_D>();
+	}
 	else if (type == "N2")
 	{
 		p = make_shared<Particle_N2>();

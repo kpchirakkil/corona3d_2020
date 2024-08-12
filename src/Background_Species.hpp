@@ -18,6 +18,7 @@
 #include "Particle_H.hpp"
 #include "Particle_N2.hpp"
 #include "Particle_O.hpp"
+#include "Particle_D.hpp"
 #include "Distribution_MB.hpp"
 #include "Planet.hpp"
 #include "Common_Functions.hpp"

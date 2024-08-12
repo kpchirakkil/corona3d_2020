@@ -12,6 +12,7 @@
 #include "Particle_H2.hpp"
 #include "Particle_N2.hpp"
 #include "Particle_O.hpp"
+#include "Particle_D.hpp"
 #include <iostream>
 
 Particle::Particle()

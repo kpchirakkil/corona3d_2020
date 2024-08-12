@@ -258,6 +258,44 @@ namespace common {
 		infile.close();
 	}
 
+	void import_csv(string filename, vector<double> &col1, vector<double> &col2, vector<double> &col3, vector<double> &col4, vector<double> &col5, vector<double> &col6, vector<double> &col7, vector<double> &col8)
+	{
+		ifstream infile;
+		infile.open(filename);
+		if (!infile.good())
+		{
+			cout << "\"" << filename << "\" not found!\n";
+			exit(1);
+		}
+		string line, word;
+		vector<string> row;
+		while (getline(infile, line))
+		{
+			row.clear();
+			if (line[0] == '#' || line.empty() || std::all_of(line.begin(), line.end(), ::isspace))
+			{
+				continue;
+			}
+			else
+			{
+				stringstream str(line);
+				while(getline(str, word, ','))
+				{
+					row.push_back(word);
+				}
+				col1.push_back(stod(row[0]));
+				col2.push_back(stod(row[1]));
+				col3.push_back(stod(row[2]));
+				col4.push_back(stod(row[3]));
+				col5.push_back(stod(row[4]));
+				col6.push_back(stod(row[5]));
+				col7.push_back(stod(row[6]));
+				col8.push_back(stod(row[7]));
+			}
+		}
+		infile.close();
+	}
+
 	// returns interpolated value at x from parallel arrays (x_data, y_data)
 	// assumes that x_data has at least two elements, is sorted and is strictly monotonic increasing
 	double interpolate(vector<double> &x_data, vector<double> &y_data, double x)

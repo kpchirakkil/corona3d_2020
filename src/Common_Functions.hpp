@@ -40,6 +40,7 @@ namespace common {
 	void import_csv(string filename, vector<double> &col1, vector<double> &col2, vector<double> &col3, vector<double> &col4, vector<double> &col5);
 	void import_csv(string filename, vector<double> &col1, vector<double> &col2, vector<double> &col3, vector<double> &col4, vector<double> &col5, vector<double> &col6);
 	void import_csv(string filename, vector<double> &col1, vector<double> &col2, vector<double> &col3, vector<double> &col4, vector<double> &col5, vector<double> &col6, vector<double> &col7);
+	void import_csv(string filename, vector<double> &col1, vector<double> &col2, vector<double> &col3, vector<double> &col4, vector<double> &col5, vector<double> &col6, vector<double> &col7, vector<double> &col8);
 	// returns interpolated value at x from parallel arrays (x_data, y_data)
 	double interpolate(vector<double> &x_data, vector<double> &y_data, double x);
 
