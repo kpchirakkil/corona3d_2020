@@ -1,4 +1,4 @@
-#0.1eV differential cross sections for O-H elastic collisions from Zhang et al. 2009,
+#0.79eV differential cross sections for O-H elastic collisions from Krstic and Shultz. 1998,
 #angle(deg),sigma(cm^2)
 0.000440648,2.49E-17
 0.00232174,1.31E-16
