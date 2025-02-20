@@ -16,6 +16,7 @@
 #include "Distribution_Import.hpp"
 #include "Distribution_MB.hpp"
 #include "Common_Functions.hpp"
+#include "Vtally.hpp"
 using namespace std;
 
 class Atmosphere {
@@ -42,6 +43,8 @@ private:
 
 	vector<vector<int>> stats_dens_counts;  // vector for accumulating particle density counts
 	vector<int> stats_coldens_counts;  // vector for accumulating integrated dayside column density counts
+        vector<double> stats_angleavg_dens;  // vector for accumulating angle-averaged column density counts in x=const. plane
+    //bg temp -- remove    vector<vector<double>> stats_angleavg_vel_dist;  // vector for accumulating angle-averaged velocity distribution counts in x=const. plane
 	vector<vector<int>> stats_dens2d_counts;  // stores a 2d grid of dayside column density counts
 	int stats_num_EDFs;  // number of altitude EDFs to track; populated from corona3d_2020.cfg
 	vector<int> stats_EDF_alts;  // holds list of altitudes that (in km above surface) that EDFs are tracked at
@@ -49,8 +52,8 @@ private:
 	vector<double> stats_loss_rates;  // loss rates at each EDF altitude are calculated and stored here
 
 	// these two modules are where stats are accumulated and then output at the end of a simulation
-	void update_stats(double dt, int idx);
-	void output_stats(double dt, double rate, int total_parts, string output_dir);
+        void update_stats(double dt, int idx);
+  void output_stats(double dt, double rate, int total_parts, string output_dir, Vtally my_vtally);
 
 	// output test particle trace data for selected particles
 	void output_collision_data();

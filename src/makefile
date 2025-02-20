@@ -1,7 +1,7 @@
 CFLAGS=-O2 #g -O0 -Wall -Wextra
 
-corona3d_2020: Atmosphere.o Background_Species.o Common_Functions.o Distribution_Hot_H.o Distribution_Hot_O.o Distribution_Import.o Distribution_MB.o Distribution.o Interpolator.o main.o Particle_CO.o Particle_CO2.o Particle_H.o Particle_N2.o Particle_O.o Particle.o Planet.o
-	g++ $(CFLAGS) Atmosphere.o Background_Species.o Common_Functions.o Distribution_Hot_H.o Distribution_Hot_O.o Distribution_Import.o Distribution_MB.o Distribution.o Interpolator.o main.o Particle_CO.o Particle_CO2.o Particle_H.o Particle_N2.o Particle_O.o Particle.o Planet.o -o corona3d_2020
+corona3d_2020: Atmosphere.o Background_Species.o Common_Functions.o Distribution_Hot_H.o Distribution_Hot_O.o Distribution_Import.o Distribution_MB.o Distribution.o Interpolator.o main.o Particle_CO.o Particle_CO2.o Particle_H.o Particle_N2.o Particle_O.o Particle.o Planet.o vtally.o
+	g++ $(CFLAGS) Atmosphere.o Background_Species.o Common_Functions.o Distribution_Hot_H.o Distribution_Hot_O.o Distribution_Import.o Distribution_MB.o Distribution.o Interpolator.o main.o Particle_CO.o Particle_CO2.o Particle_H.o Particle_N2.o Particle_O.o Particle.o Planet.o vtally.o -o corona3d_2020
 
 Atmosphere.o: Atmosphere.cpp
 	g++ $(CFLAGS) -c Atmosphere.cpp
@@ -53,6 +53,9 @@ Particle.o: Particle.cpp
 
 Planet.o: Planet.cpp
 	g++ $(CFLAGS) -c Planet.cpp
+
+vtally.o: vtally.cpp
+	g++ $(CFLAGS) -c vtally.cpp
 
 clean:
 	rm *.o

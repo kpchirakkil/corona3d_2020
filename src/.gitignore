@@ -15,7 +15,7 @@ output/*/*.out
 
 # Python scripts
 ################
-*.py
+#*.py
 
 # Outputs from analysis/plotting scripts
 ########################################
@@ -27,9 +27,9 @@ output/*.csv~
 *.pdf
 *.svg
 *.png
-*.xlsx
-*.csv
-*.txt
+#*.xlsx
+#*.csv
+#*.txt
 *.txt~
 
 

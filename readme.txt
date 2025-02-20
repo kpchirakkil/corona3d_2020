@@ -28,7 +28,8 @@ On Mac:
      brew install eigen
 
 You may need to look up how to install the Eigen library on your particular system if
-neither of these commands works. Once installed, retry make, and it should work now.
+neither of these commands works. Once installed, retry make, and it should work now. The relevant
+'include' line may also need to be commented in in Particle.hpp.
 
 Once installed, modify the corona3d_2020.cfg file to have the desired parameters. To
 run the program, execute the following command from within the src directory:
@@ -76,8 +77,4 @@ the background species' densities at the current altitude along with the availab
 cross sections supplied in the configuration files. If it is determined that a collision occurred, then the
 particle's velocity vector is again updated using convervation of momentum (only elastic collisions are considered
 currently). Finally, a deactivation check is done using three deacitivation criteria.
-
-
-
-
 

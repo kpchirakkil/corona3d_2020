@@ -32,6 +32,7 @@ Atmosphere::Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet 
 	stats_EDFs.resize(2);   // index 0 is day side EDFs, 1 is night side
 	stats_EDFs[0].resize(stats_num_EDFs);
 	stats_EDFs[1].resize(stats_num_EDFs);
+       	stats_angleavg_dens.resize(stats_num_EDFs); // vector for accumulating angle-averaged column density counts in x=const. plane
 
 	for (int i=0; i<stats_num_EDFs; i++)
 	{
@@ -63,6 +64,7 @@ Atmosphere::Atmosphere(int n, int num_to_trace, string trace_output_dir, Planet 
 		stats_dens_counts[1][i] = 0;
 		stats_coldens_counts[i] = 0;
 	}
+	
 
 	stats_dens2d_counts.resize(1025);
 	for (int i=0; i<1025; i++)
@@ -267,6 +269,7 @@ void Atmosphere::output_alt_energy_distro(double alt_in_cm, double e_bin_width, 
 // a lot of stuff in here needs to be changed to be dynamically determined at runtime
 void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, double upper_bound, int print_status_freq, int output_pos_freq, string output_pos_dir, string output_stats_dir)
 {
+  
 	int night_escape_count = 0;
 	int day_escape_count = 0;
 	double v_esc_current = 0.0;
@@ -289,6 +292,9 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 	double v_esc_upper = sqrt(2.0 * constants::G * my_planet.get_mass() / upper_bound);
 	double global_rate = my_dist->get_global_rate();
 	double k = my_planet.get_k_g();
+	Vtally my_vtally(stats_num_EDFs,stats_EDF_alts,100.0,20.0,400.0,dt,(global_rate/2.0), num_parts, my_planet.get_radius());
+
+	
 
 	vector<int> active_indices;  // list of indices for active particles
 	active_indices.resize(num_parts);
@@ -326,7 +332,8 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 
 		for (int j=0; j<active_parts; j++)
 		{
-			update_stats(dt, active_indices[j]);
+		  update_stats(dt, active_indices[j]);
+		        my_vtally.update_vtally(my_parts[active_indices[j]]);
 			my_parts[active_indices[j]]->do_timestep(dt, k);
 
 			if (bg_species.check_collision(my_parts[active_indices[j]], dt))
@@ -390,7 +397,8 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 		output_collision_data();
 	}
 
-	output_stats(dt, (global_rate / 2.0), num_parts, output_stats_dir);
+	output_stats(dt, (global_rate / 2.0), num_parts, output_stats_dir, my_vtally);
+
 
 	cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;
 	cout << "Active particles remaining: " << active_parts << endl;
@@ -403,11 +411,16 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 	cout << "Total loss rate: " << ((double)day_escape_count / (double)(num_parts) + (double)night_escape_count / (double)(num_parts)) * (global_rate / 2.0) << endl;
 }
 
+
+
 void Atmosphere::update_stats(double dt, int i)
 {
 	double x = my_parts[i]->get_x();
-	//double y = my_parts[i]->get_y();
+	double y = my_parts[i]->get_y();
 	double z = my_parts[i]->get_z();
+	//	double vx = my_parts[i]->get_vx();
+//bg temp -- remove	double vy = my_parts[i]->get_vy();
+//bg temp -- remove	double vz = my_parts[i]->get_vz();
 	int x_index = 0;
 	//int y_index = 0;
 	int z_index = 0;
@@ -419,6 +432,9 @@ void Atmosphere::update_stats(double dt, int i)
 	//double inverse_v_r = 0.0;
 	double cos_theta = 0.0;
 	int cos_index = 0;
+//bg temp -- remove	double v_i = 0;
+//bg temp -- remove	double v_iplus1 = 0;
+//bg temp -- remove	double w = 100000e5; // width of line of sight (cm)
 
 	//inverse_v_r = abs(dt / (my_parts[i]->get_radius() - my_parts[i]->get_previous_radius()));
 	r_3d_index = (int)(1e-5*(my_parts[i]->get_radius()-my_planet.get_radius()));
@@ -484,9 +500,76 @@ void Atmosphere::update_stats(double dt, int i)
 			stats_loss_rates[j] = stats_loss_rates[j] + radial_v;
 		}
 	}
+	
+	// for bg angle-averaged density calculation in constant x plane (limb observation)
+	for (int j=0; j<stats_num_EDFs; j++)
+	  {
+	    if ((int)(1e-5*(x-my_planet.get_radius())) == stats_EDF_alts[j]) // if particle in the slab where x = the chosen altitude (towards the Sun)
+	      {
+		if (sqrt(pow(y,2) + pow(z,2)) <= 1e5/2)
+	      {
+		stats_angleavg_dens[j] += 1;
+		  }
+		else if (sqrt(pow(y,2) + pow(z,2)) > 1e5/2)
+		{
+		  stats_angleavg_dens[j] += (2/constants::pi)*asin(1e5/(2*sqrt(pow(y,2) + pow(z,2))));
+		}
+		}
+	  }
+
+//bg temp -- remove	// NEW SECTION Apr 2023- will need checking and debugging
+//bg temp -- remove	// for angle-averaged velocity distribution calculation in constant x plane (limb observation)
+//bg temp -- remove	for (int j=0; j<stats_num_EDFs; j++)
+//bg temp -- remove	  {
+//bg temp -- remove	    if ((int)(1e-5*(x-my_planet.get_radius())) == stats_EDF_alts[j]) // if particle in the slab where x = the chosen altitude (towards the Sun)
+//bg temp -- remove	      {
+//bg temp -- remove		if (sqrt(y*y + z*z) <= w/2.0) // w defined above
+//bg temp -- remove		  {
+//bg temp -- remove		    //  std::cout << i << "\t" << y << "\t" << z << "\t" << stats_EDF_alts[j] << "\t" << sqrt(vy*vy +vz*vz) << "\n";
+//bg temp -- remove		    for (int v_index=0; v_index<201; v_index++)
+//bg temp -- remove		      {
+//bg temp -- remove			v_i = -40e5 + v_index*(40e5/100);
+//bg temp -- remove			v_iplus1 = -40e5 + (v_index+1)*(40e5/100);
+//bg temp -- remove			if (v_i >= 0 and v_iplus1 > 0)
+//bg temp -- remove			  {
+//bg temp -- remove			  if (v_iplus1 <= sqrt(vy*vy + vz*vz))
+//bg temp -- remove			  {
+//bg temp -- remove			    //	    std::cout << "1 " << (1/constants::pi)*(acos(v_i/(sqrt(vy*vy + vz*vz))) - acos(v_iplus1/(sqrt(vy*vy + vz*vz)))) << "\n";
+//bg temp -- remove			    stats_angleavg_vel_dist[j][v_index] += (1/constants::pi)*(acos(v_i/(sqrt(vy*vy + vz*vz))) - acos(v_iplus1/(sqrt(vy*vy + vz*vz))));
+//bg temp -- remove			  }
+//bg temp -- remove			  else if (v_iplus1 > sqrt(vy*vy + vz*vz) and v_i <= sqrt(vy*vy + vz*vz))
+//bg temp -- remove			  {
+//bg temp -- remove			    //	    std::cout<< "2 " << acos(v_i/(sqrt(vy*vy + vz*vz))) <<"\n";
+//bg temp -- remove			    stats_angleavg_vel_dist[j][v_index] += (1/constants::pi)*(acos(v_i/(sqrt(vy*vy + vz*vz))));
+//bg temp -- remove			      }
+//bg temp -- remove			  }
+//bg temp -- remove			else if (v_i < 0 and v_iplus1 <= 0)
+//bg temp -- remove			  {
+//bg temp -- remove			    if (abs(v_i) <= sqrt(vy*vy + vz*vz))
+//bg temp -- remove			      {
+//bg temp -- remove				//		std::cout << "3 " << v_i << "\t" << v_iplus1 << "\t" << (1/constants::pi)*(acos(v_i/(sqrt(vy*vy + vz*vz))) - acos(v_iplus1/(sqrt(vy*vy + vz*vz)))) << "\n";
+//bg temp -- remove				stats_angleavg_vel_dist[j][v_index] += (1/constants::pi)*(acos(v_i/(sqrt(vy*vy + vz*vz))) - acos(v_iplus1/(sqrt(vy*vy + vz*vz))));
+//bg temp -- remove			      }
+//bg temp -- remove			    else if (abs(v_i) > sqrt(vy*vy + vz*vz) and abs(v_iplus1) <= sqrt(vy*vy + vz*vz))
+//bg temp -- remove			      {
+//bg temp -- remove				//		std::cout << "4 " << (1/constants::pi)*(constants::pi - acos(v_iplus1/(sqrt(vy*vy + vz*vz)))) << "\n";
+//bg temp -- remove				stats_angleavg_vel_dist[j][v_index] += (1/constants::pi)*(constants::pi - acos(v_iplus1/(sqrt(vy*vy + vz*vz))));
+//bg temp -- remove			      }
+//bg temp -- remove			  }
+//bg temp -- remove			else if (v_i < 0 and v_iplus1 > 0) // not needed unless the v indexing is changed
+//bg temp -- remove			  {
+//bg temp -- remove			    std::cout << "need to fix\n";
+//bg temp -- remove			  }
+							
+//bg temp -- remove		      }
+//bg temp -- remove		  }
+//bg temp -- remove	      }
+//bg temp -- remove	  }
+		    
+		    
 }
 
-void Atmosphere::output_stats(double dt, double rate, int total_parts, string output_dir)
+void Atmosphere::output_stats(double dt, double rate, int total_parts, string output_dir, Vtally my_vtally)
 {
 	double volume = 0.0;
 	double surface_upper = 0.0;
@@ -497,11 +580,14 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 	double coldens_day = 0.0;
 	double sum_day = 0.0;
 	double sum_night = 0.0;
-	ofstream dens_day_out, dens_night_out, coldens_day_out, dens2d_out, EDF_day_out, EDF_night_out, loss_rates_out;
+//bg temp -- remove	double w = 100000e5;
+	ofstream dens_day_out, dens_night_out, coldens_day_out, dens2d_out, EDF_day_out, EDF_night_out, loss_rates_out, angleavg_dens_out;
+
 	dens_day_out.open(output_dir + "density1d_day.out");
 	dens_night_out.open(output_dir + "density1d_night.out");
 	coldens_day_out.open(output_dir + "column_density_day.out");
 	dens2d_out.open(output_dir + "density2d.out");
+	angleavg_dens_out.open(output_dir + "angleavg_dens.out");
 
 	dens_day_out << "#alt[km]\tdensity[cm-3]\n";
 	dens_night_out << "#alt[km]\tdensity[cm-3]\n";
@@ -520,7 +606,7 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 		sum_night = (double)stats_dens_counts[1][i];
 
 		dens_day = (dt*rate/(double)total_parts*sum_day) / volume;
-	    dens_night = (dt*rate/(double)total_parts*sum_night) / volume;
+	        dens_night = (dt*rate/(double)total_parts*sum_night) / volume;
 
 		dens_day_out << i << "\t\t" << dens_day << "\n";
 		dens_night_out << i << "\t\t" << dens_night << "\n";
@@ -551,17 +637,24 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 
 	loss_rates_out.open(output_dir + "loss_rates.out");
 	loss_rates_out << "#alt[km]\tloss rate[s-1]\n";
+
+	my_vtally.record_vtallies(output_dir);
 	for (int i=0; i<stats_num_EDFs; i++)
 	{
 		EDF_day_out.open(output_dir + "EDF_day_" + to_string(stats_EDF_alts[i]) + "km.out");
 		EDF_night_out.open(output_dir + "EDF_night_" + to_string(stats_EDF_alts[i]) + "km.out");
+	//bg temp -- remove	angleavg_vel_dist_out.open(output_dir + "angleavg_vel_dist_" + to_string(stats_EDF_alts[i]) + "km.csv");
 		EDF_day_out << "# rows are energy, 0eV at top, 10eV at bottom; columns are cos(theta), -1 at left, 1 at right\n";
 		EDF_night_out << "# rows are energy, 0eV at top, 10eV at bottom; columns are cos(theta), -1 at left, 1 at right\n";
+	//bg temp -- remove	angleavg_vel_dist_out << "velocity bin (-40 km/s at top, 40.04 km/s at top)\tnumber of particles\n";
 
 		r_in_cm = 1e5*(double)stats_EDF_alts[i] + my_planet.get_radius();
 		surface_upper = 2.0*constants::pi * (r_in_cm+1e5) * (r_in_cm+1e5);
 		volume = 2.0*constants::pi/3.0 * (pow(r_in_cm+1e5, 3.0) - pow(r_in_cm, 3.0));
 
+		angleavg_dens_out << stats_EDF_alts[i]  << "\t" << ( dt * rate * stats_angleavg_dens[i] ) /
+		                                                   ((double)total_parts*1e5*1e5) << "\n";
+				
 		loss_rates_out << stats_EDF_alts[i] << "\t\t" << (stats_loss_rates[i] / volume) * (dt*rate/(double)total_parts) * surface_upper << "\n";
 
 		for (int j=0; j<201; j++)
@@ -573,9 +666,13 @@ void Atmosphere::output_stats(double dt, double rate, int total_parts, string ou
 			}
 			EDF_day_out << "\n";
 			EDF_night_out << "\n";
+//bg temp -- remove			angleavg_vel_dist_out << j << "," << ((dt*rate/(double)total_parts)*stats_angleavg_vel_dist[i][j]) / (w*1e5 * 0.04e5) << "\n";
 		}
 		EDF_day_out.close();
 		EDF_night_out.close();
+//bg temp -- remove		angleavg_vel_dist_out.close();
+		
 	}
 	loss_rates_out.close();
+	angleavg_dens_out.close();
 }
