@@ -48,12 +48,12 @@ Distribution_Hot_H::Distribution_Hot_H(Planet my_p, double ref_h, double ref_T)
 	vector<string> values;
 	int num_params = 0;
 
-	while (getline(infile, line))
-	{
-		if (line[0] == '#' || line.empty() || std::all_of(line.begin(), line.end(), ::isspace))
-		{
-			continue;
-		}
+		while (getline(infile, line))
+        {
+                if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
+                {
+                        continue;
+                }
 		else
 		{
 			stringstream str(line);

@@ -64,7 +64,7 @@ namespace common {
 		while (getline(infile, line))
 		{
 			row.clear();
-			if (line[0] == '#' || line.empty() || std::all_of(line.begin(), line.end(), ::isspace))
+						if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
 			{
 				continue;
 			}
@@ -96,7 +96,7 @@ namespace common {
 		while (getline(infile, line))
 		{
 			row.clear();
-			if (line[0] == '#' || line.empty() || std::all_of(line.begin(), line.end(), ::isspace))
+						if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
 			{
 				continue;
 			}
@@ -129,7 +129,7 @@ namespace common {
 		while (getline(infile, line))
 		{
 			row.clear();
-			if (line[0] == '#' || line.empty() || std::all_of(line.begin(), line.end(), ::isspace))
+						if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
 			{
 				continue;
 			}
@@ -163,7 +163,7 @@ namespace common {
 		while (getline(infile, line))
 		{
 			row.clear();
-			if (line[0] == '#' || line.empty() || std::all_of(line.begin(), line.end(), ::isspace))
+						if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
 			{
 				continue;
 			}
@@ -198,7 +198,7 @@ namespace common {
 		while (getline(infile, line))
 		{
 			row.clear();
-			if (line[0] == '#' || line.empty() || std::all_of(line.begin(), line.end(), ::isspace))
+						if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
 			{
 				continue;
 			}

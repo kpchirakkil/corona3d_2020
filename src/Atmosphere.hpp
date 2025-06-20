@@ -16,7 +16,7 @@
 #include "Distribution_Import.hpp"
 #include "Distribution_MB.hpp"
 #include "Common_Functions.hpp"
-#include "Vtally.hpp"
+#include "vtally.hpp"
 using namespace std;
 
 class Atmosphere {
