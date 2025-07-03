@@ -409,14 +409,17 @@ double Background_Species::find_new_theta(int part_index, double energy)
 		}
 	}
 
-	// search CDF for angle
-	double u = common::get_rand();
-	int k = 0;
-	while (diff_sigma_CDFs[part_index][energy_index][0][k] < u)
-	{
-		k++;
-	}
-	return diff_sigma_CDFs[part_index][energy_index][1][k];
+		// search CDF for angle
+        double u = common::get_rand();
+        // clamp probability to [0,1] in case of rounding errors
+        u = std::max(0.0, std::min(u, 1.0));
+        int k = 0;
+        while ((k + 1 < (int)diff_sigma_CDFs[part_index][energy_index][0].size()) &&
+               diff_sigma_CDFs[part_index][energy_index][0][k] < u)
+        {
+                k++;
+        }
+        return diff_sigma_CDFs[part_index][energy_index][1][k];
 }
 
 // get density from imported density profile

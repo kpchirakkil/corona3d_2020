@@ -274,38 +274,38 @@ void Distribution_Hot_O::init_old_way(shared_ptr<Particle> p)
 double Distribution_Hot_O::get_new_radius_O2plus_DR()
 {
 	double u = common::get_rand();
-	int k = 0;
-	while (O2plus_DR_CDF[0][k] < u)
-	{
-		k++;
-	}
-	return O2plus_DR_CDF[1][k] + my_planet.get_radius();
+    // clamp to valid probability range just in case
+    u = std::max(0.0, std::min(u, 1.0));
+    int k = 0;
+    // ensure we never increment past the last element
+    while ((k + 1 < (int)O2plus_DR_CDF[0].size()) && O2plus_DR_CDF[0][k] < u)
+    {
+            k++;
+    }
+    return O2plus_DR_CDF[1][k] + my_planet.get_radius();
 }
 
 // Sample Rotational Energy from a Thermal Population of Rigid Rotators
 double Distribution_Hot_O::E_rot(double B, double T)
 {
-	int j = 0;
-	int nj = 200;  // highest rotational level considered
+		int nj = 200;  // highest rotational level considered
 
-	// partition function using two terms of Euler-MacLaurin summation formula
-	double Q_rot = constants::k_b*T/B + 1.0/3.0;
+		// partition function using two terms of Euler-MacLaurin summation formula
+        double Q_rot = constants::k_b*T/B + 1.0/3.0;
 
-	double P_tot = 0.0;
-	double P_j = 0.0;
-	double u = common::get_rand();
+		double P_tot = 0.0;
+        double u = common::get_rand();
 
-	for (int i=0; i<(nj+1); i++)
-	{
-		P_j = (2.0*j+1.0)*exp(-j*(j+1)*B/(constants::k_b*T))/Q_rot;
-		P_tot = P_tot + P_j;
-		j = i;
-		if (u < P_tot)
-		{
-			break;
-		}
-	}
-	return j*(j+1.0)*B;
+		for (int j=0; j <= nj; ++j)
+        {
+                double P_j = (2.0*j+1.0)*exp(-j*(j+1)*B/(constants::k_b*T))/Q_rot;
+                P_tot += P_j;
+                if (u < P_tot)
+                {
+                        return j*(j+1.0)*B;
+                }
+        }
+        return nj*(nj+1.0)*B;
 }
 
 // returns global production rate (needs to be set by chosen production method)
