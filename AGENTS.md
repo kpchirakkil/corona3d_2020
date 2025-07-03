@@ -23,12 +23,13 @@ This document tracks action items for updating the Monte‑Carlo hot‑O escape 
     - **Inelastic**: Import state‑resolved σ(E,θ) from the Gacesa GitHub repository
         - O-CO2: <https://github.com/mgacesa66/O-CO2_cross-sections>
         - O-CO: <https://github.com/mgacesa66/Cross-sections-O-CO>
+        - O-N2: <https://github.com/snchtchhbr/n2_o_cross_section>
 
 ## Task Checklist and Recent Discussion
 
 - **Cross‑Section Data**
   - Gather doubly differential *elastic* cross‑sections for **O‑CO₂, O‑O, O‑N₂, O‑CO** from Gacesa et al. (2020) & related databases.
-  - Collect corresponding *inelastic* cross‑sections for the same pairs (from the Gacesa GitHub repository: O-CO2 at <https://github.com/mgacesa66/O-CO2_cross-sections>, O-CO at <https://github.com/mgacesa66/Cross-sections-O-CO>).
+  - Collect corresponding *inelastic* cross‑sections for the same pairs (from the Gacesa GitHub repository: O-CO2 at <https://github.com/mgacesa66/O-CO2_cross-sections>, O-CO at <https://github.com/mgacesa66/Cross-sections-O-CO>, and O-N2 at <https://github.com/snchtchhbr/n2_o_cross_section>).
   - Convert all cross‑sections into interpolation tables (energy × scattering‑angle).
 
 - **Monte‑Carlo Code**

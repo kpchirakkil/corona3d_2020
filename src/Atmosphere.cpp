@@ -112,8 +112,8 @@ void Atmosphere::output_altitude_distro(double bin_width, string datapath)
 			}
 		}
 	}
-	int num_bins = (int)((max_radius - my_planet.get_radius()) / bin_width) + 10;
-	int abins[num_bins] = {0};  // array of altitude bin counts
+		int num_bins = (int)((max_radius - my_planet.get_radius()) / bin_width) + 10;
+        vector<int> abins(num_bins, 0);  // array of altitude bin counts
 
 	for (int i=0; i<num_parts; i++)
 	{
@@ -197,8 +197,8 @@ void Atmosphere::output_velocity_distro(double bin_width, string datapath)
 			}
 		}
 	}
-	int num_bins = (int)((max_v / bin_width) + 10);
-	int vbins[num_bins] = {0};  // array of velocity bin counts
+		int num_bins = (int)((max_v / bin_width) + 10);
+        vector<int> vbins(num_bins, 0);  // array of velocity bin counts
 
 	for (int i=0; i<num_parts; i++)
 	{
@@ -242,8 +242,8 @@ void Atmosphere::output_alt_energy_distro(double alt_in_cm, double e_bin_width, 
 			}
 		}
 	}
-	int num_bins = (int)((max_e / e_bin_width) + 10);
-	int ebins[num_bins] = {0};  // array of energy bin counts
+		int num_bins = (int)((max_e / e_bin_width) + 10);
+        vector<int> ebins(num_bins, 0);  // array of energy bin counts
 
 	for (int i=0; i<num_parts; i++)
 	{

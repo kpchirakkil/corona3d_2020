@@ -5,7 +5,7 @@
  *      Author: bethan
  */
 #include "Atmosphere.hpp"
-#include "Vtally.hpp"
+#include "vtally.hpp"
 #include <iostream>
 
 Vtally::Vtally(const int &num_EDFs, const vector<int> &EDF_alts, const double &vtally_x, const double &vtally_dx,  const double &vtally_w, const double &dt, const double &rate, const int &num_parts, const double &radius){ //
