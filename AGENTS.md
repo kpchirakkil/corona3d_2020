@@ -56,7 +56,7 @@ This document tracks action items for updating the Monte‑Carlo hot‑O escape 
 
 - **References**  
   - Gacesa et al. (2020), *MNRAS* **491**, 5650 (elastic & inelastic O–CO₂ σ(E,θ)) <https://academic.oup.com/mnras/article/491/4/5650/5651174>
-  - Kharchenko et al. (2000), *JGR*, **105**, 24899 (elastic O–O) <https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2000JA000085>
+  - Kharchenko et al. (2000), *JGR* **105**, 24899 (elastic O–O) <https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2000JA000085>
   - Lillis et al. (2017), *JGR* **122**, 3815 (MAVEN hot‑O escape analysis) <https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2016JA023525>
 
 ## Notes
