@@ -59,26 +59,23 @@ namespace common {
 			cout << "\"" << filename << "\" not found!\n";
 			exit(1);
 		}
-		string line, word;
-		vector<string> row;
-		while (getline(infile, line))
-		{
-			row.clear();
-						if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
-			{
-				continue;
-			}
-			else
-			{
-				stringstream str(line);
-				while(getline(str, word, ','))
-				{
-					row.push_back(word);
-				}
-				col1.push_back(stod(row[0]));
-				col2.push_back(stod(row[1]));
-			}
-		}
+				string line;
+                while (getline(infile, line))
+                {
+                        if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
+                        {
+                                continue;
+                        }
+                        else
+                        {
+                                replace(line.begin(), line.end(), ',', ' ');
+                                stringstream str(line);
+                                double v1, v2;
+                                str >> v1 >> v2;
+                                col1.push_back(v1);
+                                col2.push_back(v2);
+                        }
+                }
 		infile.close();
 	}
 
@@ -91,27 +88,24 @@ namespace common {
 			cout << "\"" << filename << "\" not found!\n";
 			exit(1);
 		}
-		string line, word;
-		vector<string> row;
-		while (getline(infile, line))
-		{
-			row.clear();
-						if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
-			{
-				continue;
-			}
-			else
-			{
-				stringstream str(line);
-				while(getline(str, word, ','))
-				{
-					row.push_back(word);
-				}
-				col1.push_back(stod(row[0]));
-				col2.push_back(stod(row[1]));
-				col3.push_back(stod(row[2]));
-			}
-		}
+				string line;
+                while (getline(infile, line))
+                {
+                        if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
+                        {
+                                continue;
+                        }
+                        else
+                        {
+                                replace(line.begin(), line.end(), ',', ' ');
+                                stringstream str(line);
+                                double v1, v2, v3;
+                                str >> v1 >> v2 >> v3;
+                                col1.push_back(v1);
+                                col2.push_back(v2);
+                                col3.push_back(v3);
+                        }
+                }
 		infile.close();
 	}
 
@@ -124,28 +118,25 @@ namespace common {
 			cout << "\"" << filename << "\" not found!\n";
 			exit(1);
 		}
-		string line, word;
-		vector<string> row;
-		while (getline(infile, line))
-		{
-			row.clear();
-						if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
-			{
-				continue;
-			}
-			else
-			{
-				stringstream str(line);
-				while(getline(str, word, ','))
-				{
-					row.push_back(word);
-				}
-				col1.push_back(stod(row[0]));
-				col2.push_back(stod(row[1]));
-				col3.push_back(stod(row[2]));
-				col4.push_back(stod(row[3]));
-			}
-		}
+				string line;
+                while (getline(infile, line))
+                {
+                        if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
+                        {
+                                continue;
+                        }
+                        else
+                        {
+                                replace(line.begin(), line.end(), ',', ' ');
+                                stringstream str(line);
+                                double v1, v2, v3, v4;
+                                str >> v1 >> v2 >> v3 >> v4;
+                                col1.push_back(v1);
+                                col2.push_back(v2);
+                                col3.push_back(v3);
+                                col4.push_back(v4);
+                        }
+                }
 		infile.close();
 	}
 
@@ -158,29 +149,26 @@ namespace common {
 			cout << "\"" << filename << "\" not found!\n";
 			exit(1);
 		}
-		string line, word;
-		vector<string> row;
-		while (getline(infile, line))
-		{
-			row.clear();
-						if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
-			{
-				continue;
-			}
-			else
-			{
-				stringstream str(line);
-				while(getline(str, word, ','))
-				{
-					row.push_back(word);
-				}
-				col1.push_back(stod(row[0]));
-				col2.push_back(stod(row[1]));
-				col3.push_back(stod(row[2]));
-				col4.push_back(stod(row[3]));
-				col5.push_back(stod(row[4]));
-			}
-		}
+				string line;
+                while (getline(infile, line))
+                {
+                        if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
+                        {
+                                continue;
+                        }
+                        else
+                        {
+                                replace(line.begin(), line.end(), ',', ' ');
+                                stringstream str(line);
+                                double v1, v2, v3, v4, v5;
+                                str >> v1 >> v2 >> v3 >> v4 >> v5;
+                                col1.push_back(v1);
+                                col2.push_back(v2);
+                                col3.push_back(v3);
+                                col4.push_back(v4);
+                                col5.push_back(v5);
+                        }
+                }
 		infile.close();
 	}
 
@@ -193,30 +181,27 @@ namespace common {
 			cout << "\"" << filename << "\" not found!\n";
 			exit(1);
 		}
-		string line, word;
-		vector<string> row;
-		while (getline(infile, line))
-		{
-			row.clear();
-						if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
-			{
-				continue;
-			}
-			else
-			{
-				stringstream str(line);
-				while(getline(str, word, ','))
-				{
-					row.push_back(word);
-				}
-				col1.push_back(stod(row[0]));
-				col2.push_back(stod(row[1]));
-				col3.push_back(stod(row[2]));
-				col4.push_back(stod(row[3]));
-				col5.push_back(stod(row[4]));
-				col6.push_back(stod(row[5]));
-			}
-		}
+				string line;
+                while (getline(infile, line))
+                {
+                        if (line.empty() || line[0] == '#' || std::all_of(line.begin(), line.end(), ::isspace))
+                        {
+                                continue;
+                        }
+                        else
+                        {
+                                replace(line.begin(), line.end(), ',', ' ');
+                                stringstream str(line);
+                                double v1, v2, v3, v4, v5, v6;
+                                str >> v1 >> v2 >> v3 >> v4 >> v5 >> v6;
+                                col1.push_back(v1);
+                                col2.push_back(v2);
+                                col3.push_back(v3);
+                                col4.push_back(v4);
+                                col5.push_back(v5);
+                                col6.push_back(v6);
+                        }
+                }
 		infile.close();
 	}
 
