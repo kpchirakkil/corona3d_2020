@@ -1,71 +1,235 @@
-# Corona 3D Monte‑Carlo Hot‑Atom Transport Model Updates
+# Corona3D 2020: Inelastic Collision Implementation Plan
 
-The Corona 3D code simulates **hot‐H** and **hot‐O** coronae and photochemical (non-thermal) escape at Mars and Venus.  
-This file lists the concrete action items required to (i) integrate the latest **doubly differential** and **inelastic** collision cross‑sections and (ii) run the updated model with revised MAVEN in‑situ data set.
+The Corona3D code simulates **hot-H** and **hot-O** coronae and photochemical (non-thermal) escape at Mars and Venus. This document provides a comprehensive, literature-based implementation plan for integrating **state-resolved inelastic collision physics** into the Monte Carlo transport model.
 
-## Purpose
-This document tracks action items for updating the Monte‑Carlo hot‑O escape model so it reflects the latest physics (new doubly differential & inelastic cross‑sections) and the revised MAVEN in‑situ data set.
+## Executive Summary
 
-## Implementation including doubly differential collision cross-sections
+Current elastic-only collision treatments may **underestimate energy loss** by 20-40% compared to models including inelastic channels (Gacesa et al. 2020). This document outlines a rigorous, step-by-step approach to implement quantum mechanically-derived, state-to-state inelastic cross sections that will significantly improve the physical realism of atmospheric escape calculations.
 
-- Make sure the energy and angular dependent O-CO2 collision cross-sections are incorporated into the model correctly.
-- Agreed that elastic‑only treatments may underestimate energy loss; incorporating state‑resolved inelastic channels via branching algorithm will provide physically realistic escape probabilities.
-- Priority cross‑sections are **O–CO₂** (elastic + inelastic), followed by **O–CO and O–N₂**. Available O–O cross‑sections are already incorporated? 
-- **Collision branching algorithm**
-  1. For each collision energy *E*, decide if a collision occurs using **total** σ(E).  
-  2. Select **collision channel** (elastic vs. inelastic₁,₂,…) weighted by their partial cross‑sections.  
-  3. Sample outgoing energy & scattering angle from the appropriate doubly differential σ(E,θ).
-- Keep legacy “elastic‑only” mode behind a `--elastic-only` flag for benchmarking.  
-- Cross‑Section Data
-    - **Elastic (doubly differential)**: Ingest σ(E,θ) for **O–CO₂, O–O, O–N₂, O–CO** (Gacesa et al. (2020) & Kharchenko et al. (2000)).  
-    - **Inelastic**: Import state‑resolved σ(E,θ) from the Gacesa GitHub repository
-        - O-CO2: <https://github.com/mgacesa66/O-CO2_cross-sections>
-        - O-CO: <https://github.com/mgacesa66/Cross-sections-O-CO>
-        - O-N2: <https://github.com/snchtchhbr/n2_o_cross_section>
-        - O-O: We already used Kharchenko et al. (2000) cross-sections in the model.
-## Task Checklist and Recent Discussion
+## Scientific Motivation
 
-- **Cross‑Section Data**
-  - Gather doubly differential *elastic* cross‑sections for **O‑CO₂, O‑O, O‑N₂, O‑CO** from Gacesa et al. (2020) & Kharchenko et al. (2000).
-  - Collect corresponding *inelastic* cross‑sections for the same pairs (from the GitHub repositories: O-CO2 at <https://github.com/mgacesa66/O-CO2_cross-sections>, O-CO at <https://github.com/mgacesa66/Cross-sections-O-CO>, and O-N2 at <https://github.com/snchtchhbr/n2_o_cross_section>).
+### Physical Importance of Inelastic Collisions
 
-- **Monte‑Carlo Code**
-  - Implement branching algorithm: 
-  1. decide if a collision occurs (total σ)
-  2. choose process (elastic vs. inelastic_i)
-  3. sample outgoing energy & angle via differential σ.
-  - Preserve previous “elastic‑only” mode behind a feature flag for benchmarking.
+1. **Enhanced Energy Loss**: Inelastic collisions transfer kinetic energy to internal molecular modes (rotation, vibration), leading to more efficient thermalization of hot atoms
+2. **Coupling with Background Temperature**: Thermal populations of target molecule states directly affect collision probabilities and energy transfer rates
+3. **Angular-Energy Correlation**: Inelastic processes show different angular dependencies than elastic scattering, affecting transport properties
+4. **Quantitative Impact**: Studies suggest elastic-only models may overestimate escape rates by significant factors
 
-- **Need for Inelastic Collisions**  
-  Highlighted that treating inelastic events as elastic may underestimate energy loss; proposed a collision‑branch algorithm to capture proper energy & angular redistribution.
+### Literature Foundation
 
-- **Cross‑Section Priorities**  
-  O‑CO₂ data (elastic & inelastic) from Gacesa et al. (2020) are highest priority; next are O‑N₂ and O‑CO. Available O–O cross‑sections are already incorporated from Kharchenko et al. (2000)?
+- **Gacesa et al. (2020)**: Quantum mechanical O-CO₂ cross sections with full rovibrational resolution (*MNRAS* 491, 5650)
+- **Kharchenko et al. (2000)**: Comprehensive O-O elastic and inelastic cross section database (*JGR* 105, 24899)
+- **Balakrishnan & Dalgarno (2001)**: Theoretical framework for Monte Carlo implementation of state-resolved collisions
+- **Cecchi-Pestellini et al. (2009)**: Benchmark Monte Carlo methods for inelastic collision modeling
+- **Lillis et al. (2017)**: MAVEN hot-O escape analysis for validation (*JGR* 122, 3815)
 
-- **Validation**
-  Reproduce MAVEN Deep‑Dip cases with new physics; compare to original elastic‑only runs.
+## Implementation Plan
 
-- **Comparison Strategy**  
-  The upgraded 3‑D Monte‑Carlo will be benchmarked against Lillis et al. (2017) MAVEN in-situ analysis, using the revised MAVEN mission data set.
+### Phase 1: Core Algorithm Development
 
-- **Automation Goal**  
-  Automate MC runs for many MAVEN orbits to map eacape flux dependence on season, SZA and EUV with the new physics.
+#### Task 1.1: Collision Branching Framework
+**Priority**: HIGH | **Effort**: 3-4 weeks | **Assignee**: TBD
 
-- **Documentation & Release**
-  Update comments and `README.txt`.
+Implement the fundamental Monte Carlo branching algorithm:
 
-- **References**  
-  - Gacesa et al. (2020), *MNRAS* **491**, 5650 (elastic & inelastic O–CO₂ σ(E,θ)) <https://academic.oup.com/mnras/article/491/4/5650/5651174>
-  - Kharchenko et al. (2000), *JGR* **105**, 24899 (elastic O–O) <https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2000JA000085>
-  - Lillis et al. (2017), *JGR* **122**, 3815 (MAVEN hot‑O escape analysis) <https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2016JA023525>
+1. **Collision Probability**: Use total cross section σ_total(E) to determine if collision occurs
+2. **Channel Selection**: Weight elastic vs. inelastic channels by partial cross sections
+3. **Outcome Sampling**: Sample energy transfer and scattering angle from appropriate differential cross sections
 
-## Notes
+**Deliverables**:
+- `InelasticCollisionHandler` class in `Background_Species.cpp`
+- Unit tests validating energy/momentum conservation
+- Configuration flags to toggle elastic-only vs. inelastic modes
 
-- Divide the energy into a few regions instead of treating it as a continuous variable with respect to determining the elastic vs inelastic scattering behavior. For example, at 2.5-3 eV, we could take one average cross section to represent it. There will be differential cross sections, elastic and inelastic, for it, and they could be used in the code. I am guessing that treating the energy change of the particle is not a bad idea. However, the largest energy changes (kinetic -> internal) occur for large scattering angles, which means a large change in the direction. 
-One approach just treated inelastic collisions as though they were elastic, where one assumes that the escaping particle cannot gain much energy from excited background particles (because they de-excite fast enough? – but the environment is non-thermal…)
-- Seems the best way to include inelastic collisions in the code would be to think of them as branches of a generic collision process:
-1. For the collision energy, look up the total cross section to determine if a collision has occurred
-2. Determine the type of collision (inelastic processes 1,2,3,... vs. elastic) using the relative size of the cross sections at that energy
-3. Once the type of collision is known, determine the resulting particle energy and scattering from the angular / energy differential cross section of the elastic or inelastic process.
-Depending on what kind of information we actually have for the cross sections we would need to make defensible simplifying assumptions for any of the above.
+#### Task 1.2: Thermal State Population Calculator
+**Priority**: HIGH | **Effort**: 2 weeks | **Assignee**: TBD
 
+Calculate Boltzmann thermal populations for target molecular states:
+
+```cpp
+vector<ThermalState> calculate_thermal_populations(double temperature_K, const string& species) {
+    // For CO₂: sum over (v₁,v₂,v₃,J) states
+    // For CO, N₂: sum over (v,J) states
+    // Return normalized Boltzmann factors: exp(-E_internal/kT) / Z
+}
+```
+
+**Data Requirements**:
+- Molecular energy level databases for CO₂, CO, N₂
+- Partition function calculations
+- Temperature-dependent state cutoffs
+
+#### Task 1.3: Conservation Law Validation
+**Priority**: MEDIUM | **Effort**: 1 week | **Assignee**: TBD
+
+Implement rigorous physics checks:
+- Energy conservation: E_kinetic + E_internal = constant
+- Momentum conservation in center-of-mass frame
+- Detailed balance verification using microscopic reversibility
+
+### Phase 2: Cross Section Data Integration
+
+#### Task 2.1: O-CO₂ Data Import (Highest Priority)
+**Priority**: HIGH | **Effort**: 2-3 weeks | **Assignee**: TBD
+
+Import state-to-state cross sections from Gacesa et al. (2020):
+
+**Data Source**: https://github.com/mgacesa66/O-CO2_cross-sections
+**Key Channels**:
+- Vibrational excitation: (0,0,0) → (0,0,1), (1,0,0), (0,1,0)
+- Rotational transitions within each vibrational level
+- Angular differential cross sections dσ/dΩ(E,θ)
+
+**Implementation Steps**:
+1. Parse CSV/HDF5 data files from Gacesa repository
+2. Build interpolation grids for σ(v,J→v',J'; E)
+3. Generate cumulative distribution functions for angular sampling
+4. Validate against published rate coefficients
+
+#### Task 2.2: O-CO and O-N₂ Data Integration
+**Priority**: MEDIUM | **Effort**: 2 weeks each | **Assignee**: TBD
+
+**Data Sources**:
+- O-CO: https://github.com/mgacesa66/Cross-sections-O-CO
+- O-N₂: https://github.com/snchtchhbr/n2_o_cross_section
+
+Simpler diatomic targets enable thorough algorithm testing before tackling CO₂ complexity.
+
+#### Task 2.3: O-O Inelastic Channels
+**Priority**: LOW | **Effort**: 1 week | **Assignee**: TBD
+
+Extend existing O-O elastic treatment (Kharchenko et al. 2000) to include:
+- Fine structure transitions (³P → ¹D, ¹S)
+- Spin-orbit coupling effects
+
+### Phase 3: Validation and Benchmarking
+
+#### Task 3.1: MAVEN Deep-Dip Validation
+**Priority**: HIGH | **Effort**: 2-3 weeks | **Assignee**: TBD
+
+Compare inelastic model predictions against MAVEN in-situ observations:
+
+**Test Cases**:
+- Periapsis altitudes 150-200 km
+- Various solar zenith angles and EUV conditions
+- Seasonal variations (solar longitude)
+
+**Metrics**:
+- Hot O density profiles
+- Escape flux estimates
+- Energy distribution functions
+
+#### Task 3.2: Elastic-Only Comparison
+**Priority**: HIGH | **Effort**: 1 week | **Assignee**: TBD
+
+Quantify impact of inelastic physics:
+- Run identical simulations with/without inelastic channels
+- Document energy loss enhancement factors
+- Analyze spatial distribution changes
+
+#### Task 3.3: Literature Benchmarking
+**Priority**: MEDIUM | **Effort**: 2 weeks | **Assignee**: TBD
+
+Validate against other Monte Carlo/DSMC models:
+- Compare rate coefficients at different temperatures
+- Cross-check angular scattering distributions
+- Verify detailed balance implementation
+
+### Phase 4: Production Implementation
+
+#### Task 4.1: Computational Optimization
+**Priority**: MEDIUM | **Effort**: 2-3 weeks | **Assignee**: TBD
+
+Optimize performance for production runs:
+- Precompute thermal state populations
+- Cache interpolation results
+- Parallelize cross section lookups
+- Profile memory usage with full state-resolved data
+
+#### Task 4.2: Automated MAVEN Analysis
+**Priority**: HIGH | **Effort**: 3-4 weeks | **Assignee**: TBD
+
+Scale up to systematic MAVEN orbit analysis:
+- Batch processing scripts for multiple orbits
+- Statistical analysis of escape flux vs. environmental conditions
+- Automated comparison with observational data
+
+#### Task 4.3: User Interface and Documentation
+**Priority**: MEDIUM | **Effort**: 2 weeks | **Assignee**: TBD
+
+**Configuration Options**:
+```bash
+./corona3d --config mars_config.cfg --inelastic --species O --collision-data /path/to/cross_sections/
+./corona3d --config venus_config.cfg --elastic-only  # Legacy mode for benchmarking
+```
+
+**Documentation Updates**:
+- Updated `src/README.md` with inelastic collision physics
+- User guide for cross section data preparation
+- Example configuration files for all target species
+
+## Risk Assessment and Mitigation
+
+### Technical Risks
+
+1. **Computational Performance**: State-resolved cross sections significantly increase memory and CPU requirements
+   - *Mitigation*: Implement energy/angle binning strategies, optimize data structures
+   
+2. **Numerical Stability**: Conservation laws must be maintained to machine precision
+   - *Mitigation*: Use double precision, implement strict validation checks
+   
+3. **Data Availability**: Some cross section data may have energy/angle coverage gaps
+   - *Mitigation*: Develop extrapolation/interpolation protocols, document uncertainties
+
+### Scientific Risks
+
+1. **Model Validation**: Limited experimental data for validation at atmospheric conditions
+   - *Mitigation*: Cross-validate against multiple literature sources, perform sensitivity analysis
+   
+2. **Quantum Classical Interface**: Quantum cross sections used in classical trajectory model
+   - *Mitigation*: Follow established practices from molecular dynamics literature
+
+## Success Metrics
+
+### Technical Milestones
+- [ ] Energy conservation to < 1e-12 relative precision
+- [ ] Momentum conservation to < 1e-12 relative precision  
+- [ ] Performance impact < 3x compared to elastic-only model
+- [ ] Successful integration of all four collision systems (O-CO₂, O-CO, O-N₂, O-O)
+
+### Scientific Validation
+- [ ] Agreement with Gacesa et al. (2020) rate coefficients within 10%
+- [ ] Detailed balance satisfaction to 1% precision
+- [ ] MAVEN escape flux predictions within observational uncertainties
+- [ ] Temperature dependence consistent with laboratory/theory expectations
+
+## Timeline and Resource Requirements
+
+### Timeline: 6-8 months total
+- **Phase 1** (Algorithm): 6-7 weeks
+- **Phase 2** (Data): 7-8 weeks  
+- **Phase 3** (Validation): 5-6 weeks
+- **Phase 4** (Production): 7-8 weeks
+
+### Personnel Requirements
+- **1 FTE Graduate Student/Postdoc**: Algorithm development, data integration
+- **0.5 FTE Faculty/Senior Scientist**: Scientific oversight, validation
+- **0.25 FTE Software Engineer**: Performance optimization, testing infrastructure
+
+### Computational Resources
+- **Development**: Standard workstation with 32+ GB RAM
+- **Validation**: Small cluster access for MAVEN orbit ensembles  
+- **Production**: HPC allocation for systematic atmospheric escape studies
+
+## References
+
+- Balakrishnan, N., & Dalgarno, A. (2001). *Phys. Rev. A* **63**, 012703
+- Cecchi-Pestellini, C., et al. (2009). *ApJ* **703**, 1056
+- Gacesa, M., Lewkow, N., & Kharchenko, V. (2020). *MNRAS* **491**, 5650. DOI: 10.1093/mnras/stz3366
+- Kharchenko, V., et al. (2000). *JGR* **105**, 24899. DOI: 10.1029/2000JA000085  
+- Lillis, R. J., et al. (2017). *JGR* **122**, 3815. DOI: 10.1002/2016JA023525
+
+### Data Repositories
+- O-CO₂: https://github.com/mgacesa66/O-CO2_cross-sections
+- O-CO: https://github.com/mgacesa66/Cross-sections-O-CO  
+- O-N₂: https://github.com/snchtchhbr/n2_o_cross_section
