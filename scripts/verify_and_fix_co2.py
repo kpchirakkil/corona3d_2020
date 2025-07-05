@@ -26,7 +26,7 @@ def check_total_cross_section():
     """Check and verify the total cross section file format."""
     
     original_file = "src/inputs/collisions/O-CO2_full/CSs_3pes/O-CO2_elastic-cross-sections_3pes.dat"
-    csv_file = "src/inputs/collisions/O-CO2/total_cross_section_O(3P)_CO2_elastic.csv"
+    csv_file = "src/inputs/collisions/O-CO2_full/csv_format/total_cross_sections/total_cross_section_O(3P)_CO2_elastic.csv"
     
     print("Checking total cross section file...")
     
@@ -110,7 +110,7 @@ def check_differential_cross_sections():
             continue
             
         original_file = f"src/inputs/collisions/O-CO2_full/DCSs_3pes/O-CO2_DCS-3pes_iEng{file_index:02d}.dat"
-        csv_file = f"src/inputs/collisions/O-CO2/O-CO2_DCS-3pes_iEng{file_index:02d}.csv"
+        csv_file = f"src/inputs/collisions/O-CO2_full/csv_format/differential_cross_sections/O-CO2_DCS-3pes_iEng{file_index:02d}.csv"
         
         if not os.path.exists(original_file) or not os.path.exists(csv_file):
             continue
@@ -197,7 +197,7 @@ def fix_differential_files(problematic_files):
             continue
             
         original_file = f"src/inputs/collisions/O-CO2_full/DCSs_3pes/O-CO2_DCS-3pes_iEng{file_index:02d}.dat"
-        csv_file = f"src/inputs/collisions/O-CO2/O-CO2_DCS-3pes_iEng{file_index:02d}.csv"
+        csv_file = f"src/inputs/collisions/O-CO2_full/csv_format/differential_cross_sections/O-CO2_DCS-3pes_iEng{file_index:02d}.csv"
         
         if not os.path.exists(original_file):
             continue
@@ -256,7 +256,7 @@ def fix_all_differential_files():
             continue
             
         original_file = f"src/inputs/collisions/O-CO2_full/DCSs_3pes/O-CO2_DCS-3pes_iEng{file_index:02d}.dat"
-        csv_file = f"src/inputs/collisions/O-CO2/O-CO2_DCS-3pes_iEng{file_index:02d}.csv"
+        csv_file = f"src/inputs/collisions/O-CO2_full/csv_format/differential_cross_sections/O-CO2_DCS-3pes_iEng{file_index:02d}.csv"
         
         if not os.path.exists(original_file):
             continue

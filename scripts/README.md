@@ -57,6 +57,7 @@ angle_degrees,cross_section_cm2
 ```bash
 python scripts/fix_co_config.py
 python scripts/fix_n2_config.py
+python scripts/update_co2_config.py
 ```
 
 ### To verify file formats:
