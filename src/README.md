@@ -2,7 +2,7 @@
 
 ## Overview
 
-Corona3D 2020 is a sophisticated 3D Monte Carlo simulation framework for modeling hot atom transport in planetary atmospheres. The model tracks the trajectories of energetic atoms (primarily oxygen) as they undergo collisions with atmospheric constituents, providing insights into atmospheric escape processes and exospheric dynamics.
+Corona3D 2020 is a sophisticated 3D Monte Carlo simulation framework for modeling hot atom transport in planetary atmospheres. The model tracks the trajectories of energetic atoms (hot oxygen and hot hydrogen) as they undergo collisions with atmospheric constituents, providing insights into atmospheric escape processes and exospheric dynamics at Mars and Venus.
 
 ## Table of Contents
 
@@ -19,11 +19,17 @@ Corona3D 2020 is a sophisticated 3D Monte Carlo simulation framework for modelin
 
 ### Hot Atom Transport
 
-The model simulates the transport of "hot" atoms—atoms with kinetic energies significantly above thermal equilibrium—through planetary atmospheres. These hot atoms are typically produced by:
+The model simulates the transport of "hot" atoms—atoms with kinetic energies significantly above thermal equilibrium—through planetary atmospheres at Mars and Venus. These hot atoms are typically produced by:
 
+**Hot Oxygen Production Mechanisms:**
 - **Dissociative recombination**: O₂⁺ + e⁻ → O + O*
 - **Charge exchange**: O⁺ + CO₂ → O* + CO₂⁺
 - **Photodissociation**: CO₂ + hν → CO + O*
+
+**Hot Hydrogen Production Mechanisms:**
+- **H₂ Photodissociation**: H₂ + hν → H + H*
+- **Charge exchange**: H⁺ + atmospheric neutrals → H* + ions
+- **HCO⁺ Dissociative recombination**: HCO⁺ + e⁻ → H* + CO
 
 ### Key Physical Processes
 
@@ -42,12 +48,20 @@ The model simulates the transport of "hot" atoms—atoms with kinetic energies s
 
 #### Collision Partners
 
-The model supports comprehensive collision physics between hot atoms and background atmospheric species:
+The model supports comprehensive collision physics between hot atoms and background atmospheric species for both Mars and Venus:
+
+**Hot Oxygen Collision Systems:**
 - **O-O**: Oxygen-oxygen elastic scattering (Kharchenko et al. 2000)
 - **O-CO₂**: Oxygen-carbon dioxide interactions (elastic + inelastic channels, Gacesa et al. 2020)
 - **O-CO**: Oxygen-carbon monoxide interactions (elastic + inelastic channels)
 - **O-N₂**: Oxygen-nitrogen interactions (elastic + inelastic channels)
 - **O-H**: Oxygen-hydrogen interactions (elastic scattering)
+
+**Hot Hydrogen Collision Systems:**
+- **H-O**: Hydrogen-oxygen elastic scattering
+- **H-CO₂**: Hydrogen-carbon dioxide interactions
+- **H-CO**: Hydrogen-carbon monoxide interactions
+- **H-N₂**: Hydrogen-nitrogen interactions
 
 ## Mathematical Framework
 
@@ -312,11 +326,11 @@ make depend   # Update dependencies
   - `is_active()`: Checks if particle is still being tracked
 
 #### Derived Classes
-- **`Particle_O`**: Oxygen atoms (primary focus)
-- **`Particle_H`**: Hydrogen atoms
-- **`Particle_CO`**: Carbon monoxide molecules
-- **`Particle_CO2`**: Carbon dioxide molecules
-- **`Particle_N2`**: Nitrogen molecules
+- **`Particle_O`**: Oxygen atoms (hot oxygen transport)
+- **`Particle_H`**: Hydrogen atoms (hot hydrogen transport)
+- **`Particle_CO`**: Carbon monoxide molecules (background species)
+- **`Particle_CO2`**: Carbon dioxide molecules (background species)
+- **`Particle_N2`**: Nitrogen molecules (background species)
 
 Each derived class implements:
 ```cpp
@@ -514,7 +528,7 @@ double Background_Species::get_density_at_altitude(double altitude, int species_
 Generate initial conditions for hot atoms:
 
 #### `Distribution_Hot_O` (Oxygen)
-Production mechanisms for hot oxygen atoms:
+Production mechanisms for hot oxygen atoms at Mars and Venus:
 
 **1. O₂⁺ Dissociative Recombination**:
 ```
@@ -561,7 +575,7 @@ CO₂ + hν → CO + O* (UV photolysis with wavelength-dependent energy)
 ```
 
 #### `Distribution_Hot_H` (Hydrogen)
-Production mechanisms for hot hydrogen atoms:
+Production mechanisms for hot hydrogen atoms at Mars and Venus:
 
 **1. H₂ Photodissociation**:
 ```cpp
@@ -572,9 +586,18 @@ void Distribution_Hot_H::init_H2_photodiss_particle(shared_ptr<Particle> p) {
 }
 ```
 
-**2. Charge Exchange**: H⁺ + atmospheric neutrals → H* + ions
+**2. HCO⁺ Dissociative Recombination**:
+```cpp
+void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p) {
+    // Sample from HCO⁺ density profile and apply DR cross section
+    double excess_energy_eV = 1.5;  // Representative value
+    // ... spatial and velocity sampling
+}
+```
 
-**3. Ion-Neutral Reactions**: Complex multi-step processes with intermediate energy transfer
+**3. Charge Exchange**: H⁺ + atmospheric neutrals → H* + ions
+
+**4. Ion-Neutral Reactions**: Complex multi-step processes with intermediate energy transfer
 
 #### `Distribution_MB` (Maxwell-Boltzmann)
 Thermal equilibrium distributions for validation and background particle initialization:
@@ -1040,13 +1063,15 @@ angle_degrees,cross_section_cm2
 # Simulation Parameters
 num_testparts     10000        # Number of test particles
 part_type         O            # Particle type (H, O, N2, CO, CO2)
-dist_type         Hot_O        # Initial distribution type
+dist_type         Hot_O        # Initial distribution type (Hot_O, Hot_H, MB, Import)
 timesteps         1000000      # Number of simulation timesteps
 dt                1.0          # Time step (seconds)
 
-# Planet Properties
-planet_mass       6.39e23      # Mars mass (kg)
+# Planet Properties (Mars or Venus)
+planet_mass       6.39e23      # Mars mass (kg) - uncomment Venus values for Venus
 planet_radius     3.39e6       # Mars radius (m)
+#planet_mass       4.87e24      # Venus mass (kg)
+#planet_radius     6.05e6       # Venus radius (m)
 ref_height        200e5        # Reference height (cm)
 ref_temp          200.0        # Reference temperature (K)
 
@@ -1054,11 +1079,13 @@ ref_temp          200.0        # Reference temperature (K)
 sim_lower_bound   100e5        # Lower boundary (cm)
 sim_upper_bound   1000e5       # Upper boundary (cm)
 
-# Background Species
-num_bgparts       3            # Number of background species
-./inputs/CO2_Mars_HotO.cfg     # CO₂ configuration
-./inputs/CO_Mars_HotO.cfg      # CO configuration
-./inputs/N2_Mars_HotO.cfg      # N₂ configuration
+# Background Species (Mars or Venus configurations)
+num_bgparts       4            # Number of background species
+./inputs/O_Mars_HotH.cfg       # O configuration (Mars)
+./inputs/N2_Mars_HotH.cfg      # N₂ configuration (Mars)
+./inputs/CO_Mars_HotH.cfg      # CO configuration (Mars)
+./inputs/CO2_Mars_HotH.cfg     # CO₂ configuration (Mars)
+# Use Venus configurations for Venus simulations
 
 # Output Configuration
 output_dir        ./output/    # Output directory
@@ -1067,10 +1094,10 @@ print_status_freq 10000        # Status print frequency
 
 ### Species Configuration Files
 
-Each background species has its own configuration file:
+Each background species has its own configuration file for both Mars and Venus:
 
 ```ini
-# CO2_Mars_HotO.cfg
+# CO2_Mars_HotO.cfg (Mars configuration)
 type                CO2
 ref_dens           6.68e7                    # Reference density (cm⁻³)
 total_sigma_file   ./inputs/collisions/...   # Total cross section file
@@ -1084,6 +1111,13 @@ energy2    0.153740
 # Differential cross section files
 energy1_file    ./inputs/collisions/.../DCS_01.csv
 energy2_file    ./inputs/collisions/.../DCS_02.csv
+...
+
+# CO2_Venus_HotH.cfg (Venus configuration)
+type                CO2
+ref_dens           1.2e8                     # Reference density (cm⁻³) - Venus values
+total_sigma_file   ./inputs/collisions/...   # Total cross section file
+num_diff_energies  41                        # Number of differential energies
 ...
 ```
 
@@ -1303,7 +1337,7 @@ def calculate_global_escape_flux(escape_statistics, production_mechanisms):
 
 ### Comparison with Observational Data
 
-#### MAVEN Deep Dip Campaign Analysis
+#### MAVEN Deep Dip Campaign Analysis (Mars)
 ```python
 def analyze_maven_deep_dip_comparison(simulation_directory, maven_data_file):
     """Compare simulation results with MAVEN deep dip observations."""
@@ -1337,17 +1371,52 @@ def analyze_maven_deep_dip_comparison(simulation_directory, maven_data_file):
     return {'residuals': residuals, 'relative_errors': relative_errors};
 ```
 
+#### Venus Express Analysis (Venus)
+```python
+def analyze_venus_express_comparison(simulation_directory, venus_data_file):
+    """Compare simulation results with Venus Express observations."""
+    
+    # Load Venus Express in-situ measurements
+    venus_data = load_venus_express_observations(venus_data_file);
+    
+    # Extract simulation results at Venus Express observation altitudes
+    simulation_densities = extract_simulation_at_altitudes(
+        simulation_directory, venus_data['altitudes_km']);
+    
+    # Statistical analysis
+    residuals = simulation_densities - venus_data['measured_densities'];
+    relative_errors = residuals / venus_data['measured_densities'];
+    
+    # Generate comparison plots
+    plt.figure(figsize=(12, 8));
+    plt.errorbar(venus_data['altitudes_km'], venus_data['measured_densities'],
+                yerr=venus_data['uncertainties'], label='Venus Express Observations',
+                fmt='s', capsize=5);
+    plt.plot(venus_data['altitudes_km'], simulation_densities, 
+            'b-', linewidth=2, label='Corona3D Simulation');
+    plt.xlabel('Altitude (km)');
+    plt.ylabel('Hot H Density (cm⁻³)');
+    plt.yscale('log');
+    plt.legend();
+    plt.title('Simulation vs Venus Express Observations');
+    plt.grid(True, alpha=0.3);
+    plt.savefig('venus_express_comparison.png', dpi=300, bbox_inches='tight');
+    
+    return {'residuals': residuals, 'relative_errors': relative_errors};
+```
+
 #### Model Validation Metrics
 - **Chi-squared goodness of fit**: Quantitative comparison with observational data
 - **Correlation analysis**: Statistical relationship between model and measurements  
 - **Energy spectrum validation**: Comparison of predicted vs observed velocity distributions
 - **Seasonal/temporal variations**: Model predictions vs time-dependent observations
+- **Planetary comparison**: Validation against both Mars (MAVEN) and Venus (Venus Express) observations
 
 ## Goals
 
-1. **Recalculation of Hot O Escape Rates**: Utilize new doubly differential elastic cross-sections (O-CO2, O-CO, O-N2) and revised MAVEN data to improve accuracy in escape rate calculations.
-2. **Automated Escape Probability Calculations**: Develop tools to automate the calculation of escape probabilities for each MAVEN orbit, including inbound periapsis and deep-dip campaigns.
-3. **Inclusion of Inelastic Collision Physics**: Integrate state-resolved inelastic collision physics and cross-sections to enhance the physical realism of atmospheric escape modeling.
+1. **Recalculation of Hot O and Hot H Escape Rates**: Utilize new doubly differential elastic cross-sections (O-CO2, O-CO, O-N2, H-CO2, H-CO, H-N2) and revised MAVEN/Venus Express data to improve accuracy in escape rate calculations for both Mars and Venus.
+2. **Automated Escape Probability Calculations**: Develop tools to automate the calculation of escape probabilities for each MAVEN orbit (Mars) and Venus Express orbit (Venus), including inbound periapsis and deep-dip campaigns.
+3. **Inclusion of Inelastic Collision Physics**: Integrate state-resolved inelastic collision physics and cross-sections to enhance the physical realism of atmospheric escape modeling for both hot oxygen and hot hydrogen.
 
 ## Usage Guide
 
@@ -2164,10 +2233,10 @@ void do_collision(shared_ptr<Particle> target, double theta, double time, double
 ### Scientific Impact
 
 This enhanced model will provide:
-- Updated atmospheric escape rate calculations using improved collision physics and latest MAVEN datasets
-- Systematic automated analysis of MAVEN observational data with new cross-section databases
-- Quantitative assessment of the role of inelastic processes in hot atom thermalization
-- Enhanced understanding of Mars atmospheric evolution and current escape processes through improved physics implementation
+- Updated atmospheric escape rate calculations using improved collision physics and latest MAVEN (Mars) and Venus Express (Venus) datasets
+- Systematic automated analysis of MAVEN and Venus Express observational data with new cross-section databases
+- Quantitative assessment of the role of inelastic processes in hot atom thermalization for both hot oxygen and hot hydrogen
+- Enhanced understanding of Mars and Venus atmospheric evolution and current escape processes through improved physics implementation
 
 ---
 

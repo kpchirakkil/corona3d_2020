@@ -10,11 +10,11 @@ Current elastic-only collision treatments may **underestimate energy loss** by 2
 
 ### Primary Objectives
 
-1. **Re-calculation of Hot O Escape Rates**: Re-do the Lillis et al. (2017) analysis using new doubly differential elastic cross-sections for O-CO₂, O-CO, and O-N₂ interactions, combined with revised MAVEN in-situ data to provide improved escape rate calculations
+1. **Re-calculation of Hot O and Hot H Escape Rates**: Re-do the Lillis et al. (2017) analysis using new doubly differential elastic cross-sections for O-CO₂, O-CO, O-N₂, H-CO₂, H-CO, and H-N₂ interactions, combined with revised MAVEN (Mars) and Venus Express (Venus) in-situ data to provide improved escape rate calculations
 
-2. **Automated MAVEN Data Processing**: Write comprehensive output to file and automate the calculation of escape probabilities for each MAVEN orbit in-situ data, including inbound periapsis passes and deep-dip campaigns
+2. **Automated MAVEN and Venus Express Data Processing**: Write comprehensive output to file and automate the calculation of escape probabilities for each MAVEN orbit (Mars) and Venus Express orbit (Venus) in-situ data, including inbound periapsis passes and deep-dip campaigns
 
-3. **Inelastic Collision Physics Integration**: Include state-resolved inelastic collision physics and cross-sections to provide more realistic energy transfer modeling and enhanced atmospheric escape predictions
+3. **Inelastic Collision Physics Integration**: Include state-resolved inelastic collision physics and cross-sections to provide more realistic energy transfer modeling and enhanced atmospheric escape predictions for both hot oxygen and hot hydrogen
 
 ## Scientific Motivation
 
@@ -81,7 +81,7 @@ Recalculate escape rates using updated cross-sections and revised MAVEN data to 
 ## Scientific Impact
 
 This enhanced model will provide:
-- Updated atmospheric escape rate calculations using improved collision physics and latest MAVEN datasets
-- Systematic automated analysis of MAVEN observational data with new cross-section databases  
-- Quantitative assessment of the role of inelastic processes in hot atom thermalization
-- Enhanced understanding of Mars atmospheric evolution and current escape processes through improved physics implementation
+- Updated atmospheric escape rate calculations using improved collision physics and latest MAVEN (Mars) and Venus Express (Venus) datasets
+- Systematic automated analysis of MAVEN and Venus Express observational data with new cross-section databases  
+- Quantitative assessment of the role of inelastic processes in hot atom thermalization for both hot oxygen and hot hydrogen
+- Enhanced understanding of Mars and Venus atmospheric evolution and current escape processes through improved physics implementation
