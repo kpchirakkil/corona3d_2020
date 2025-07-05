@@ -1,5 +1,7 @@
 # Corona3D 2020: Inelastic Collision Implementation Plan
 
+**STATUS UPDATE (July 2025)**: This document outlines the planned implementation roadmap for integrating inelastic collision physics into Corona3D 2020. The current codebase implements **ONLY elastic collision physics**. All inelastic collision features described below are part of the development plan and have **NOT YET BEEN IMPLEMENTED**.
+
 The Corona3D code simulates **hot-H** and **hot-O** coronae and photochemical (non-thermal) escape at Mars and Venus. This document provides a comprehensive, literature-based implementation plan for integrating **state-resolved inelastic collision physics** into the Monte Carlo transport model.
 
 ## Executive Summary

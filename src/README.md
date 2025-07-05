@@ -81,18 +81,24 @@ Where:
 - **m** is the particle mass (g)
 
 #### Numerical Integration Scheme
-The code uses a leapfrog integration scheme with fixed time steps:
+The code uses a modified Verlet integration scheme with fixed time steps:
 
 ```cpp
-// Position update: r(t+dt) = r(t) + v(t)*dt
-position_new = position + velocity * dt;
+// Calculate acceleration at current position
+double inv_r_cube = inverse_radius*inverse_radius*inverse_radius;
+Array<double, 3, 1> a = k_g*position.array()*inv_r_cube;
 
-// Gravitational acceleration: a = -GM/r³ * r_hat
-double r_mag = sqrt(x² + y² + z²);
-Vector3d accel = -k_g * position / (r_mag * r_mag * r_mag);
+// Position update: r(t+dt) = r(t) + v(t)*dt + 0.5*a(t)*dt²
+position.array() = position.array() + (velocity.array()*dt) + (0.5*a*dt*dt);
+radius = sqrt(position[0]*position[0] + position[1]*position[1] + position[2]*position[2]);
+inverse_radius = 1.0 / radius;
 
-// Velocity update: v(t+dt) = v(t) + a(t)*dt  
-velocity_new = velocity + accel * dt;
+// Calculate acceleration at new position
+inv_r_cube = inverse_radius*inverse_radius*inverse_radius;
+a = a + k_g*position.array()*inv_r_cube;
+
+// Velocity update: v(t+dt) = v(t) + 0.5*(a(t) + a(t+dt))*dt
+velocity.array() = velocity.array() + 0.5*a*dt;
 ```
 
 ### Collision Probability and Cross Sections
@@ -146,11 +152,11 @@ For collision calculations, the code transforms to the center-of-mass (CM) frame
 
 ```cpp
 // Center-of-mass velocity
-Vector3d v_cm = (m₁*v₁ + m₂*v₂) / (m₁ + m₂);
+Matrix<double, 3, 1> v_cm = (m₁*v₁ + m₂*v₂) / (m₁ + m₂);
 
 // Relative velocity in CM frame  
-Vector3d v_rel = v₁ - v₂;
-double v_rel_magnitude = |v_rel|;
+Matrix<double, 3, 1> v_rel = v₁ - v₂;
+double v_rel_magnitude = sqrt(v_rel[0]*v_rel[0] + v_rel[1]*v_rel[1] + v_rel[2]*v_rel[2]);
 ```
 
 #### Elastic Collision Dynamics
@@ -159,7 +165,7 @@ For elastic collisions, kinetic energy is conserved in the CM frame:
 
 ```cpp
 // Post-collision relative velocity (same magnitude, new direction)
-Vector3d v_rel_new = v_rel_magnitude * [cos(θ), sin(θ)cos(φ), sin(θ)sin(φ)];
+Matrix<double, 3, 1> v_rel_new = v_rel_magnitude * Matrix<double, 3, 1>(cos(θ), sin(θ)*cos(φ), sin(θ)*sin(φ));
 
 // Transform back to lab frame
 v₁_new = v_cm + (m₂/(m₁ + m₂)) * v_rel_new;
@@ -664,7 +670,19 @@ class Distribution_Import : public Distribution {
 
 ### Current Code Status vs. Planned Implementation
 
-**IMPORTANT**: As of January 2025, the Corona3D codebase implements **elastic-only collision physics**. The inelastic collision framework described below represents the planned implementation based on literature best practices. The current implementation uses energy-dependent total cross sections and differential cross sections for realistic elastic scattering, but does not include energy transfer to internal molecular modes.
+**CRITICAL ACCURACY NOTE**: The extensive inelastic collision framework described in the sections below represents **PLANNED IMPLEMENTATION** based on literature best practices. As of July 2025, the Corona3D codebase implements **ONLY elastic collision physics**. 
+
+**Current Implementation Status**:
+- ✅ **IMPLEMENTED**: Elastic collisions with energy-dependent total cross sections σ(E)
+- ✅ **IMPLEMENTED**: Angular differential cross sections dσ/dΩ(E,θ) for realistic scattering
+- ✅ **IMPLEMENTED**: Center-of-mass collision dynamics with conservation laws
+- ✅ **IMPLEMENTED**: O-O, O-CO₂, O-CO, O-N₂, O-H collision systems (elastic only)
+- ❌ **NOT IMPLEMENTED**: InelasticCollisionHandler class
+- ❌ **NOT IMPLEMENTED**: StateResolvedCollisionManager class  
+- ❌ **NOT IMPLEMENTED**: State-resolved inelastic collision channels
+- ❌ **NOT IMPLEMENTED**: Energy transfer to internal molecular modes
+
+The detailed inelastic collision algorithms and classes described below are part of the development roadmap outlined in AGENTS.md but do not exist in the current codebase.
 
 **Current Capabilities**:
 - ✅ Elastic collisions with energy-dependent total cross sections σ(E)
@@ -2164,10 +2182,10 @@ Differential Cross Sections:
 #include <algorithm>                // STL algorithms
 ```
 
-#### Build System:
-- **Make**: Standard Unix build system with automatic dependency tracking
-- **GCC/Clang**: Modern C++ compilers with C++11/14/17 features
-- **OpenMP**: Parallel processing for multi-core systems (optional)
+**Build System**: 
+- **Make**: Standard Unix build system (no automatic dependency tracking as claimed)
+- **GCC**: Basic C++ compilation without OpenMP or advanced optimizations by default
+- **Eigen3**: Linear algebra library with conditional includes for different platforms
 
 #### Python Analysis Tools:
 ```python
