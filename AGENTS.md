@@ -4,7 +4,7 @@ The Corona3D code simulates **hot-H** and **hot-O** coronae and photochemical (n
 
 ## Executive Summary
 
-Current elastic-only collision treatments may **underestimate energy loss** by 20-40% compared to models including inelastic channels (Gacesa et al. 2020). This document outlines a rigorous, step-by-step approach to implement quantum mechanically-derived, state-to-state inelastic cross sections that will significantly improve the physical realism of atmospheric escape calculations.
+Current elastic-only collision treatments may **underestimate energy loss** by 20-40% compared to models including inelastic channels (Gacesa et al. 2020). This document outlines a rigorous, step-by-step approach to implement quantum mechanically-derived, state-to-state inelastic cross sections that will significantly improve the physical realism of atmospheric escape calculations. The current Corona3D implementation includes sophisticated elastic collision physics with energy-dependent cross sections and differential scattering, but lacks the inelastic energy transfer mechanisms described in this plan.
 
 ## Project Goals
 

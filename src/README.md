@@ -337,43 +337,63 @@ The `Atmosphere` class serves as the main simulation controller:
 ### Core Algorithm:
 ```cpp
 for (timestep = 0; timestep < max_timesteps; timestep++) {
-    for (particle : active_particles) {
-        // 1. Update particle statistics and check boundaries
-        update_particle_statistics(particle);
+    for (int j = 0; j < active_parts; j++) {
+        int particle_index = active_indices[j];
         
-        // 2. Integrate equations of motion under gravity
-        Vector3d gravitational_acceleration = -k_g * position / (r³);
-        particle.velocity += gravitational_acceleration * dt;
-        particle.position += particle.velocity * dt;
+        // 1. Update particle statistics and velocity tallying
+        update_stats(dt, particle_index);
+        my_vtally.update_vtally(my_parts[particle_index]);
         
-        // 3. Check for collisions with each background species
-        for (bg_species : background_species) {
-            double collision_probability = calculate_collision_probability(particle, bg_species, dt);
-            if (uniform_random() < collision_probability) {
-                // Select collision partner and energy
-                double collision_energy = calculate_relative_kinetic_energy(particle, bg_species);
-                double scattering_angle = sample_scattering_angle(collision_energy);
-                
-                // Execute collision dynamics
-                particle.do_collision(bg_species, scattering_angle, current_time);
-                break;  // Only one collision per timestep
-            }
+        // 2. Integrate equations of motion under gravity (leapfrog scheme)
+        my_parts[particle_index]->do_timestep(dt, k_g);
+        
+        // 3. Check for collisions with background species
+        if (bg_species.check_collision(my_parts[particle_index], dt)) {
+            // Execute collision dynamics with selected target and scattering angle
+            my_parts[particle_index]->do_collision(
+                bg_species.get_collision_target(), 
+                bg_species.get_collision_theta(), 
+                i*dt, 
+                my_planet.get_radius()
+            );
         }
         
         // 4. Check deactivation conditions
-        if (particle.radius > upper_boundary && particle.has_escape_velocity()) {
-            particle.deactivate("ESCAPED");
-        } else if (particle.radius < lower_boundary) {
-            particle.deactivate("ABSORBED");
-        } else if (particle.velocity < thermal_velocity_threshold) {
-            particle.deactivate("THERMALIZED");
+        double v_esc_current = sqrt(2.0 * constants::G * my_planet.get_mass() / my_parts[particle_index]->get_radius());
+        double v_thermal = v_esc_current;  // Thermalization threshold
+        
+        if (my_parts[particle_index]->get_total_v() < v_thermal) {
+            my_parts[particle_index]->deactivate("Particle was thermalized");
+            active_parts--;
+            active_indices.erase(active_indices.begin() + j);
+            j--;
+        } else if (my_parts[particle_index]->get_radius() >= upper_bound && 
+                   my_parts[particle_index]->get_total_v() >= v_esc_upper) {
+            // Escape condition with hemispheric tracking
+            if (my_parts[particle_index]->get_x() > 0.0) {
+                my_parts[particle_index]->deactivate("Reached upper bound on day side with escape velocity");
+                day_escape_count++;
+            } else {
+                my_parts[particle_index]->deactivate("Reached upper bound on night side with escape velocity");
+                night_escape_count++;
+            }
+            active_parts--;
+            active_indices.erase(active_indices.begin() + j);
+            j--;
+        } else if (my_parts[particle_index]->get_radius() <= lower_bound) {
+            my_parts[particle_index]->deactivate("Dropped below lower bound");
+            active_parts--;
+            active_indices.erase(active_indices.begin() + j);
+            j--;
         }
     }
     
-    // 5. Remove deactivated particles and output diagnostics
-    remove_inactive_particles();
-    if (timestep % output_frequency == 0) {
-        output_diagnostics(timestep);
+    // 5. Output diagnostics and trace data
+    if (print_status_freq > 0 && (i+1) % print_status_freq == 0) {
+        output_simulation_status(i, dt, active_parts, day_escape_count, night_escape_count);
+    }
+    if (num_traced > 0) {
+        output_trace_data();
     }
 }
 ```
@@ -391,47 +411,81 @@ Manages atmospheric background constituents and collision physics:
 
 #### Collision Detection Algorithm:
 ```cpp
-bool Background_Species::check_collision(shared_ptr<Particle> test_particle, double dt) {
+bool Background_Species::check_collision(shared_ptr<Particle> p, double dt) {
     // 1. Calculate background densities at particle location
-    double altitude = test_particle->get_radius() - planet_radius;
-    vector<double> species_densities = get_densities_at_altitude(altitude);
+    double r = p->get_radius();
+    double alt = r - my_planet.get_radius();
+    vector<double> dens(num_species);
     
-    // 2. Initialize background particles with Maxwell-Boltzmann velocities
-    for (int i = 0; i < num_species; i++) {
-        double thermal_velocity = sqrt(k_B * temperature / background_mass[i]);
-        background_particles[i]->init_velocity_MB(thermal_velocity);
-        
-        // 3. Calculate collision energy in center-of-mass frame
-        collision_energies[i] = calc_collision_energy_eV(test_particle, background_particles[i]);
-        
-        // 4. Look up energy-dependent cross section
-        total_cross_sections[i] = interpolate_cross_section(collision_energies[i]);
+    if (use_dens_profile) {
+        // Get density from imported profile
+        for (int i = 0; i < num_species; i++) {
+            dens[i] = get_density(alt, i);
+        }
+    } else {
+        // Calculate density using exponential scale height
+        double r_moved = my_planet.get_radius() + ref_height - r;
+        for (int i = 0; i < num_species; i++) {
+            dens[i] = calc_new_density(bg_densities[i][0], bg_scaleheights[i][0], r_moved);
+        }
     }
     
-    // 5. Calculate total collision probability using Beer-Lambert law
-    double total_collision_rate = 0.0;
-    for (int i = 0; i < num_species; i++) {
-        total_collision_rate += species_densities[i] * total_cross_sections[i] * relative_velocity;
-    }
-    double collision_probability = 1.0 - exp(-total_collision_rate * dt);
+    // 2. Calculate collision energies and cross sections
+    vector<double> energy(num_species);
+    vector<double> total_sig(num_species);
+    double my_total_v = p->get_total_v();
     
-    // 6. Determine if collision occurs
-    if (uniform_random() > collision_probability) {
+    for (int i = 0; i < num_species; i++) {
+        if (bg_sigma_defaults[i] == 0.0) {
+            // Use energy-dependent cross section table
+            double avg_v = (use_temp_profile) ? avg_v_interp[i]->loglinterp(alt) : bg_avg_v[i][0];
+            my_dist->init_vonly(bg_parts[i], avg_v);
+            energy[i] = calc_collision_e(p, bg_parts[i]);
+            total_sig[i] = sigma_interp[i]->linterp(energy[i]);
+        } else {
+            // Use default cross section
+            total_sig[i] = bg_sigma_defaults[i];
+        }
+    }
+    
+    // 3. Calculate total collision probability using Beer-Lambert law
+    double tau = 0.0;
+    for (int i = 0; i < num_species; i++) {
+        tau += my_total_v * dt * total_sig[i] * dens[i];
+    }
+    double collision_probability = 1.0 - exp(-tau);
+    
+    // 4. Determine if collision occurs
+    double u = common::get_rand();
+    if (u > collision_probability) {
+        collision_target = -1;
         return false;  // No collision
     }
     
-    // 7. Select collision partner probabilistically
-    double selection_random = uniform_random();
-    double cumulative_probability = 0.0;
+    // 5. Select collision partner probabilistically
+    num_collisions++;
+    u = common::get_rand();
+    double total_dens = 0.0;
     for (int i = 0; i < num_species; i++) {
-        cumulative_probability += (species_densities[i] * total_cross_sections[i]) / total_collision_rate;
-        if (selection_random <= cumulative_probability) {
-            collision_target_index = i;
-            collision_energy = collision_energies[i];
-            scattering_angle = sample_scattering_angle(i, collision_energy);
-            return true;
-        }
+        total_dens += dens[i];
     }
+    
+    double frac = 0.0;
+    collision_target = 0;
+    do {
+        frac += dens[collision_target] / total_dens;
+        collision_target++;
+    } while (u >= frac && collision_target < num_species);
+    collision_target--;
+    
+    // 6. Initialize collision target and sample scattering angle
+    if (bg_sigma_defaults[collision_target] != 0.0) {
+        double avg_v = (use_temp_profile) ? avg_v_interp[collision_target]->loglinterp(alt) : bg_avg_v[collision_target][0];
+        my_dist->init_vonly(bg_parts[collision_target], avg_v);
+        energy[collision_target] = calc_collision_e(p, bg_parts[collision_target]);
+    }
+    collision_theta = find_new_theta(collision_target, energy[collision_target]);
+    return true;
 }
 ```
 
@@ -587,13 +641,16 @@ class Distribution_Import : public Distribution {
 
 ### Current Code Status vs. Planned Implementation
 
-**IMPORTANT**: As of January 2025, the Corona3D codebase implements **elastic-only collision physics**. The inelastic collision framework described below represents the planned implementation based on literature best practices.
+**IMPORTANT**: As of January 2025, the Corona3D codebase implements **elastic-only collision physics**. The inelastic collision framework described below represents the planned implementation based on literature best practices. The current implementation uses energy-dependent total cross sections and differential cross sections for realistic elastic scattering, but does not include energy transfer to internal molecular modes.
 
 **Current Capabilities**:
 - ✅ Elastic collisions with energy-dependent total cross sections σ(E)
 - ✅ Angular differential cross sections dσ/dΩ(E,θ) for realistic scattering
 - ✅ Center-of-mass collision dynamics with exact conservation laws
 - ✅ O-O, O-CO₂, O-CO, O-N₂, O-H collision systems (elastic only)
+- ✅ Maxwell-Boltzmann thermal velocity distributions for background species
+- ✅ Exponential atmospheric density profiles with scale heights
+- ✅ Gravitational trajectory integration with leapfrog scheme
 
 **Planned Implementation** (described in detail below):
 - 🔄 State-resolved inelastic collision channels
@@ -852,53 +909,67 @@ void validate_detailed_balance(double temperature_K) {
 
 #### Center-of-Mass Frame Calculations
 
-The collision algorithm uses center-of-mass transformations to ensure exact conservation of energy and momentum:
+The collision algorithm uses center-of-mass transformations to ensure exact conservation of energy and momentum. The actual implementation in `Particle.cpp` uses a rotation matrix approach:
 
 ```cpp
 void Particle::do_collision(shared_ptr<Particle> target, double theta, double time, double planet_radius) {
     // 1. Store pre-collision velocities for diagnostics
-    double v_before = get_total_velocity();
+    double v_before = get_total_v();
     
     // 2. Calculate masses and center-of-mass velocity
-    double m1 = this->get_mass();
-    double m2 = target->get_mass();
-    Vector3d v1_initial = this->velocity;
-    Vector3d v2_initial = target->velocity;
+    double my_mass = get_mass();
+    double targ_mass = target->get_mass();
+    Matrix<double, 3, 1> targ_v = {target->get_vx(), target->get_vy(), target->get_vz()};
     
-    Vector3d v_cm = (m1 * v1_initial + m2 * v2_initial) / (m1 + m2);
+    // 3. Calculate center-of-mass velocity
+    Matrix<double, 3, 1> vcm = (my_mass*velocity.array() + targ_mass*targ_v.array()) / (my_mass + targ_mass);
     
-    // 3. Transform to center-of-mass frame
-    Vector3d v1_cm = v1_initial - v_cm;  // Particle 1 velocity in CM frame
-    Vector3d v2_cm = v2_initial - v_cm;  // Particle 2 velocity in CM frame
+    // 4. Transform to center-of-mass frame
+    Matrix<double, 3, 1> v1v = velocity.array() - vcm.array();  // particle 1 c-o-m velocity
+    double v1 = sqrt(v1v[0]*v1v[0] + v1v[1]*v1v[1] + v1v[2]*v1v[2]);  // particle 1 c-o-m scalar velocity
     
-    // 4. Apply scattering transformation
-    // In CM frame, |v1_cm| = |v2_cm| before and after collision (elastic)
-    double v_rel_magnitude = sqrt(v1_cm.dot(v1_cm));
+    // 5. Apply scattering transformation using rotation matrix
+    // Unit vector parallel to particle 1 velocity
+    Matrix<double, 3, 1> r = velocity.array() / sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1] + velocity[2]*velocity[2]);
     
-    // Generate random azimuthal angle (0 to 2π)
-    double phi = 2.0 * M_PI * uniform_random();
+    double alpha = atan2(velocity[1], velocity[0]);
+    double phi = atan2(velocity[2], sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1]));
+    double gamma = constants::twopi*common::get_rand();  // random azimuthal angle
     
-    // Construct post-collision relative velocity vector
-    Vector3d v_rel_scattered = v_rel_magnitude * Vector3d(
-        sin(theta) * cos(phi),
-        sin(theta) * sin(phi), 
-        cos(theta)
-    );
+    // 6. Construct post-collision velocity in CM frame
+    Matrix<double, 3, 1> vp;
+    vp[0] = v1*cos(alpha)*cos(phi-theta);
+    vp[1] = v1*sin(alpha)*cos(phi-theta);
+    vp[2] = v1*sin(phi-theta);
     
-    // 5. Transform back to laboratory frame
-    Vector3d v1_final = v_cm + (m2 / (m1 + m2)) * v_rel_scattered;
-    Vector3d v2_final = v_cm - (m1 / (m1 + m2)) * v_rel_scattered;
+    // 7. Apply rotation matrix transformation
+    Matrix<double, 3, 3> Rrg;
+    double Cg = cos(gamma);
+    double Sg = sin(gamma);
+    double Vg = 1.0-Cg;
     
-    // 6. Update particle velocities
-    this->velocity = v1_final;
-    target->velocity = v2_final;
+    Rrg(0, 0) = r[0]*r[0]*Vg+Cg;
+    Rrg(0, 1) = r[0]*r[1]*Vg+r[2]*Sg;
+    Rrg(0, 2) = r[0]*r[2]*Vg-r[1]*Sg;
+    Rrg(1, 0) = r[0]*r[1]*Vg-r[2]*Sg;
+    Rrg(1, 1) = r[1]*r[1]*Vg+Cg;
+    Rrg(1, 2) = r[1]*r[2]*Vg+r[0]*Sg;
+    Rrg(2, 0) = r[0]*r[2]*Vg+r[1]*Sg;
+    Rrg(2, 1) = r[1]*r[2]*Vg-r[0]*Sg;
+    Rrg(2, 2) = r[2]*r[2]*Vg+Cg;
     
-    // 7. Log collision event for traced particles
-    if (this->is_traced()) {
-        double v_after = get_total_velocity();
-        double altitude_km = (get_radius() - planet_radius) * 1e-5;
-        log_collision_event(time, altitude_km, target->get_name(), 
-                          theta * 180.0/M_PI, v_before*1e-5, v_after*1e-5);
+    Matrix<double, 3, 1> vrel1 = Rrg * vp;
+    
+    // 8. Transform back to laboratory frame and update velocity
+    velocity = vcm.array() + vrel1.array();
+    
+    // 9. Log collision event for traced particles
+    if (traced) {
+        v_after = get_total_v()*1e-5;
+        double alt_in_km = 1e-5*(radius - planet_radius);
+        collision_log.push_back(to_string(time) + "\t\t" + to_string(alt_in_km) + "\t" + 
+                               target->get_name() + "\t" + to_string(theta * (180.0/constants::pi)) + 
+                               "\t" + to_string(v_before*1e-5) + "\t" + to_string(v_after));
     }
 }
 ```
