@@ -750,7 +750,7 @@ public:
 
 **Step 2: Data Requirements and Sources**
 
-1. **State-to-State Cross Sections**: σ(v,J → v',J'; E)
+1. **State-to-State Cross Sections**: σ(v,J → v',J') in eV
    - **O-CO₂**: Gacesa et al. (2020) quantum scattering calculations
      - Repository: https://github.com/mgacesa66/O-CO2_cross-sections
      - Includes full rovibrational state resolution for ground electronic state
@@ -1178,29 +1178,29 @@ def analyze_limb_velocity_distributions(edf_data):
         for e_bin, energy_eV in enumerate(energy_bins):
             for a_bin, cos_theta in enumerate(angle_bins):
                 # Convert energy to velocity: v = sqrt(2E/m)
-                velocity_cm_s = sqrt(2.0 * energy_eV * erg_per_eV / oxygen_mass_g)
-                velocity_km_s = velocity_cm_s * 1e-5
+                velocity_cm_s = sqrt(2.0 * energy_eV * erg_per_eV / oxygen_mass_g);
+                velocity_km_s = velocity_cm_s * 1e-5;
                 
                 # Map to velocity-angle grid
-                v_bin = find_velocity_bin(velocity_km_s)
-                velocity_distribution[v_bin, a_bin] = energy_angle_matrix[e_bin, a_bin]
+                v_bin = find_velocity_bin(velocity_km_s);
+                velocity_distribution[v_bin, a_bin] = energy_angle_matrix[e_bin, a_bin];
         
         # Generate limb brightness profiles
-        plot_limb_brightness_profile(altitude, velocity_distribution)
+        plot_limb_brightness_profile(altitude, velocity_distribution);
 
 def compare_with_observations(simulation_results, observational_data):
     """Compare simulation outputs with spacecraft observations."""
     # Load MAVEN, Venus Express, or other observational datasets
-    obs_altitudes, obs_densities, obs_uncertainties = load_observational_data(observational_data)
+    obs_altitudes, obs_densities, obs_uncertainties = load_observational_data(observational_data);
     
     # Interpolate simulation results to observational altitudes
-    sim_densities = interpolate_simulation_to_observations(simulation_results, obs_altitudes)
+    sim_densities = interpolate_simulation_to_observations(simulation_results, obs_altitudes);
     
     # Statistical comparison
-    chi_squared = calculate_chi_squared(sim_densities, obs_densities, obs_uncertainties)
-    correlation_coefficient = calculate_correlation(sim_densities, obs_densities)
+    chi_squared = calculate_chi_squared(sim_densities, obs_densities, obs_uncertainties);
+    correlation_coefficient = calculate_correlation(sim_densities, obs_densities);
     
-    return {'chi_squared': chi_squared, 'correlation': correlation_coefficient}
+    return {'chi_squared': chi_squared, 'correlation': correlation_coefficient};
 ```
 
 **3. Weighted Escape Flux Calculations** (`calculate_weighted_escape_estimate.py`):
@@ -1209,25 +1209,25 @@ def calculate_global_escape_flux(escape_statistics, production_mechanisms):
     """Calculate planet-wide escape flux from simulation statistics."""
     
     # Combine escape probabilities with production rates
-    total_escape_flux = 0.0
+    total_escape_flux = 0.0;
     
     for mechanism, rate_s in production_mechanisms.items():
-        mechanism_escape_prob = escape_statistics[mechanism]['total_escape_probability']
-        mechanism_flux = rate_s * mechanism_escape_prob
-        total_escape_flux += mechanism_flux
+        mechanism_escape_prob = escape_statistics[mechanism]['total_escape_probability'];
+        mechanism_flux = rate_s * mechanism_escape_prob;
+        total_escape_flux += mechanism_flux;
         
-        print(f'{mechanism}: {rate_s:.2e} s⁻¹ × {mechanism_escape_prob:.3f} = {mechanism_flux:.2e} s⁻¹')
+        print(f'{mechanism}: {rate_s:.2e} s⁻¹ × {mechanism_escape_prob:.3f} = {mechanism_flux:.2e} s⁻¹');
     
     # Convert to standard units
-    escape_flux_per_cm2_per_s = total_escape_flux / (4 * np.pi * planet_radius_cm**2)
-    escape_rate_kg_per_s = total_escape_flux * oxygen_atomic_mass_kg
+    escape_flux_per_cm2_per_s = total_escape_flux / (4 * np.pi * planet_radius_cm**2);
+    escape_rate_kg_per_s = total_escape_flux * oxygen_atomic_mass_kg;
     
     return {
         'total_flux_particles_per_s': total_escape_flux,
         'flux_per_cm2_per_s': escape_flux_per_cm2_per_s,
         'mass_loss_rate_kg_per_s': escape_rate_kg_per_s,
         'mass_loss_rate_kg_per_year': escape_rate_kg_per_s * seconds_per_year
-    }
+    };
 ```
 
 ### Comparison with Observational Data
@@ -1238,32 +1238,32 @@ def analyze_maven_deep_dip_comparison(simulation_directory, maven_data_file):
     """Compare simulation results with MAVEN deep dip observations."""
     
     # Load MAVEN in-situ measurements
-    maven_data = load_maven_observations(maven_data_file)
+    maven_data = load_maven_observations(maven_data_file);
     
     # Extract simulation results at MAVEN observation altitudes
     simulation_densities = extract_simulation_at_altitudes(
-        simulation_directory, maven_data['altitudes_km'])
+        simulation_directory, maven_data['altitudes_km']);
     
     # Statistical analysis
-    residuals = simulation_densities - maven_data['measured_densities']
-    relative_errors = residuals / maven_data['measured_densities']
+    residuals = simulation_densities - maven_data['measured_densities'];
+    relative_errors = residuals / maven_data['measured_densities'];
     
     # Generate comparison plots
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(12, 8));
     plt.errorbar(maven_data['altitudes_km'], maven_data['measured_densities'],
                 yerr=maven_data['uncertainties'], label='MAVEN Observations',
-                fmt='o', capsize=5)
+                fmt='o', capsize=5);
     plt.plot(maven_data['altitudes_km'], simulation_densities, 
-            'r-', linewidth=2, label='Corona3D Simulation')
-    plt.xlabel('Altitude (km)')
-    plt.ylabel('Hot O Density (cm⁻³)')
-    plt.yscale('log')
-    plt.legend()
-    plt.title('Simulation vs MAVEN Deep Dip Observations')
-    plt.grid(True, alpha=0.3)
-    plt.savefig('maven_comparison.png', dpi=300, bbox_inches='tight')
+            'r-', linewidth=2, label='Corona3D Simulation');
+    plt.xlabel('Altitude (km)');
+    plt.ylabel('Hot O Density (cm⁻³)');
+    plt.yscale('log');
+    plt.legend();
+    plt.title('Simulation vs MAVEN Deep Dip Observations');
+    plt.grid(True, alpha=0.3);
+    plt.savefig('maven_comparison.png', dpi=300, bbox_inches='tight');
     
-    return {'residuals': residuals, 'relative_errors': relative_errors}
+    return {'residuals': residuals, 'relative_errors': relative_errors};
 ```
 
 #### Model Validation Metrics
@@ -1271,6 +1271,12 @@ def analyze_maven_deep_dip_comparison(simulation_directory, maven_data_file):
 - **Correlation analysis**: Statistical relationship between model and measurements  
 - **Energy spectrum validation**: Comparison of predicted vs observed velocity distributions
 - **Seasonal/temporal variations**: Model predictions vs time-dependent observations
+
+## Goals
+
+1. **Recalculation of Hot O Escape Rates**: Utilize new doubly differential elastic cross-sections (O-CO2, O-CO, O-N2) and revised MAVEN data to improve accuracy in escape rate calculations.
+2. **Automated Escape Probability Calculations**: Develop tools to automate the calculation of escape probabilities for each MAVEN orbit, including inbound periapsis and deep-dip campaigns.
+3. **Inclusion of Inelastic Collision Physics**: Integrate state-resolved inelastic collision physics and cross-sections to enhance the physical realism of atmospheric escape modeling.
 
 ## Usage Guide
 
@@ -1436,7 +1442,7 @@ public:
         
         // Step 3: Calculate total cross section including elastic contribution
         double sigma_elastic = elastic_cross_sections[species_index]->interpolate(collision_energy_eV);
-        double sigma_total_inelastic = std::accumulate(weighted_partial_cross_sections.begin(),
+        double sigma_total_inelastic = std::accumulate(weighted_partial_cross_sections.begin(), 
                                                      weighted_partial_cross_sections.end(), 0.0);
         double sigma_total = sigma_elastic + sigma_total_inelastic;
         
@@ -1446,7 +1452,7 @@ public:
         // Check for elastic collision
         if (random_selector <= sigma_elastic) {
             double theta_elastic = sample_elastic_scattering_angle(species_index, collision_energy_eV);
-            return CollisionResult{ELASTIC_CHANNEL, 0.0, theta_elastic};
+            return CollisionResult{ELASTIC, 0.0, theta_elastic};
         }
         
         // Select inelastic channel
@@ -1457,14 +1463,14 @@ public:
                 int selected_channel = open_channel_indices[i];
                 const auto& channel = species_channels[species_index][selected_channel];
                 
-                double theta_inelastic = sample_inelastic_scattering_angle(channel, collision_energy_eV);
-                return CollisionResult{INELASTIC_CHANNEL, channel.internal_energy_change_eV, theta_inelastic};
+                double theta_inelastic = sample_inelastic_scattering_angle(selected, collision_energy_eV);
+                return CollisionResult{INELASTIC, channel.internal_energy_change_eV, theta_inelastic};
             }
         }
         
         // Fallback to elastic (should not occur with proper normalization)
         logger->warn("Channel selection fallback to elastic collision");
-        return CollisionResult{ELASTIC_CHANNEL, 0.0, sample_elastic_scattering_angle(species_index, collision_energy_eV)};
+        return CollisionResult{ELASTIC, 0.0, sample_elastic_scattering_angle(species_index, collision_energy_eV)};
     }
     
     /**
@@ -1708,10 +1714,6 @@ double validate_cross_sections(string experimental_data_file, string model_data_
 - **Limb Observations**: Validation of column density predictions vs MAVEN IUVS observations
 - **Energy Spectra**: Comparison of predicted vs observed velocity distributions
 
-**Venus Express Validation**:
-- **Hot O Corona Observations**: Comparison with ASPERA and SPICAV measurements
-- **Escape Flux Estimates**: Model predictions vs observational constraints
-
 ```cpp
 // MAVEN comparison analysis
 struct MavenComparisonResult {
@@ -1752,9 +1754,9 @@ vector<MavenComparisonResult> validate_against_maven(string maven_data_file,
 }
 ```
 
-### Analytical Model Benchmarks
+#### Analytical Model Benchmarks
 
-#### Hard Sphere Collision Model
+##### Hard Sphere Collision Model
 ```cpp
 // Analytical hard sphere cross section for validation
 double hard_sphere_cross_section(double radius1_cm, double radius2_cm) {
@@ -1765,8 +1767,7 @@ double hard_sphere_cross_section(double radius1_cm, double radius2_cm) {
 // Compare with quantum mechanical cross sections
 void validate_hard_sphere_limit() {
     double O_radius = 1.4e-8;   // cm, approximate atomic radius
-    double CO2_radius = 2.0e-8; // cm, approximate molecular radius
-    
+    double CO2_radius = 2.0e-8; // cm, approximate molecular radius    
     double hard_sphere_sigma = hard_sphere_cross_section(O_radius, CO2_radius);
     double quantum_sigma_low_energy = interpolate_quantum_cross_section(0.03); // eV
     
@@ -1776,7 +1777,7 @@ void validate_hard_sphere_limit() {
 }
 ```
 
-#### Energy Conservation Tests
+##### Energy Conservation Tests
 ```cpp
 // Rigorous energy conservation validation
 void test_energy_conservation(int num_test_collisions = 10000) {
@@ -1818,7 +1819,7 @@ void test_energy_conservation(int num_test_collisions = 10000) {
 }
 ```
 
-#### Escape Velocity Validation
+##### Escape Velocity Validation
 ```cpp
 // Test escape condition implementation
 void validate_escape_calculations() {
@@ -1951,69 +1952,14 @@ LillisComparisonMetrics compare_with_lillis_2017(string simulation_output_dir) {
 **Additional Cross Section Data Sources:**
 
 4. **O-CO Cross Sections**: https://github.com/mgacesa66/Cross-sections-O-CO
-   - Multi-surface scattering calculations (3A', 3A'', 2-3A'')
-   - Rovibrational state-resolved data for diatomic CO target
+   - Multi-surface quantum scattering calculations
+   - Energy range: 1.0×10⁻⁴ to 4.75 eV
+   - 298 collision energies with angular distributions
 
 5. **O-N₂ Cross Sections**: https://github.com/snchtchhbr/n2_o_cross_section  
-   - High-level quantum chemistry with rotational coupling
-   - Comprehensive energy and angular coverage
-
-### Primary Literature Sources
-
-1. **Gacesa, M., Lillis, R. J., & Kharchenko, V.** (2020). "O(³P)+CO₂ scattering cross sections at superthermal collision energies for planetary aeronomy." *Journal of Chemical Physics*, 153(2), 024306. DOI: 10.1063/5.0011749
-   - Provides state-of-the-art quantum mechanical cross sections for O-CO₂ collisions
-   - Statistical averaging over multiple potential energy surfaces
-   - Energy range: 0.03-5 eV covering thermal to superthermal collisions
-
-2. **Kharchenko, V., Dalgarno, A., Zygelman, B., & Yee, J.-H.** (2000). "Kinetic theory of hot oxygen atoms in the terrestrial exosphere." *Journal of Geophysical Research*, 105(A10), 24899-24906.
-   - Classic reference for O-O collision cross sections
-   - Validated against laboratory measurements
-   - Provides foundation for hot atom transport theory
-
-3. **Fox, J. L.** (2015). "The chemistry of protonated species in the martian ionosphere." *Icarus*, 252, 366-392.
-   - Ion-neutral reaction rates and branching ratios
-   - Hot atom production mechanisms in CO₂-dominated atmospheres
-   - Temperature-dependent atmospheric chemistry
-
-4. **Lillis, R. J., et al.** (2017). "Photochemical escape of oxygen from Mars: First results from MAVEN in situ data." *Journal of Geophysical Research: Space Physics*, 122(4), 3815-3836.
-   - MAVEN in-situ measurements for model validation
-   - Hot O density profiles and escape flux estimates
-   - Observational constraints on atmospheric escape processes
-
-### Computational Methods and Algorithms
-
-5. **Numerical Integration Schemes**:
-   - Leapfrog method for classical trajectory integration
-   - Verlet algorithm for long-term stability
-   - Adaptive time-stepping for collision-dominated regions
-
-6. **Monte Carlo Techniques**:
-   - Importance sampling for rare escape events
-   - Variance reduction methods for collision probability calculation
-   - Statistical convergence analysis and uncertainty quantification
-
-7. **Cross Section Interpolation**:
-   - Linear interpolation in energy space
-   - Logarithmic interpolation for density profiles
-   - Cubic spline interpolation for smooth derivatives
-
-### Cross Section Data Repositories
-
-#### Primary Data Sources:
-- **O-CO₂**: [https://github.com/mgacesa66/O-CO2_cross-sections](https://github.com/mgacesa66/O-CO2_cross-sections)
-  - Elastic and inelastic state-to-state cross sections
-  - Differential cross sections as function of energy and angle
-  - Statistical averaging over 3A₂, 3B₂, and 3B₁ potential surfaces
-
-- **O-CO**: [https://github.com/mgacesa66/Cross-sections-O-CO](https://github.com/mgacesa66/Cross-sections-O-CO)
-  - Multi-surface quantum scattering calculations
-  - Energy range: 1.0×10⁻⁴ to 4.75 eV
-  - 298 collision energies with angular distributions
-
-- **O-N₂**: [https://github.com/snchtchhbr/n2_o_cross_section](https://github.com/snchtchhbr/n2_o_cross_section)
-  - Rotationally resolved cross sections
-  - Elastic and inelastic channels
-  - Temperature-dependent collision dynamics
+   - Rotationally resolved cross sections
+   - Elastic and inelastic channels
+   - Temperature-dependent collision dynamics
 
 #### Data Format Specifications:
 ```
@@ -2100,8 +2046,6 @@ import pandas as pd                # Data manipulation and analysis
 /**
  * @file Particle.hpp
  * @brief Base class for all particle types in corona3d simulation
- * @author Rodney Lillis, Justin Deighan
- * @date Created: May 27, 2020
  * @version 2.0
  * 
  * This header defines the abstract base class for all particle types.
@@ -2136,39 +2080,24 @@ import pandas as pd                # Data manipulation and analysis
 void do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r);
 ```
 
-### Contact Information and Support
+## Project Goals and Development Roadmap
 
-#### Primary Developers:
-- **Dr. Robert Lillis** (UC Berkeley Space Sciences Laboratory)
-  - Principal Investigator and theoretical framework
-  - Email: rlillis@ssl.berkeley.edu
+### Primary Objectives
 
-- **Dr. Justin Deighan** (University of Colorado LASP)
-  - Code development and MAVEN data integration
-  - Email: justin.deighan@lasp.colorado.edu
+1. **Re-calculation of Hot O Escape Rates**: Re-do the Lillis et al. (2017) analysis using new doubly differential elastic cross-sections for O-CO₂, O-CO, and O-N₂ interactions, combined with revised MAVEN in-situ data to provide improved escape rate calculations
 
-#### Contributing Guidelines:
-1. **Code Style**: Follow existing C++ style conventions
-2. **Documentation**: All new functions must include Doxygen-style comments
-3. **Testing**: Include unit tests for new physics implementations
-4. **Validation**: Benchmark against observational data when available
+2. **Automated MAVEN Data Processing**: Write comprehensive output to file and automate the calculation of escape probabilities for each MAVEN orbit in-situ data, including inbound periapsis passes and deep-dip campaigns
 
-#### Bug Reports and Feature Requests:
-- Use GitHub Issues for bug reports and enhancement requests
-- Include minimal reproducible examples for bug reports
-- Provide scientific justification for new feature requests
+3. **Inelastic Collision Physics Integration**: Include state-resolved inelastic collision physics and cross-sections to provide more realistic energy transfer modeling and enhanced atmospheric escape predictions
 
-#### Citing This Code:
-```bibtex
-@software{corona3d_2020,
-  title = {Corona3D 2020: 3D Monte Carlo Hot Atom Transport Model},
-  author = {Lillis, Robert J. and Deighan, Justin and collaborators},
-  year = {2020},
-  url = {https://github.com/user/corona3d_2020},
-  version = {2.0}
-}
-```
+### Scientific Impact
+
+This enhanced model will provide:
+- Updated atmospheric escape rate calculations using improved collision physics and latest MAVEN datasets
+- Systematic automated analysis of MAVEN observational data with new cross-section databases
+- Quantitative assessment of the role of inelastic processes in hot atom thermalization
+- Enhanced understanding of Mars atmospheric evolution and current escape processes through improved physics implementation
 
 ---
 
-*This comprehensive documentation reflects the current state of the Corona3D 2020 model as of 2020-2025. For the most up-to-date information, please refer to the Git repository and recent publications. The model continues to evolve with new cross section data, improved physics implementations, and enhanced validation against spacecraft observations.*
+*This documentation reflects the current state of the Corona3D 2020 model as of 2025. The model continues to evolve with new cross section data, improved physics implementations, and enhanced validation against spacecraft observations.*
