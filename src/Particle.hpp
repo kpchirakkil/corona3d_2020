@@ -8,20 +8,26 @@
 #ifndef PARTICLE_HPP_
 #define PARTICLE_HPP_
 
-#if defined(__APPLE__)
-// Prefer the Homebrew Eigen install but fall back to other common paths.
-#  if __has_include("/opt/homebrew/opt/eigen/include/eigen3/Eigen/Core")
-#    include </opt/homebrew/opt/eigen/include/eigen3/Eigen/Core> // Mac Homebrew option 1
-#  elif __has_include("/usr/local/Cellar/eigen/3.3.9/include/eigen3/Eigen/Core")
-#    include </usr/local/Cellar/eigen/3.3.9/include/eigen3/Eigen/Core> // Mac Homebrew option 2
-#  elif __has_include("/opt/local/include/eigen3/Eigen/Core")
-#    include </opt/local/include/eigen3/Eigen/Core> // Mac Homebrew option 3
-#  else
-#    include <eigen3/Eigen/Core> // use system Eigen for Mac
-#  endif
-#else
-#  include <eigen3/Eigen/Core> // use system Eigen for Ubuntu
-#endif
+#include <eigen3/Eigen/Core>  // use system Eigen for Ubuntu
+// #include </usr/local/Cellar/eigen/3.3.9/include/eigen3/Eigen/Core>  // Mac option 1
+// #include </opt/local/include/eigen3/Eigen/Core> // Mac option 2
+// #include </opt/homebrew/opt/eigen/include/eigen3/Eigen/Core> // Mac option 3
+
+// #if defined(__APPLE__)
+// // Prefer the Homebrew Eigen install but fall back to other common paths.
+// #  if __has_include("/opt/homebrew/opt/eigen/include/eigen3/Eigen/Core")
+// #    include </opt/homebrew/opt/eigen/include/eigen3/Eigen/Core> // Mac Homebrew option 1
+// #  elif __has_include("/usr/local/Cellar/eigen/3.3.9/include/eigen3/Eigen/Core")
+// #    include </usr/local/Cellar/eigen/3.3.9/include/eigen3/Eigen/Core> // Mac Homebrew option 2
+// #  elif __has_include("/opt/local/include/eigen3/Eigen/Core")
+// #    include </opt/local/include/eigen3/Eigen/Core> // Mac Homebrew option 3
+// #  else
+// #    include <eigen3/Eigen/Core> // use system Eigen for Mac
+// #  endif
+// #else
+// #  include <eigen3/Eigen/Core> // use system Eigen for Ubuntu
+// #endif
+
 #include "Common_Functions.hpp"
 using namespace Eigen;
 
