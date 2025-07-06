@@ -1,8 +1,8 @@
-# Corona3D 2020: 3D Monte Carlo Hot Atom Transport Model
+# Corona3D: 3D Monte Carlo Hot Atom Transport Model
 
 ## Overview
 
-Corona3D 2020 is a sophisticated 3D Monte Carlo simulation framework for modeling hot atom transport in planetary atmospheres. The model tracks the trajectories of energetic atoms (hot oxygen and hot hydrogen) as they undergo collisions with atmospheric constituents, providing insights into atmospheric escape processes and exospheric dynamics at Mars and Venus.
+Corona3D is a sophisticated 3D Monte Carlo simulation framework for modeling hot atom transport in planetary atmospheres. The model tracks the trajectories of energetic atoms (hot oxygen and hot hydrogen) as they undergo collisions with atmospheric constituents, providing insights into atmospheric escape processes and exospheric dynamics at Mars and Venus.
 
 ## Table of Contents
 
@@ -53,9 +53,8 @@ The model supports comprehensive collision physics between hot atoms and backgro
 **Hot Oxygen Collision Systems:**
 - **O-O**: Oxygen-oxygen elastic scattering (Kharchenko et al. 2000)
 - **O-CO₂**: Oxygen-carbon dioxide interactions (elastic + inelastic channels, Gacesa et al. 2020)
-- **O-CO**: Oxygen-carbon monoxide interactions (elastic + inelastic channels)
-- **O-N₂**: Oxygen-nitrogen interactions (elastic + inelastic channels)
-- **O-H**: Oxygen-hydrogen interactions (elastic scattering)
+- **O-CO**: Oxygen-carbon monoxide interactions (elastic + inelastic channels, Kumar et al. 2022)
+- **O-N₂**: Oxygen-nitrogen interactions (elastic + inelastic channels, Kumar et al. 2023)
 
 **Hot Hydrogen Collision Systems:**
 - **H-O**: Hydrogen-oxygen elastic scattering
@@ -670,25 +669,25 @@ class Distribution_Import : public Distribution {
 
 ### Current Code Status vs. Planned Implementation
 
-**CRITICAL ACCURACY NOTE**: The extensive inelastic collision framework described in the sections below represents **PLANNED IMPLEMENTATION** based on literature best practices. As of July 2025, the Corona3D codebase implements **ONLY elastic collision physics**. 
+**CRITICAL ACCURACY NOTE**: The extensive inelastic collision framework described in the sections below represents **PLANNED IMPLEMENTATION** based on literature best practices. Currently, the Corona3D codebase implements **ONLY elastic collision physics**. 
 
 **Current Implementation Status**:
 - ✅ **IMPLEMENTED**: Elastic collisions with energy-dependent total cross sections σ(E)
 - ✅ **IMPLEMENTED**: Angular differential cross sections dσ/dΩ(E,θ) for realistic scattering
 - ✅ **IMPLEMENTED**: Center-of-mass collision dynamics with conservation laws
-- ✅ **IMPLEMENTED**: O-O, O-CO₂, O-CO, O-N₂, O-H collision systems (elastic only)
+- ✅ **IMPLEMENTED**: O-O, O-CO₂, O-CO, O-N₂ collision systems (elastic only)
 - ❌ **NOT IMPLEMENTED**: InelasticCollisionHandler class
 - ❌ **NOT IMPLEMENTED**: StateResolvedCollisionManager class  
 - ❌ **NOT IMPLEMENTED**: State-resolved inelastic collision channels
 - ❌ **NOT IMPLEMENTED**: Energy transfer to internal molecular modes
 
-The detailed inelastic collision algorithms and classes described below are part of the development roadmap outlined in AGENTS.md but do not exist in the current codebase.
+The detailed inelastic collision algorithms and classes described below are part of the development roadmap outlined in `AGENTS.md` but do not exist in the current codebase.
 
 **Current Capabilities**:
 - ✅ Elastic collisions with energy-dependent total cross sections σ(E)
 - ✅ Angular differential cross sections dσ/dΩ(E,θ) for realistic scattering
 - ✅ Center-of-mass collision dynamics with exact conservation laws
-- ✅ O-O, O-CO₂, O-CO, O-N₂, O-H collision systems (elastic only)
+- ✅ O-O, O-CO₂, O-CO, O-N₂ collision systems (elastic only)
 - ✅ Maxwell-Boltzmann thermal velocity distributions for background species
 - ✅ Exponential atmospheric density profiles with scale heights
 - ✅ Gravitational trajectory integration with leapfrog scheme
@@ -700,7 +699,7 @@ The detailed inelastic collision algorithms and classes described below are part
 - 🔄 Temperature-dependent thermal state populations
 - 🔄 Detailed balance and conservation law validation
 
-**Scientific Motivation for Inelastic Implementation**: Gacesa et al. (2020) indicate that elastic-only treatments may underestimate energy loss by 20-40%, potentially leading to overestimated atmospheric escape rates. The planned inelastic implementation will provide more realistic physics and better agreement with MAVEN observations.
+**Scientific Motivation for Inelastic Implementation**: Studies indicate that elastic-only treatments may underestimate energy loss, potentially leading to overestimated atmospheric escape rates. The planned inelastic implementation will provide more realistic physics.
 
 ### Cross Section Data Structure
 
@@ -755,11 +754,12 @@ class Background_Species {
 
 **Current Status**: The codebase currently implements **elastic-only** collision physics. Inelastic collision channels represent a critical physics enhancement that will significantly improve model accuracy.
 
-**Scientific Motivation**: Studies by Gacesa et al. (2020) indicate that elastic-only treatments may underestimate energy loss by 20-40% compared to full inelastic models. Inelastic collisions transfer kinetic energy to internal molecular modes (rotation, vibration), leading to enhanced thermalization and more realistic atmospheric escape predictions.
+**Scientific Motivation**: Studies indicate that elastic-only treatments may underestimate energy loss compared to full elastic + inelastic models. Inelastic collisions transfer kinetic energy to internal molecular modes (rotation, vibration), leading to enhanced thermalization and more realistic atmospheric escape predictions.
 
 **Implementation Plan**: State-Resolved Inelastic Collision Physics
 
-The implementation follows established Monte Carlo practices from the quantum scattering literature (Balakrishnan & Dalgarno 2001; Cecchi-Pestellini et al. 2009):
+The implementation follows established Monte Carlo practices from the quantum scattering literature:
+<!-- (Balakrishnan & Dalgarno 2001; Cecchi-Pestellini et al. 2009) -->
 
 **Step 1: Collision Channel Branching Algorithm**
 
@@ -852,11 +852,12 @@ public:
    - **O-CO₂**: Gacesa et al. (2020) quantum scattering calculations
      - Repository: https://github.com/mgacesa66/O-CO2_cross-sections
      - Includes full rovibrational state resolution for ground electronic state
-   - **O-CO**: Multi-surface calculations on 3A', 3A'', and 2-3A'' potential energy surfaces
+   - **O-CO**: Kumar et al. 2022 multi-surface calculations on 3A', 3A'', and 2-3A'' potential energy surfaces
      - Repository: https://github.com/mgacesa66/Cross-sections-O-CO
-   - **O-N₂**: High-level quantum chemistry with rotational coupling
+   - **O-N₂**: Kumar et al. (2023) high-level quantum chemistry with rotational coupling
      - Repository: https://github.com/snchtchhbr/n2_o_cross_section
-   - **O-O**: Kharchenko et al. (2000) elastic + inelastic channels
+   - **O-O**: Kharchenko et al. (2000)
+        <!-- - elastic + inelastic channels -->
 
 2. **Molecular Energy Level Data**:
    - **CO₂**: Rovibrational energy levels E(v₁,v₂,v₃,J) in cm⁻¹ or eV
@@ -926,8 +927,7 @@ void validate_detailed_balance(double temperature_K) {
 5. **Threshold Effects**: Inelastic channels open only above specific collision energies
 
 **Expected Scientific Impact**: Incorporating inelastic collision physics will:
-- Reduce predicted escape rates by 20-40% due to enhanced energy loss (Gacesa et al. 2020)
-- Improve agreement with MAVEN in-situ measurements (Lillis et al. 2017)
+- Reduce predicted escape rates due to enhanced energy loss
 - Enable study of atmospheric temperature effects on escape efficiency
 - Provide more realistic coupling between hot and thermal atmospheric populations
 
@@ -937,14 +937,14 @@ void validate_detailed_balance(double temperature_K) {
 
 1. **Extend Background_Species class** with inelastic collision handling methods
 2. **Add molecular energy level databases** for CO₂, CO, and N₂ internal states  
-3. **Import state-to-state cross section data** from Gacesa et al. repositories
+3. **Import state-to-state cross section data** from Gacesa et al. and Kumar et al. repositories
 4. **Implement thermal state population calculations** using Boltzmann distributions
 5. **Add collision branching logic** to select between elastic and inelastic channels
 6. **Update collision dynamics** to handle energy transfer to internal modes
 7. **Implement conservation law verification** for energy and momentum
 8. **Add configuration options** to enable/disable inelastic physics
 
-**See AGENTS.md in the project root** for detailed implementation timeline, task assignments, and resource requirements. The implementation is estimated to require 6-8 months of development effort.
+**See `AGENTS.md` in the project root** for a detailed implementation plan.
 
 ### Collision Dynamics Implementation
 
@@ -1034,10 +1034,9 @@ assert((p_final - p_initial).norm() / p_initial.norm() < 1e-12);
 
 #### Quantum Scattering Calculations
 - **O-CO₂**: Gacesa et al. (2020) - Ab initio potential energy surfaces with statistical averaging
-- **O-CO**: Multi-surface scattering calculations (3A', 3A'', 2-3A'')  
-- **O-N₂**: High-level quantum chemistry with rotational coupling
+- **O-CO**: Kumar et al. (2022) - Multi-surface scattering calculations (3A', 3A'', 2-3A'')  
+- **O-N₂**: Kumar et al. (2023) - High-level quantum chemistry with rotational coupling
 - **O-O**: Kharchenko et al. (2000) - Validated against experimental measurements
-- **O-H**: Classical trajectory calculations on fitted potential surfaces
 
 #### Data Processing Pipeline
 1. **Unit Conversion**: Original data (often in cm⁻¹, radians) → eV, degrees
@@ -1048,7 +1047,7 @@ assert((p_final - p_initial).norm() / p_initial.norm() < 1e-12);
 #### Validation Against Experimental Data
 The cross sections are benchmarked against:
 - **Laboratory measurements**: Molecular beam scattering experiments
-- **Atmospheric observations**: MAVEN, Venus Express in-situ measurements  
+- **Atmospheric observations**: MAVEN in-situ measurements  
 - **Analytical models**: Hard sphere and classical trajectory approximations
 
 ### Cross Section Data Format
@@ -1389,7 +1388,7 @@ def analyze_maven_deep_dip_comparison(simulation_directory, maven_data_file):
     return {'residuals': residuals, 'relative_errors': relative_errors};
 ```
 
-#### Venus Express Analysis (Venus)
+<!-- #### Venus Express Analysis (Venus)
 ```python
 def analyze_venus_express_comparison(simulation_directory, venus_data_file):
     """Compare simulation results with Venus Express observations."""
@@ -1421,20 +1420,20 @@ def analyze_venus_express_comparison(simulation_directory, venus_data_file):
     plt.savefig('venus_express_comparison.png', dpi=300, bbox_inches='tight');
     
     return {'residuals': residuals, 'relative_errors': relative_errors};
-```
+``` -->
 
 #### Model Validation Metrics
 - **Chi-squared goodness of fit**: Quantitative comparison with observational data
 - **Correlation analysis**: Statistical relationship between model and measurements  
 - **Energy spectrum validation**: Comparison of predicted vs observed velocity distributions
 - **Seasonal/temporal variations**: Model predictions vs time-dependent observations
-- **Planetary comparison**: Validation against both Mars (MAVEN) and Venus (Venus Express) observations
+- **Planetary comparison**: Validation against Mars (MAVEN) observations
 
 ## Goals
 
-1. **Recalculation of Hot O and Hot H Escape Rates**: Utilize new doubly differential elastic cross-sections (O-CO2, O-CO, O-N2, H-CO2, H-CO, H-N2) and revised MAVEN/Venus Express data to improve accuracy in escape rate calculations for both Mars and Venus.
-2. **Automated Escape Probability Calculations**: Develop tools to automate the calculation of escape probabilities for each MAVEN orbit (Mars) and Venus Express orbit (Venus), including inbound periapsis and deep-dip campaigns.
-3. **Inclusion of Inelastic Collision Physics**: Integrate state-resolved inelastic collision physics and cross-sections to enhance the physical realism of atmospheric escape modeling for both hot oxygen and hot hydrogen.
+1. **Recalculation of Hot O (and Hot H) Escape Rates**: Utilize new doubly differential elastic cross-sections (O-CO2, O-CO, O-N2) and revised MAVEN data to improve accuracy in escape rate calculations for Mars (and Venus in the future).
+2. **Automated Escape Probability Calculations**: Develop tools to automate the calculation of escape probabilities for each MAVEN orbit (Mars) during inbound periapsis in deep-dip campaigns.
+3. **Inclusion of Inelastic Collision Physics**: Integrate state-resolved inelastic collision physics and cross-sections to enhance the physical realism of atmospheric escape modeling for hot oxygen (and hot hydrogen in the future).
 
 ## Usage Guide
 
@@ -1548,7 +1547,7 @@ void Background_Species::add_new_species(string species_config_file) {
 
 #### Inelastic Collision Implementation: Literature-Based Approach
 
-**Theoretical Foundation**: Implementation follows the rigorous quantum mechanical framework established by Gacesa et al. (2020), Kharchenko et al. (2000), and related computational studies for atmosphere-relevant collision systems.
+**Theoretical Foundation**: Implementation follows the rigorous quantum mechanical framework established by Gacesa et al. (2020), Kumar et al. (2022, 2023), Kharchenko et al. (2000), and related computational studies for atmosphere-relevant collision systems.
 
 **Core Algorithm**: The collision branching algorithm implements a three-stage process consistent with Monte Carlo collision theory:
 
@@ -1721,8 +1720,8 @@ void Particle::execute_inelastic_collision(shared_ptr<Particle> target,
 **Literature Data Integration**:
 
 - **O-CO₂ system**: State-to-state cross sections from Gacesa et al. (2020) quantum calculations
-- **O-N₂ system**: Rotationally-resolved data from computational studies  
-- **O-CO system**: Vibrational excitation cross sections from theoretical work
+- **O-N₂ system**: Rotationally-resolved data from Kumar et al. (2023)
+- **O-CO system**: Vibrational excitation cross sections from Kumar et al. (2022)
 - **Energy level data**: NIST/HITRAN rovibrational constants for accurate internal energy calculations
 
 **Performance Considerations**:
@@ -2090,31 +2089,23 @@ LillisComparisonMetrics compare_with_lillis_2017(string simulation_output_dir) {
 
 ### Inelastic Collision Implementation Literature
 
-**Core References for State-Resolved Collision Physics:**
+**References for State-Resolved Collision Physics:**
 
 1. **Gacesa, M., Lewkow, N., & Kharchenko, V.** (2020). "O(³P)+CO₂ collisions at hyperthermal energies: dynamics simulations and semiclassical rate coefficients for planetary aeronomy." *Monthly Notices of the Royal Astronomical Society*, 491(4), 5650-5664. DOI: 10.1093/mnras/stz3366
    - State-to-state inelastic cross sections for O-CO₂ rovibrational excitation
    - Quantum mechanical calculations on ab initio potential energy surfaces
    - **Data Repository**: https://github.com/mgacesa66/O-CO2_cross-sections
 
-2. **Balakrishnan, N., & Dalgarno, A.** (2001). "Quantum mechanical computational methods for inelastic collision processes." *Physical Review A*, 63(1), 012703.
-   - Theoretical framework for Monte Carlo implementation of inelastic collisions  
-   - Detailed balance and microscopic reversibility principles
-   - State-to-state rate coefficient calculations
+2. Kumar et al. (2022): Sanchit Kumar, Marko Gacesa, Malathe S Khalil, Amal Al Ghaferi, Nayla El-Kork, A quantum-mechanical investigation of O(3P) + CO scattering cross sections at superthermal collision energies, Monthly Notices of the Royal Astronomical Society, Volume 519, Issue 1, February 2023, Pages 1253–1260, https://doi.org/10.1093/mnras/stac3057
 
-3. **Cecchi-Pestellini, C., Bodo, E., Balakrishnan, N., & Dalgarno, A.** (2009). "Rate coefficients for rovibrational energy transfer in H₂-H₂ collisions." *Astrophysical Journal*, 703(1), 1056-1062.
-   - Benchmark Monte Carlo methods for inelastic molecular collisions
-   - Statistical sampling of quantum state distributions
-   - Validation against experimental measurements
-
-**Additional Cross Section Data Sources:**
-
-4. **O-CO Cross Sections**: https://github.com/mgacesa66/Cross-sections-O-CO
+**O-CO Cross Sections**: https://github.com/mgacesa66/Cross-sections-O-CO
    - Multi-surface quantum scattering calculations
    - Energy range: 1.0×10⁻⁴ to 4.75 eV
    - 298 collision energies with angular distributions
 
-5. **O-N₂ Cross Sections**: https://github.com/snchtchhbr/n2_o_cross_section  
+3. Kumar et al. (2023): Sanchit Kumar, Sumit Kumar, Marko Gacesa, Nayla El-Kork, Sharma S R K C Yamijala, Quantum scattering cross-sections for O(3P) + N2 collisions for planetary aeronomy, Monthly Notices of the Royal Astronomical Society, Volume 526, Issue 4, December 2023, Pages 5675–5681, https://doi.org/10.1093/mnras/stad3149
+
+ **O-N₂ Cross Sections**: https://github.com/snchtchhbr/n2_o_cross_section  
    - Rotationally resolved cross sections
    - Elastic and inelastic channels
    - Temperature-dependent collision dynamics
@@ -2244,18 +2235,18 @@ void do_collision(shared_ptr<Particle> target, double theta, double time, double
 
 1. **Re-calculation of Hot O Escape Rates**: Re-do the Lillis et al. (2017) analysis using new doubly differential elastic cross-sections for O-CO₂, O-CO, and O-N₂ interactions, combined with revised MAVEN in-situ data to provide improved escape rate calculations
 
-2. **Automated MAVEN Data Processing**: Write comprehensive output to file and automate the calculation of escape probabilities for each MAVEN orbit in-situ data, including inbound periapsis passes and deep-dip campaigns
+2. **Automated MAVEN Data Processing**: Write comprehensive output to file and automate the calculation of escape probabilities for each MAVEN orbit in-situ data during inbound periapsis passes and deep-dip campaigns
 
 3. **Inelastic Collision Physics Integration**: Include state-resolved inelastic collision physics and cross-sections to provide more realistic energy transfer modeling and enhanced atmospheric escape predictions
 
 ### Scientific Impact
 
 This enhanced model will provide:
-- Updated atmospheric escape rate calculations using improved collision physics and latest MAVEN (Mars) and Venus Express (Venus) datasets
-- Systematic automated analysis of MAVEN and Venus Express observational data with new cross-section databases
-- Quantitative assessment of the role of inelastic processes in hot atom thermalization for both hot oxygen and hot hydrogen
-- Enhanced understanding of Mars and Venus atmospheric evolution and current escape processes through improved physics implementation
+- Updated atmospheric escape rate calculations using improved collision physics and latest MAVEN (Mars) dataset
+- Systematic automated analysis of MAVEN observational data with new cross-section databases
+- Quantitative assessment of the role of inelastic processes in hot atom thermalization for hot oxygen (and hot hydrogen in the future)
+- Enhanced understanding of Mars (and Venus in the future) atmospheric evolution and current escape processes through improved physics implementation
 
 ---
 
-*This documentation reflects the current state of the Corona3D 2020 model as of 2025. The model continues to evolve with new cross section data, improved physics implementations, and enhanced validation against spacecraft observations.*
+*This documentation reflects the current state of the Corona3D model. The model continues to evolve with new cross section data, improved physics implementations, and inclusion of spacecraft observations.*

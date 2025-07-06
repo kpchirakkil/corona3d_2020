@@ -1,22 +1,22 @@
-# Corona3D 2020: Inelastic Collision Implementation Plan
+# Corona3D: Inelastic Collision Implementation Plan
 
-**STATUS UPDATE (July 2025)**: This document outlines the planned implementation roadmap for integrating inelastic collision physics into Corona3D 2020. The current codebase implements **ONLY elastic collision physics**. All inelastic collision features described below are part of the development plan and have **NOT YET BEEN IMPLEMENTED**.
+**STATUS UPDATE**: This document outlines the planned implementation roadmap for integrating inelastic collision physics into Corona3D model. The current codebase implements **ONLY elastic collision physics**. All inelastic collision features described below are part of the development plan and have **NOT YET BEEN IMPLEMENTED**.
 
 The Corona3D code simulates **hot-H** and **hot-O** coronae and photochemical (non-thermal) escape at Mars and Venus. This document provides a comprehensive, literature-based implementation plan for integrating **state-resolved inelastic collision physics** into the Monte Carlo transport model.
 
 ## Executive Summary
 
-Current elastic-only collision treatments may **underestimate energy loss** by 20-40% compared to models including inelastic channels (Gacesa et al. 2020). This document outlines a rigorous, step-by-step approach to implement quantum mechanically-derived, state-to-state inelastic cross sections that will significantly improve the physical realism of atmospheric escape calculations. The current Corona3D implementation includes sophisticated elastic collision physics with energy-dependent cross sections and differential scattering, but lacks the inelastic energy transfer mechanisms described in this plan.
+Current elastic-only collision treatments may **underestimate energy loss** compared to models including inelastic channels. This document outlines a rigorous, step-by-step approach to implement quantum mechanically-derived, state-to-state inelastic cross sections that will significantly improve the physical realism of atmospheric escape calculations. The current Corona3D implementation includes sophisticated elastic collision physics with energy-dependent cross sections and differential scattering, but lacks the inelastic energy transfer mechanisms described in this plan.
 
 ## Project Goals
 
 ### Primary Objectives
 
-1. **Re-calculation of Hot O and Hot H Escape Rates**: Re-do the Lillis et al. (2017) analysis using new doubly differential elastic cross-sections for O-CO₂, O-CO, O-N₂, H-CO₂, H-CO, and H-N₂ interactions, combined with revised MAVEN (Mars) and Venus Express (Venus) in-situ data to provide improved escape rate calculations
+1. **Re-calculation of Hot O and Hot H Escape Rates**: Re-do the Lillis et al. (2017) analysis using new doubly differential elastic cross-sections for O-CO₂, O-CO, and O-N₂ interactions, combined with revised MAVEN (Mars) in-situ data to provide improved escape rate calculations
 
-2. **Automated MAVEN and Venus Express Data Processing**: Write comprehensive output to file and automate the calculation of escape probabilities for each MAVEN orbit (Mars) and Venus Express orbit (Venus) in-situ data, including inbound periapsis passes and deep-dip campaigns
+2. **Automated MAVEN and Venus Express Data Processing**: Write comprehensive output to file and automate the calculation of escape probabilities for each MAVEN orbit (Mars) in-situ data during inbound periapsis passes in deep-dip campaigns
 
-3. **Inelastic Collision Physics Integration**: Include state-resolved inelastic collision physics and cross-sections to provide more realistic energy transfer modeling and enhanced atmospheric escape predictions for both hot oxygen and hot hydrogen
+3. **Inelastic Collision Physics Integration**: Include state-resolved inelastic collision physics and cross-sections to provide more realistic energy transfer modeling and enhanced atmospheric escape predictions for hot oxygen (and hot hydrogen in the future)
 
 ## Scientific Motivation
 
@@ -31,8 +31,8 @@ Current elastic-only collision treatments may **underestimate energy loss** by 2
 
 - **Gacesa et al. (2020)**: Quantum mechanical O-CO₂ cross sections with full rovibrational resolution (*MNRAS* 491, 5650)
 - **Kharchenko et al. (2000)**: Comprehensive O-O elastic and inelastic cross section database (*JGR* 105, 24899)
-- **Balakrishnan & Dalgarno (2001)**: Theoretical framework for Monte Carlo implementation of state-resolved collisions
-- **Cecchi-Pestellini et al. (2009)**: Benchmark Monte Carlo methods for inelastic collision modeling
+<!-- - **Balakrishnan & Dalgarno (2001)**: Theoretical framework for Monte Carlo implementation of state-resolved collisions
+- **Cecchi-Pestellini et al. (2009)**: Benchmark Monte Carlo methods for inelastic collision modeling -->
 - **Lillis et al. (2017)**: MAVEN hot-O escape analysis for validation (*JGR* 122, 3815)
 
 ## Implementation Approach
@@ -78,12 +78,11 @@ Recalculate escape rates using updated cross-sections and revised MAVEN data to 
 #### Model Validation and Comparison
 - Compare results with previous studies to validate improvements
 - Assess the quantitative impact of inelastic collision physics
-- Validate against MAVEN observational data
 
 ## Scientific Impact
 
 This enhanced model will provide:
-- Updated atmospheric escape rate calculations using improved collision physics and latest MAVEN (Mars) and Venus Express (Venus) datasets
-- Systematic automated analysis of MAVEN and Venus Express observational data with new cross-section databases  
-- Quantitative assessment of the role of inelastic processes in hot atom thermalization for both hot oxygen and hot hydrogen
-- Enhanced understanding of Mars and Venus atmospheric evolution and current escape processes through improved physics implementation
+- Updated atmospheric escape rate calculations using improved collision physics and latest MAVEN (Mars) dataset
+- Systematic automated analysis of MAVEN observational data with new cross-section databases  
+- Quantitative assessment of the role of inelastic processes in hot atom thermalization for hot oxygen (and hot hydrogen in the future)
+- Enhanced understanding of Mars (and Venus in the future) atmospheric evolution and current escape processes through improved physics implementation
