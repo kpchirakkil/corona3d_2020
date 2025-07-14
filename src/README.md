@@ -32,7 +32,7 @@ The model simulates the transport of "hot" atoms—atoms with kinetic energies s
 
 1. **Gravitational Forces**: Hot atoms experience planetary gravity according to Newton's law of universal gravitation, with acceleration: **a = -GM/r²**
 2. **Elastic Collisions**: Kinetic energy and momentum are conserved during collisions with background atmospheric species
-3. **Inelastic Collisions**: Energy is transferred to internal degrees of freedom (rotation/vibration) of collision partners
+3. **Inelastic Collisions (planned)**: Energy would be transferred to internal degrees of freedom (rotation/vibration) of collision partners
 4. **Atmospheric Escape**: Particles escape when their total energy (kinetic + gravitational potential) exceeds zero
 5. **Thermalization**: High-energy atoms lose energy through collisions until they reach thermal equilibrium with the atmosphere
 
@@ -648,32 +648,32 @@ class Distribution_Import : public Distribution {
 **CRITICAL ACCURACY NOTE**: The extensive inelastic collision framework described in the sections below represents **PLANNED IMPLEMENTATION** based on literature best practices. Currently, the Corona3D codebase implements **ONLY elastic collision physics**. 
 
 **Current Implementation Status**:
-- ✅ **IMPLEMENTED**: Elastic collisions with energy-dependent total cross sections σ(E)
-- ✅ **IMPLEMENTED**: Angular differential cross sections dσ/dΩ(E,θ) for realistic scattering
-- ✅ **IMPLEMENTED**: Center-of-mass collision dynamics with conservation laws
-- ✅ **IMPLEMENTED**: O-O, O-CO₂, O-CO, O-N₂ collision systems (elastic only)
-- ❌ **NOT IMPLEMENTED**: InelasticCollisionHandler class
-- ❌ **NOT IMPLEMENTED**: StateResolvedCollisionManager class  
-- ❌ **NOT IMPLEMENTED**: State-resolved inelastic collision channels
-- ❌ **NOT IMPLEMENTED**: Energy transfer to internal molecular modes
+- **IMPLEMENTED**: Elastic collisions with energy-dependent total cross sections σ(E)
+- **IMPLEMENTED**: Angular differential cross sections dσ/dΩ(E,θ) for realistic scattering
+- **IMPLEMENTED**: Center-of-mass collision dynamics with conservation laws
+- **IMPLEMENTED**: O-O, O-CO₂, O-CO, O-N₂ collision systems (elastic only)
+- **NOT IMPLEMENTED**: InelasticCollisionHandler class
+- **NOT IMPLEMENTED**: StateResolvedCollisionManager class  
+- **NOT IMPLEMENTED**: State-resolved inelastic collision channels
+- **NOT IMPLEMENTED**: Energy transfer to internal molecular modes
 
 The detailed inelastic collision algorithms and classes described below are part of the development roadmap outlined in `AGENTS.md` but do not exist in the current codebase.
 
 **Current Capabilities**:
-- ✅ Elastic collisions with energy-dependent total cross sections σ(E)
-- ✅ Angular differential cross sections dσ/dΩ(E,θ) for realistic scattering
-- ✅ Center-of-mass collision dynamics with exact conservation laws
-- ✅ O-O, O-CO₂, O-CO, O-N₂ collision systems (elastic only)
-- ✅ Maxwell-Boltzmann thermal velocity distributions for background species
-- ✅ Exponential atmospheric density profiles with scale heights
-- ✅ Gravitational trajectory integration with leapfrog scheme
+- Elastic collisions with energy-dependent total cross sections σ(E)
+- Angular differential cross sections dσ/dΩ(E,θ) for realistic scattering
+- Center-of-mass collision dynamics with exact conservation laws
+- O-O, O-CO₂, O-CO, O-N₂ collision systems (elastic only)
+- Maxwell-Boltzmann thermal velocity distributions for background species
+- Exponential atmospheric density profiles with scale heights
+- Gravitational trajectory integration with leapfrog scheme
 
 **Planned Implementation** (described in detail below):
-- 🔄 State-resolved inelastic collision channels
-- 🔄 Collision branching algorithm (elastic vs. inelastic selection)
-- 🔄 Energy transfer to internal molecular modes (rotation, vibration)
-- 🔄 Temperature-dependent thermal state populations
-- 🔄 Detailed balance and conservation law validation
+- State-resolved inelastic collision channels
+- Collision branching algorithm (elastic vs. inelastic selection)
+- Energy transfer to internal molecular modes (rotation, vibration)
+- Temperature-dependent thermal state populations
+- Detailed balance and conservation law validation
 
 **Scientific Motivation for Inelastic Implementation**: Studies indicate that elastic-only treatments may underestimate energy loss, potentially leading to overestimated atmospheric escape rates. The planned inelastic implementation will provide more realistic physics.
 
