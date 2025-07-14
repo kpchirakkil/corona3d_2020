@@ -31,9 +31,11 @@ Current elastic-only collision treatments may **underestimate energy loss** comp
 
 - **Gacesa et al. (2020)**: Quantum mechanical O-CO₂ cross sections with full rovibrational resolution (*MNRAS* 491, 5650)
 - **Kharchenko et al. (2000)**: Comprehensive O-O elastic and inelastic cross section database (*JGR* 105, 24899)
+- Kumar et al. (2022): Sanchit Kumar, Marko Gacesa, Malathe S Khalil, Amal Al Ghaferi, Nayla El-Kork, A quantum-mechanical investigation of O(3P) + CO scattering cross sections at superthermal collision energies, Monthly Notices of the Royal Astronomical Society, Volume 519, Issue 1, February 2023, Pages 1253–1260, https://doi.org/10.1093/mnras/stac3057
+- Kumar et al. (2023): Sanchit Kumar, Sumit Kumar, Marko Gacesa, Nayla El-Kork, Sharma S R K C Yamijala, Quantum scattering cross-sections for O(3P) + N2 collisions for planetary aeronomy, Monthly Notices of the Royal Astronomical Society, Volume 526, Issue 4, December 2023, Pages 5675–5681, https://doi.org/10.1093/mnras/stad3149
+- **Lillis et al. (2017)**: MAVEN hot-O escape analysis for validation (*JGR* 122, 3815)
 <!-- - **Balakrishnan & Dalgarno (2001)**: Theoretical framework for Monte Carlo implementation of state-resolved collisions
 - **Cecchi-Pestellini et al. (2009)**: Benchmark Monte Carlo methods for inelastic collision modeling -->
-- **Lillis et al. (2017)**: MAVEN hot-O escape analysis for validation (*JGR* 122, 3815)
 
 ## Implementation Approach
 

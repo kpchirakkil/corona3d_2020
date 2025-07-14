@@ -23,12 +23,9 @@ The model simulates the transport of "hot" atoms—atoms with kinetic energies s
 
 **Hot Oxygen Production Mechanisms:**
 - **Dissociative recombination**: O₂⁺ + e⁻ → O + O*
-- **Charge exchange**: O⁺ + CO₂ → O* + CO₂⁺
-- **Photodissociation**: CO₂ + hν → CO + O*
 
 **Hot Hydrogen Production Mechanisms:**
-- **H₂ Photodissociation**: H₂ + hν → H + H*
-- **Charge exchange**: H⁺ + atmospheric neutrals → H* + ions
+- **Charge exchange**: H⁺ + H → H*
 - **HCO⁺ Dissociative recombination**: HCO⁺ + e⁻ → H* + CO
 
 ### Key Physical Processes
@@ -52,9 +49,9 @@ The model supports comprehensive collision physics between hot atoms and backgro
 
 **Hot Oxygen Collision Systems:**
 - **O-O**: Oxygen-oxygen elastic scattering (Kharchenko et al. 2000)
-- **O-CO₂**: Oxygen-carbon dioxide interactions (elastic + inelastic channels, Gacesa et al. 2020)
-- **O-CO**: Oxygen-carbon monoxide interactions (elastic + inelastic channels, Kumar et al. 2022)
-- **O-N₂**: Oxygen-nitrogen interactions (elastic + inelastic channels, Kumar et al. 2023)
+- **O-CO₂**: Oxygen-carbon dioxide interactions (elastic cross sections (inelastic planned), Gacesa et al. 2020)
+- **O-CO**: Oxygen-carbon monoxide interactions (elastic cross sections (inelastic planned), Kumar et al. 2022)
+- **O-N₂**: Oxygen-nitrogen interactions (elastic cross sections (inelastic planned), Kumar et al. 2023)
 
 **Hot Hydrogen Collision Systems:**
 - **H-O**: Hydrogen-oxygen elastic scattering
@@ -569,29 +566,10 @@ void Distribution_Hot_O::init_O2plus_DR_particle(shared_ptr<Particle> p) {
 }
 ```
 
-**2. Charge Exchange Reactions**:
-```
-O⁺ + CO₂ → O* + CO₂⁺ (with ~2-3 eV excess energy)
-```
-
-**3. Photodissociation**:
-```
-CO₂ + hν → CO + O* (UV photolysis with wavelength-dependent energy)
-```
-
 #### `Distribution_Hot_H` (Hydrogen)
 Production mechanisms for hot hydrogen atoms at Mars and Venus:
 
-**1. H₂ Photodissociation**:
-```cpp
-void Distribution_Hot_H::init_H2_photodiss_particle(shared_ptr<Particle> p) {
-    // Sample from H₂ density profile and apply Lyman-α photolysis cross section
-    double photodissociation_energy_eV = calculate_wavelength_dependent_energy();
-    // ... similar spatial and velocity sampling
-}
-```
-
-**2. HCO⁺ Dissociative Recombination**:
+**1. HCO⁺ Dissociative Recombination**:
 ```cpp
 void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p) {
     // Sample from HCO⁺ density profile and apply DR cross section
@@ -600,9 +578,7 @@ void Distribution_Hot_H::init_HCOplus_DR_particle(shared_ptr<Particle> p) {
 }
 ```
 
-**3. Charge Exchange**: H⁺ + atmospheric neutrals → H* + ions
-
-**4. Ion-Neutral Reactions**: Complex multi-step processes with intermediate energy transfer
+**2. Charge Exchange**: H⁺ + atmospheric neutrals → H* + ions
 
 #### `Distribution_MB` (Maxwell-Boltzmann)
 Thermal equilibrium distributions for validation and background particle initialization:
@@ -2235,7 +2211,7 @@ void do_collision(shared_ptr<Particle> target, double theta, double time, double
 
 1. **Re-calculation of Hot O Escape Rates**: Re-do the Lillis et al. (2017) analysis using new doubly differential elastic cross-sections for O-CO₂, O-CO, and O-N₂ interactions, combined with revised MAVEN in-situ data to provide improved escape rate calculations
 
-2. **Automated MAVEN Data Processing**: Write comprehensive output to file and automate the calculation of escape probabilities for each MAVEN orbit in-situ data during inbound periapsis passes and deep-dip campaigns
+2. **Automated MAVEN Data Processing**: Write comprehensive output to file and automate the calculation of escape probabilities for each MAVEN orbit in-situ data during inbound periapsis passes in deep-dip campaigns
 
 3. **Inelastic Collision Physics Integration**: Include state-resolved inelastic collision physics and cross-sections to provide more realistic energy transfer modeling and enhanced atmospheric escape predictions
 
