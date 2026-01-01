@@ -63,19 +63,3 @@ src/
 
 - **Implemented**: Elastic collisions with energy-dependent cross-sections, differential scattering
 - **Planned**: Inelastic collisions (rotational/vibrational energy transfer)
-
-See `../NOTES.md` for the development roadmap and action items.
-
-## References
-
-- Gacesa et al. (2020) - O-CO2 cross-sections, *MNRAS* 491, 5650
-- Kharchenko et al. (2000) - O-O cross-sections, *JGR* 105, 24899
-- Kumar et al. (2022) - O-CO cross-sections, *MNRAS* 519, 1253
-- Kumar et al. (2023) - O-N2 cross-sections, *MNRAS* 526, 5675
-- Lillis et al. (2017) - MAVEN hot-O escape, *JGR* 122, 3815
-
-## Cross-Section Data Sources
-
-- O-CO2: https://github.com/mgacesa66/O-CO2_cross-sections
-- O-CO: https://github.com/mgacesa66/Cross-sections-O-CO
-- O-N2: https://github.com/snchtchhbr/n2_o_cross_section
