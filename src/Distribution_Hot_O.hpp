@@ -31,6 +31,7 @@ private:
 	double O2plus_DR_rate_coeff;  // [cm^3/s] rate coefficient for O2+ + e -> O* + O*
 	double global_rate;    // [s^-1] set by chosen production method; calling function needs to divide this by 2 to get hemispherical rate
 	string source;         // which source to use when initializing particles (currently 'O2plus_DR' is only option)
+	double fixed_altitude; // [cm] if > 0, all particles start at this fixed altitude (for escape probability calculations)
 	vector<vector<double>> O2plus_profile;  // stores the imported O2plus density profile
 	vector<vector<double>> electron_profile; // stores the imported electron density profile
 	vector<vector<double>> temp_profile;  // stores the imported temperature profiles (4-column csv expected: altitude(cm), neutral_temp(K), ion_temp(K), electron_temp(K))

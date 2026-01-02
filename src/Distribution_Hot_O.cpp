@@ -21,6 +21,7 @@ Distribution_Hot_O::Distribution_Hot_O(Planet my_p, double ref_h, double ref_T)
 	source = "";
 	O2plus_DR_rate_coeff = 0.0;
 	global_rate = 0.0;
+	fixed_altitude = 0.0;  // disabled by default; set > 0 to fix all particles at this altitude
 
 	temp_profile.resize(4);
 	O2plus_profile.resize(2);
@@ -96,6 +97,14 @@ Distribution_Hot_O::Distribution_Hot_O(Planet my_p, double ref_h, double ref_T)
 		{
 			electron_prof_filename = values[i];
 		}
+		else if (parameters[i] == "fixed_altitude")
+		{
+			fixed_altitude = stod(values[i]);
+			if (fixed_altitude > 0.0)
+			{
+				cout << "Fixed altitude mode enabled: all particles will start at " << fixed_altitude*1e-5 << " km\n";
+			}
+		}
 	}
 
 	common::import_csv(temp_prof_filename, temp_profile[0], temp_profile[1], temp_profile[2], temp_profile[3]);
@@ -132,7 +141,15 @@ void Distribution_Hot_O::init(shared_ptr<Particle> p)
 void Distribution_Hot_O::init_O2plus_DR_particle(shared_ptr<Particle> p)
 {
 	// altitude distribution for O2+ dissociative recombination
-	double r = get_new_radius_O2plus_DR();
+	double r;
+	if (fixed_altitude > 0.0)
+	{
+		r = my_planet.get_radius() + fixed_altitude;
+	}
+	else
+	{
+		r = get_new_radius_O2plus_DR();
+	}
 	double alt = r - my_planet.get_radius();
 	double temp_ion = common::interpolate_logy(temp_profile[0], temp_profile[2], alt);
 	//double temp_neut = common::interpolate_logy(temp_profile[0], temp_profile[1], alt);
@@ -205,7 +222,15 @@ void Distribution_Hot_O::init_O2plus_DR_particle(shared_ptr<Particle> p)
 void Distribution_Hot_O::init_old_way(shared_ptr<Particle> p)
 {
 	// altitude distribution for O2+ dissociative recombination
-	double r = my_planet.get_radius() + 160e5 - log(common::get_rand())*H_DR;
+	double r;
+	if (fixed_altitude > 0.0)
+	{
+		r = my_planet.get_radius() + fixed_altitude;
+	}
+	else
+	{
+		r = my_planet.get_radius() + 160e5 - log(common::get_rand())*H_DR;
+	}
 
 	double phi = constants::twopi*(common::get_rand());
 	double u = 2.0*common::get_rand() - 1.0;
