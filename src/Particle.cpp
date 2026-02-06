@@ -107,6 +107,80 @@ void Particle::do_collision(shared_ptr<Particle> target, double theta, double ti
 	}
 }
 
+// perform collision with inelastic energy loss support
+void Particle::do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r, bool is_inelastic, double delta_E_eV)
+{
+	double v_before, v_after;
+	double my_mass = get_mass();
+	double targ_mass = target->get_mass();
+	Matrix<double, 3, 1> targ_v = {target->get_vx(), target->get_vy(), target->get_vz()};
+	Matrix<double, 3, 1> vcm;
+	Matrix<double, 3, 3> Rrg;
+
+	vcm = (my_mass*velocity.array() + targ_mass*targ_v.array()) / (my_mass + targ_mass);
+	Matrix<double, 3, 1> v1v = velocity.array() - vcm.array();        // particle 1 c-o-m velocity
+	double v1 = sqrt(v1v[0]*v1v[0] + v1v[1]*v1v[1] + v1v[2]*v1v[2]);  // particle 1 c-o-m scalar velocity
+
+	// Apply inelastic energy loss: reduce CM-frame speed
+	if (is_inelastic && delta_E_eV > 0.0)
+	{
+		double mu = (my_mass * targ_mass) / (my_mass + targ_mass);  // reduced mass
+		double v_rel = v1 * (my_mass + targ_mass) / targ_mass;      // relative speed
+		double E_CM = 0.5 * mu * v_rel * v_rel;                     // CM kinetic energy [erg]
+		double dE = delta_E_eV * constants::ergev;                   // energy loss [erg]
+		double E_CM_new = max(0.0, E_CM - dE);                      // guard against negative
+		double v_rel_new = sqrt(2.0 * E_CM_new / mu);
+		if (v_rel > 0.0)
+			v1 = v1 * (v_rel_new / v_rel);                          // scale CM speed proportionally
+	}
+
+	// unit vector parallel to particle 1 velocity
+	Matrix<double, 3, 1> r = velocity.array() / sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1] + velocity[2]*velocity[2]);
+
+	double alpha = atan2(velocity[1], velocity[0]);
+	double phi = atan2(velocity[2], sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1]));
+	double gamma = constants::twopi*common::get_rand();
+
+	Matrix<double, 3, 1> vp;
+	vp[0] = v1*cos(alpha)*cos(phi-theta);
+	vp[1] = v1*sin(alpha)*cos(phi-theta);
+	vp[2] = v1*sin(phi-theta);
+
+	double Cg = cos(gamma);
+	double Sg = sin(gamma);
+	double Vg = 1.0-Cg;
+
+	Rrg(0, 0) = r[0]*r[0]*Vg+Cg;
+	Rrg(0, 1) = r[0]*r[1]*Vg+r[2]*Sg;
+	Rrg(0, 2) = r[0]*r[2]*Vg-r[1]*Sg;
+
+	Rrg(1, 0) = r[0]*r[1]*Vg-r[2]*Sg;
+	Rrg(1, 1) = r[1]*r[1]*Vg+Cg;
+	Rrg(1, 2) = r[1]*r[2]*Vg+r[0]*Sg;
+
+	Rrg(2, 0) = r[0]*r[2]*Vg+r[1]*Sg;
+	Rrg(2, 1) = r[1]*r[2]*Vg-r[0]*Sg;
+	Rrg(2, 2) = r[2]*r[2]*Vg+Cg;
+
+	Matrix<double, 3, 1> vrel1 = Rrg * vp;
+
+	// update post-collision velocity
+	if (traced)
+	{
+	  v_before = get_total_v()*1e-5;
+	}
+	velocity = vcm.array() + vrel1.array();
+
+	// write to collision log if traced particle
+	if (traced)
+	{
+		v_after = get_total_v()*1e-5;
+		double alt_in_km = 1e-5*(radius - planet_r);
+		string coll_type = is_inelastic ? "INEL" : "ELAS";
+		collision_log.push_back(to_string(time) + "\t\t" + to_string(alt_in_km) + "\t" + target->get_name() + "\t" + to_string(theta * (180.0/constants::pi)) + "\t" + to_string(v_before) + "\t" + to_string(v_after) + "\t" + coll_type);
+	}
+}
+
 void Particle::do_timestep(double dt, double k_g)
 {
 	previous_radius = radius;  // record current radius as new previous radius
@@ -134,7 +208,7 @@ void Particle::dump_collision_log(string filename)
 {
 	ofstream outfile;
 	outfile.open(filename);
-	outfile << "#time(s)" << "\t\t" << "alt(km)" << "\t" << "targ" << "\t" << "angle(deg)" << "\t" << "v_bef(km/s)" << "\t" << "v_aft(km/s)\n";
+	outfile << "#time(s)" << "\t\t" << "alt(km)" << "\t" << "targ" << "\t" << "angle(deg)" << "\t" << "v_bef(km/s)" << "\t" << "v_aft(km/s)" << "\t" << "type\n";
 	int num_lines = collision_log.size();
 	for (int i=0; i<num_lines; i++)
 	{

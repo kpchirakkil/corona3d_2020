@@ -333,12 +333,18 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 		for (int j=0; j<active_parts; j++)
 		{
 		  update_stats(dt, active_indices[j]);
-		        my_vtally.update_vtally(my_parts[active_indices[j]]);
+		  // OPTIMIZATION: vtally disabled for escape probability calculations
+		  // Uncomment if line-of-sight velocity distributions are needed
+		  // my_vtally.update_vtally(my_parts[active_indices[j]]);
 			my_parts[active_indices[j]]->do_timestep(dt, k);
 
 			if (bg_species.check_collision(my_parts[active_indices[j]], dt))
 			{
-				my_parts[active_indices[j]]->do_collision(bg_species.get_collision_target(), bg_species.get_collision_theta(), i*dt, my_planet.get_radius());
+				CollisionOutcome outcome = bg_species.get_last_outcome();
+				my_parts[active_indices[j]]->do_collision(
+					bg_species.get_collision_target(),
+					outcome.theta, i*dt, my_planet.get_radius(),
+					outcome.is_inelastic, outcome.delta_E_eV);
 			}
 
 			// escape velocity at current radius
@@ -401,6 +407,7 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 
 
 	cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;
+	cout << "Number of inelastic collisions: " << bg_species.get_num_inelastic_collisions() << endl;
 	cout << "Active particles remaining: " << active_parts << endl;
 	cout << "Number of day side escaped particles: " << day_escape_count << endl;
 	cout << "Number of night side escaped particles: " << night_escape_count << endl;

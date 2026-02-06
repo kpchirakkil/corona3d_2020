@@ -13,6 +13,7 @@ Background_Species::Background_Species() {
 	profile_bottom_alt = 0.0;
 	profile_top_alt = 0.0;
 	num_collisions = 0;
+	num_inelastic_collisions = 0;
 	num_species = 0;
 	ref_temp = 0.0;
 	ref_height = 0.0;
@@ -20,11 +21,14 @@ Background_Species::Background_Species() {
 	collision_target = -1;
 	collision_theta = 0.0;
 	my_dist = NULL;
+	last_outcome = {false, false, -1, 0.0, 0.0};
 }
 
 Background_Species::Background_Species(int num_parts, string config_files[], Planet p, double ref_T, double ref_h, string temp_profile_filename, string dens_profile_filename, double profile_bottom, double profile_top)
 {
 	num_collisions = 0;
+	num_inelastic_collisions = 0;
+	last_outcome = {false, false, -1, 0.0, 0.0};
 	num_species = num_parts;
 	my_planet = p;
 	ref_temp = ref_T;
@@ -65,6 +69,11 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 	avg_v_interp.resize(num_species);
 	diff_sigma_energies.resize(num_species);
 	diff_sigma_CDFs.resize(num_species);
+	enable_inelastic.resize(num_species, false);
+	sigma_total_interp.resize(num_species);
+	elastic_frac_interp.resize(num_species);
+	avg_eloss_interp.resize(num_species);
+	inelastic_CDFs.resize(num_species);
 	for (int i=0; i<num_species; i++)
 	{
 		int num_energies = 0;
@@ -132,7 +141,80 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 				energies_index = j+1;
 				diff_sigma_CDFs[i].resize(num_energies);
 			}
+			else if (parameters[j] == "enable_inelastic")
+			{
+				enable_inelastic[i] = (values[j] == "true");
+			}
+			else if (parameters[j] == "total_sigma_file_total")
+			{
+				if (values[j] != "")
+				{
+					vector<vector<double>> table(2);
+					common::import_csv(values[j], table[0], table[1]);
+					sigma_total_interp[i] = make_shared<Interpolator>(table[0], table[1]);
+				}
+			}
+			else if (parameters[j] == "elastic_fraction_file")
+			{
+				if (values[j] != "")
+				{
+					vector<vector<double>> table(2);
+					common::import_csv(values[j], table[0], table[1]);
+					elastic_frac_interp[i] = make_shared<Interpolator>(table[0], table[1]);
+				}
+			}
+			else if (parameters[j] == "avg_energy_loss_file")
+			{
+				if (values[j] != "")
+				{
+					vector<vector<double>> table(2);
+					common::import_csv(values[j], table[0], table[1]);
+					avg_eloss_interp[i] = make_shared<Interpolator>(table[0], table[1]);
+				}
+			}
 		}
+
+		// Load inelastic DCS files if inelastic is enabled
+		if (enable_inelastic[i])
+		{
+			inelastic_CDFs[i].resize(num_energies);
+			for (int j=0; j<num_params; j++)
+			{
+				// Match energyN_inelastic_file pattern
+				string p = parameters[j];
+				if (p.length() > 15 && p.substr(p.length() - 15) == "_inelastic_file")
+				{
+					// Extract energy index from parameter name (e.g., "energy1_inelastic_file" -> 0)
+					string num_str = p.substr(6, p.length() - 21);
+					int eidx = stoi(num_str) - 1;  // 0-based
+
+					if (eidx >= 0 && eidx < num_energies)
+					{
+						inelastic_CDFs[i][eidx].resize(2);
+						vector<vector<double>> inel_PDF(2);
+						common::import_csv(values[j], inel_PDF[0], inel_PDF[1]);
+						make_new_inelastic_CDF(i, eidx, inel_PDF[0], inel_PDF[1]);
+					}
+				}
+			}
+			// Verify all inelastic CDFs were loaded
+			int loaded_count = 0;
+			for (int k=0; k<num_energies; k++)
+			{
+				if (inelastic_CDFs[i][k].size() >= 2 && !inelastic_CDFs[i][k][0].empty())
+					loaded_count++;
+			}
+			if (loaded_count < num_energies)
+			{
+				cout << "ERROR: enable_inelastic=true for species " << bg_parts[i]->get_name()
+				     << " but only " << loaded_count << " of " << num_energies
+				     << " inelastic DCS files were loaded. Check config for missing energyN_inelastic_file entries." << endl;
+				exit(1);
+			}
+			cout << "Inelastic collisions enabled for species " << bg_parts[i]->get_name()
+			     << " (" << loaded_count << "/" << num_energies << " inelastic CDFs loaded)" << endl;
+		}
+
 		bg_scaleheights[i].push_back(constants::k_b*ref_temp/(bg_parts[i]->get_mass()*ref_g));
 		bg_avg_v[i].push_back(sqrt(constants::k_b*ref_temp/bg_parts[i]->get_mass()));
 
@@ -255,6 +337,14 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 	double alt = r - my_planet.get_radius();
 	double r_moved = my_planet.get_radius() + ref_height - r;
 
+	// OPTIMIZATION: Skip collision check at high altitudes (>1000 km)
+	// where atmospheric density is negligible and collisions essentially never occur.
+	// This significantly speeds up particle tracking in the exosphere.
+	if (alt > 1000e5) {  // 1000 km in cm
+		collision_target = -1;
+		return false;
+	}
+
 	// get densities at current location
 	vector<double> dens;
 	dens.resize(num_species);
@@ -307,7 +397,10 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 
 			// calculate collision energy and look up cross section
 			energy[i] = calc_collision_e(p, bg_parts[i]);
-			total_sig[i] = sigma_interp[i]->linterp(energy[i]);
+			if (enable_inelastic[i] && sigma_total_interp[i])
+				total_sig[i] = sigma_total_interp[i]->linterp(energy[i]);
+			else
+				total_sig[i] = sigma_interp[i]->linterp(energy[i]);
 		}
 		else  // just use default sigma if no lookup table available
 		{
@@ -326,19 +419,19 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 	{
 		num_collisions++;
 
-		// pick target species for collision
+		// pick target species for collision, weighted by dens[i] * sigma[i]
 		u = common::get_rand();
-		double total_dens = 0.0;
+		double total_weight = 0.0;
 		for (int i=0; i<num_species; i++)
 		{
-			total_dens += dens[i];
+			total_weight += dens[i] * total_sig[i];
 		}
 		double frac = 0.0;
 		collision_target = 0;
 
 		do
 		{
-			frac += dens[collision_target] / total_dens;
+			frac += (dens[collision_target] * total_sig[collision_target]) / total_weight;
 			collision_target++;
 		}
 		while (u >= frac && collision_target < num_species);
@@ -371,7 +464,37 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 			}
 			energy[collision_target] = calc_collision_e(p, bg_parts[collision_target]);
 		}
-		collision_theta = find_new_theta(collision_target, energy[collision_target]);
+		last_outcome.occurred = true;
+		last_outcome.target_index = collision_target;
+		last_outcome.is_inelastic = false;
+		last_outcome.delta_E_eV = 0.0;
+
+		if (enable_inelastic[collision_target] && elastic_frac_interp[collision_target])
+		{
+			double f_el = elastic_frac_interp[collision_target]->linterp(energy[collision_target]);
+			f_el = max(0.0, min(1.0, f_el));
+
+			if (common::get_rand() > f_el)
+			{
+				// INELASTIC
+				last_outcome.is_inelastic = true;
+				last_outcome.delta_E_eV = avg_eloss_interp[collision_target]->linterp(energy[collision_target]);
+				last_outcome.theta = find_new_theta_inelastic(collision_target, energy[collision_target]);
+				num_inelastic_collisions++;
+			}
+			else
+			{
+				// ELASTIC
+				last_outcome.theta = find_new_theta(collision_target, energy[collision_target]);
+			}
+		}
+		else
+		{
+			// No inelastic data — elastic only (unchanged behavior)
+			last_outcome.theta = find_new_theta(collision_target, energy[collision_target]);
+		}
+
+		collision_theta = last_outcome.theta;  // keep backwards-compatible member
 		return true;
 	}
 	else
@@ -422,6 +545,54 @@ double Background_Species::find_new_theta(int part_index, double energy)
         return diff_sigma_CDFs[part_index][energy_index][1][k];
 }
 
+// scans imported inelastic differential scattering CDF for new collision theta
+double Background_Species::find_new_theta_inelastic(int part_index, double energy)
+{
+	// get energy index (uses same energy grid as elastic DCS)
+	int energy_index = 0;
+	int num_energies = diff_sigma_energies[part_index].size();
+	if (energy <= diff_sigma_energies[part_index][0])
+	{
+		energy_index = 0;
+	}
+	else if (energy >= diff_sigma_energies[part_index].back())
+	{
+		energy_index = num_energies - 1;
+	}
+	else
+	{
+		double difference = INFINITY;
+		for (int i=0; i<num_energies; i++)
+		{
+			double new_diff = abs(energy - diff_sigma_energies[part_index][i]);
+			if (new_diff < difference)
+			{
+				difference = new_diff;
+				energy_index = i;
+			}
+		}
+	}
+
+	// Guard: fall back to elastic DCS if inelastic CDF data is missing
+	if (energy_index >= (int)inelastic_CDFs[part_index].size() ||
+	    inelastic_CDFs[part_index][energy_index].size() < 2 ||
+	    inelastic_CDFs[part_index][energy_index][0].empty())
+	{
+		return find_new_theta(part_index, energy);
+	}
+
+	// search inelastic CDF for angle
+	double u = common::get_rand();
+	u = std::max(0.0, std::min(u, 1.0));
+	int k = 0;
+	while ((k + 1 < (int)inelastic_CDFs[part_index][energy_index][0].size()) &&
+	       inelastic_CDFs[part_index][energy_index][0][k] < u)
+	{
+		k++;
+	}
+	return inelastic_CDFs[part_index][energy_index][1][k];
+}
+
 // get density from imported density profile
 double Background_Species::get_density(double alt, int index)
 {
@@ -459,6 +630,16 @@ double Background_Species::get_collision_theta()
 	return collision_theta;
 }
 
+CollisionOutcome Background_Species::get_last_outcome()
+{
+	return last_outcome;
+}
+
+int Background_Species::get_num_inelastic_collisions()
+{
+	return num_inelastic_collisions;
+}
+
 // make a new differential cross section CDF and store at diff_sigma_CDFs[part_index][energy_index]
 void Background_Species::make_new_CDF(int part_index, int energy_index, vector<double> &angle, vector<double> &sigma)
 {
@@ -482,6 +663,33 @@ void Background_Species::make_new_CDF(int part_index, int energy_index, vector<d
 		else
 		{
 			diff_sigma_CDFs[part_index][energy_index][0][i] = (sigma[i] / sig_total) + diff_sigma_CDFs[part_index][energy_index][0][i-1];
+		}
+	}
+}
+
+// make a new inelastic differential cross section CDF and store at inelastic_CDFs[part_index][energy_index]
+void Background_Species::make_new_inelastic_CDF(int part_index, int energy_index, vector<double> &angle, vector<double> &sigma)
+{
+	int num_angles = angle.size();
+	inelastic_CDFs[part_index][energy_index][0].resize(num_angles);
+	inelastic_CDFs[part_index][energy_index][1].resize(num_angles);
+
+	double sig_total = 0.0;
+	for (int i=0; i<num_angles; i++)
+	{
+		inelastic_CDFs[part_index][energy_index][1][i] = angle[i] * (constants::pi / 180.0);
+		sigma[i] = sigma[i] * sin(angle[i]*constants::pi/180.0);
+		sig_total = sig_total + sigma[i];
+	}
+	for (int i=0; i<num_angles; i++)
+	{
+		if (i == 0)
+		{
+			inelastic_CDFs[part_index][energy_index][0][i] = sigma[i] / sig_total;
+		}
+		else
+		{
+			inelastic_CDFs[part_index][energy_index][0][i] = (sigma[i] / sig_total) + inelastic_CDFs[part_index][energy_index][0][i-1];
 		}
 	}
 }

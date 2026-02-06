@@ -23,6 +23,14 @@
 #include "Interpolator.hpp"
 using namespace std;
 
+struct CollisionOutcome {
+	bool occurred;          // did a collision happen?
+	bool is_inelastic;      // elastic or inelastic?
+	int target_index;       // index into bg_parts[]
+	double theta;           // scattering angle (radians)
+	double delta_E_eV;      // energy loss to internal modes (eV), 0 for elastic
+};
+
 class Background_Species {
 public:
 	Background_Species();
@@ -32,6 +40,8 @@ public:
 	int get_num_collisions();
 	shared_ptr<Particle> get_collision_target();
 	double get_collision_theta();
+	CollisionOutcome get_last_outcome();
+	int get_num_inelastic_collisions();
 
 private:
 	bool use_temp_profile;       // flag for whether or not temperature profile is available
@@ -67,6 +77,15 @@ private:
 	vector<vector<double>> diff_sigma_energies;              // array of available differential cross section energies for each species
 	vector<vector<vector<vector<double>>>> diff_sigma_CDFs;  // CDFs built from imported differential cross section tables; used for looking up scattering angles
 
+	// Inelastic collision data (per species)
+	vector<bool> enable_inelastic;                              // per-species flag
+	vector<shared_ptr<Interpolator>> sigma_total_interp;        // total σ (elastic+inelastic)
+	vector<shared_ptr<Interpolator>> elastic_frac_interp;       // σ_elastic/σ_total ratio
+	vector<shared_ptr<Interpolator>> avg_eloss_interp;          // average ΔE(E) in eV
+	vector<vector<vector<vector<double>>>> inelastic_CDFs;      // CDFs from inelastic DCS
+	CollisionOutcome last_outcome;                              // most recent collision result
+	int num_inelastic_collisions;                               // counter
+
 	// returns collision energy in eV between particle 1 and particle 2
 	double calc_collision_e(shared_ptr<Particle> p1, shared_ptr<Particle> p2);
 
@@ -76,11 +95,17 @@ private:
 	// scans imported differential scattering CDF for new collision theta
 	double find_new_theta(int part_index, double energy);
 
+	// scans imported inelastic differential scattering CDF for new collision theta
+	double find_new_theta_inelastic(int part_index, double energy);
+
 	// get density from imported density profile if available
 	double get_density(double alt, int index);
 
 	// make a new differential cross section CDF and store at diff_sigma_CDFs[index]
 	void make_new_CDF(int part_index, int energy_index, vector<double> &angle, vector<double> &sigma);
+
+	// make a new inelastic differential cross section CDF and store at inelastic_CDFs[index]
+	void make_new_inelastic_CDF(int part_index, int energy_index, vector<double> &angle, vector<double> &sigma);
 
 	//subroutine to set particle type
 	shared_ptr<Particle> set_particle_type(string type);
