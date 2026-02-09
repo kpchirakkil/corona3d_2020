@@ -19,8 +19,11 @@ Atmosphere.o: Atmosphere.cpp
 Background_Species.o: Background_Species.cpp
 	$(CXX) $(CFLAGS) -c Background_Species.cpp
 
+# Compiled without -ffast-math so that NaN/Inf detection and creation work correctly.
+# This file only runs at startup (CSV import); no performance impact.
+CFLAGS_SAFE := $(filter-out -ffast-math,$(CFLAGS))
 Common_Functions.o: Common_Functions.cpp
-	$(CXX) $(CFLAGS) -c Common_Functions.cpp
+	$(CXX) $(CFLAGS_SAFE) -c Common_Functions.cpp
 
 Distribution_Hot_H.o: Distribution_Hot_H.cpp
 	$(CXX) $(CFLAGS) -c Distribution_Hot_H.cpp

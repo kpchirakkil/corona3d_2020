@@ -67,6 +67,7 @@ private:
 	shared_ptr<Interpolator> Te_interp;   // interpolator for electron temp profile
 	vector<double> dens_alt_bins;         // array of altitude bins imported along with densities
 	vector<vector<double>> bg_densities;  // array of densities for each particle in bg_parts
+	vector<double> dens_effective_top_alt;  // per-species top altitude (cm) from last finite density point
 	vector<shared_ptr<Interpolator>> dens_interp;  // density interpolator objects
 	vector<double> bg_sigma_defaults;     // array of default total cross sections for each particle
 	vector<vector<vector<double>>> bg_sigma_tables;  // lookup tables for total cross sections

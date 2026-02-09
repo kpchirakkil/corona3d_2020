@@ -6,6 +6,116 @@
  */
 
 #include "Background_Species.hpp"
+#include <cctype>
+
+namespace {
+	bool is_non_finite_token(const string &token)
+	{
+		string lower = token;
+		for (auto &c : lower)
+		{
+			c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+		}
+
+		return (lower == "nan" || lower == "+nan" || lower == "-nan" ||
+		        lower == "inf" || lower == "+inf" || lower == "-inf" ||
+		        lower == "infinity" || lower == "+infinity" || lower == "-infinity");
+	}
+
+	bool parse_numeric_token(const string &token, double &value)
+	{
+		size_t pos = 0;
+		try
+		{
+			value = stod(token, &pos);
+		}
+		catch (...)
+		{
+			return false;
+		}
+
+		return (pos > 0);
+	}
+
+	vector<double> get_last_finite_density_altitudes(const string &filename, int num_species)
+	{
+		ifstream infile;
+		infile.open(filename);
+		if (!infile.good())
+		{
+			cout << "\"" << filename << "\" not found!\n";
+			exit(1);
+		}
+
+		vector<double> last_finite_alt(num_species, -1.0);
+		size_t line_number = 0;
+		string line;
+		while (getline(infile, line))
+		{
+			line_number++;
+			if (line.empty() || line[0] == '#' ||
+			    std::all_of(line.begin(), line.end(), [](unsigned char c){ return std::isspace(c); }))
+			{
+				continue;
+			}
+
+			replace(line.begin(), line.end(), ',', ' ');
+			stringstream str(line);
+			string first_token;
+			if (!(str >> first_token))
+			{
+				continue;
+			}
+
+			double alt = 0.0;
+			if (is_non_finite_token(first_token))
+			{
+				cout << "ERROR: Non-finite altitude in \"" << filename << "\" at line " << line_number << ".\n";
+				exit(1);
+			}
+			else if (!parse_numeric_token(first_token, alt))
+			{
+				continue;  // header row
+			}
+
+			for (int i=0; i<num_species; i++)
+			{
+				string token;
+				if (!(str >> token))
+				{
+					cout << "ERROR: Could not parse column " << (i+2) << " in \"" << filename
+					     << "\" at line " << line_number << ".\n";
+					exit(1);
+				}
+
+				if (!is_non_finite_token(token))
+				{
+					double dummy = 0.0;
+					if (!parse_numeric_token(token, dummy))
+					{
+						cout << "ERROR: Could not parse column " << (i+2) << " in \"" << filename
+						     << "\" at line " << line_number << ".\n";
+						exit(1);
+					}
+					last_finite_alt[i] = alt;
+				}
+			}
+		}
+		infile.close();
+
+		for (int i=0; i<num_species; i++)
+		{
+			if (last_finite_alt[i] < 0.0)
+			{
+				cout << "ERROR: Density column " << (i+2) << " in \"" << filename
+				     << "\" contains no finite values.\n";
+				exit(1);
+			}
+		}
+
+		return last_finite_alt;
+	}
+}
 
 Background_Species::Background_Species() {
 	use_temp_profile = false;
@@ -60,6 +170,7 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 
 	bg_parts.resize(num_species);
 	bg_densities.resize(num_species);
+	dens_effective_top_alt.resize(num_species, profile_top_alt);
 	dens_interp.resize(num_species);
 	bg_sigma_defaults.resize(num_species);
 	bg_sigma_tables.resize(num_species);
@@ -255,6 +366,7 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 	// read in density profile (if available)
 	if (use_dens_profile)
 	{
+		vector<double> last_finite_alt = get_last_finite_density_altitudes(dens_profile_filename, num_species);
 		for (int i=0; i<num_species; i++)
 		{
 			// clear out default densities and scale heights in order to use profile derived values
@@ -284,15 +396,32 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 		}
 
 		double bottom_local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+profile_bottom_alt, 2.0));
-		double top_local_g = (constants::G * my_planet.get_mass()) / (pow(my_planet.get_radius()+profile_top_alt, 2.0));
 		for (int i=0; i<num_species; i++)
 		{
+			dens_effective_top_alt[i] = min(profile_top_alt, last_finite_alt[i]);
+			if (dens_effective_top_alt[i] < profile_bottom_alt)
+			{
+				cout << "ERROR: Effective top altitude for species " << bg_parts[i]->get_name()
+				     << " is below profile bottom altitude.\n";
+				exit(1);
+			}
+
 			// generate interpolator for each density profile
 			dens_interp[i] = make_shared<Interpolator>(dens_alt_bins, bg_densities[i]);
 
 			// calc top and bottom scale height to be used for extrapolating densities
 			bg_scaleheights[i][0] = constants::k_b*Tn_interp->loglinterp(profile_bottom_alt)/(bg_parts[i]->get_mass()*bottom_local_g);
-			bg_scaleheights[i][1] = constants::k_b*Tn_interp->loglinterp(profile_top_alt)/(bg_parts[i]->get_mass()*top_local_g);
+			double top_local_g = (constants::G * my_planet.get_mass()) /
+			                    (pow(my_planet.get_radius()+dens_effective_top_alt[i], 2.0));
+			bg_scaleheights[i][1] = constants::k_b*Tn_interp->loglinterp(dens_effective_top_alt[i]) /
+			                    (bg_parts[i]->get_mass()*top_local_g);
+
+			if (dens_effective_top_alt[i] < profile_top_alt)
+			{
+				cout << "WARNING: Using effective density top for " << bg_parts[i]->get_name()
+				     << " at " << dens_effective_top_alt[i]/1e5 << " km (profile top = "
+				     << profile_top_alt/1e5 << " km)." << endl;
+			}
 		}
 	}
 }
@@ -597,15 +726,21 @@ double Background_Species::find_new_theta_inelastic(int part_index, double energ
 double Background_Species::get_density(double alt, int index)
 {
 	double current_dens = 0.0;
+	double top_alt = profile_top_alt;
+	if (index >= 0 && index < (int)dens_effective_top_alt.size())
+	{
+		top_alt = dens_effective_top_alt[index];
+	}
 
 	// if outside of profile boundaries, need to extrapolate using a scale height
 	if (alt < profile_bottom_alt)
 	{
 		current_dens = calc_new_density(bg_densities[index][0], bg_scaleheights[index][0], profile_bottom_alt - alt);
 	}
-	else if (alt > profile_top_alt)
+	else if (alt > top_alt)
 	{
-		current_dens = calc_new_density(bg_densities[index].back(), bg_scaleheights[index][1], profile_top_alt - alt);
+		double dens_at_top = dens_interp[index]->loglinterp(top_alt);
+		current_dens = calc_new_density(dens_at_top, bg_scaleheights[index][1], top_alt - alt);
 	}
 	else
 	{
