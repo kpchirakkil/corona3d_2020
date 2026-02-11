@@ -7,6 +7,8 @@
 
 #include "Background_Species.hpp"
 #include <cctype>
+#include <iomanip>
+#include <utility>
 
 namespace {
 	bool is_non_finite_token(const string &token)
@@ -35,6 +37,89 @@ namespace {
 		}
 
 		return (pos > 0);
+	}
+
+	bool load_inelastic_channel_table(const string &filename, vector<InelasticChannel> &channels)
+	{
+		ifstream infile;
+		infile.open(filename);
+		if (!infile.good())
+		{
+			return false;
+		}
+
+		channels.clear();
+		size_t line_number = 0;
+		string line;
+		while (getline(infile, line))
+		{
+			line_number++;
+			if (line.empty() || line[0] == '#' ||
+			    std::all_of(line.begin(), line.end(), [](unsigned char c){ return std::isspace(c); }))
+			{
+				continue;
+			}
+
+			replace(line.begin(), line.end(), ',', ' ');
+			stringstream str(line);
+
+			string t_ji;
+			if (!(str >> t_ji))
+			{
+				continue;
+			}
+
+			// Allow a header row like "ji,jf,sigma_cm2,delta_E_eV".
+			double ji_val = 0.0;
+			if (!parse_numeric_token(t_ji, ji_val) || is_non_finite_token(t_ji))
+			{
+				continue;
+			}
+
+			string t_jf, t_sigma, t_delta;
+			if (!(str >> t_jf >> t_sigma >> t_delta))
+			{
+				cout << "ERROR: Could not parse inelastic channel table \"" << filename
+				     << "\" at line " << line_number << ".\n";
+				exit(1);
+			}
+
+			double jf_val = 0.0;
+			double sigma_val = 0.0;
+			double delta_val = 0.0;
+			if (!parse_numeric_token(t_jf, jf_val) || is_non_finite_token(t_jf) ||
+			    !parse_numeric_token(t_sigma, sigma_val) || is_non_finite_token(t_sigma) ||
+			    !parse_numeric_token(t_delta, delta_val) || is_non_finite_token(t_delta))
+			{
+				cout << "ERROR: Non-numeric value in inelastic channel table \"" << filename
+				     << "\" at line " << line_number << ".\n";
+				exit(1);
+			}
+
+			InelasticChannel channel;
+			channel.ji = static_cast<int>(ji_val);
+			channel.jf = static_cast<int>(jf_val);
+			channel.sigma_cm2 = sigma_val;
+			channel.delta_E_eV = delta_val;
+
+			// Keep only state-changing channels in this table.
+			if (channel.jf != channel.ji && channel.sigma_cm2 > 0.0)
+			{
+				channels.push_back(channel);
+			}
+		}
+
+		infile.close();
+		return !channels.empty();
+	}
+
+	string build_channel_table_path(const string &inelastic_dcs_path, int energy_index)
+	{
+		size_t slash = inelastic_dcs_path.find_last_of("/\\");
+		string dir = (slash == string::npos) ? "" : inelastic_dcs_path.substr(0, slash + 1);
+		ostringstream name;
+		name << dir << "inelastic_channels_iEng" << setfill('0') << setw(2) << (energy_index + 1) << ".csv";
+		return name.str();
 	}
 
 	vector<double> get_last_finite_density_altitudes(const string &filename, int num_species)
@@ -124,6 +209,7 @@ Background_Species::Background_Species() {
 	profile_top_alt = 0.0;
 	num_collisions = 0;
 	num_inelastic_collisions = 0;
+	num_superelastic_collisions = 0;
 	num_species = 0;
 	ref_temp = 0.0;
 	ref_height = 0.0;
@@ -131,14 +217,15 @@ Background_Species::Background_Species() {
 	collision_target = -1;
 	collision_theta = 0.0;
 	my_dist = NULL;
-	last_outcome = {false, false, -1, 0.0, 0.0};
+	last_outcome = {false, false, -1, 0.0, 0.0, -1, -1};
 }
 
 Background_Species::Background_Species(int num_parts, string config_files[], Planet p, double ref_T, double ref_h, string temp_profile_filename, string dens_profile_filename, double profile_bottom, double profile_top)
 {
 	num_collisions = 0;
 	num_inelastic_collisions = 0;
-	last_outcome = {false, false, -1, 0.0, 0.0};
+	num_superelastic_collisions = 0;
+	last_outcome = {false, false, -1, 0.0, 0.0, -1, -1};
 	num_species = num_parts;
 	my_planet = p;
 	ref_temp = ref_T;
@@ -185,6 +272,8 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 	elastic_frac_interp.resize(num_species);
 	avg_eloss_interp.resize(num_species);
 	inelastic_CDFs.resize(num_species);
+	inelastic_channels.resize(num_species);
+	inelastic_rot_const_eV.resize(num_species, 0.0);
 	for (int i=0; i<num_species; i++)
 	{
 		int num_energies = 0;
@@ -256,6 +345,12 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 			{
 				enable_inelastic[i] = (values[j] == "true");
 			}
+			else if (parameters[j] == "rot_const_cm1")
+			{
+				// Optional rotational constant for target internal-state population model.
+				// Convert from cm^-1 to eV.
+				inelastic_rot_const_eV[i] = stod(values[j]) * 1.2398419843320026e-4;
+			}
 			else if (parameters[j] == "total_sigma_file_total")
 			{
 				if (values[j] != "")
@@ -285,10 +380,18 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 			}
 		}
 
+		// Default CO2 rotational constant if inelastic is enabled and no value is specified.
+		if (enable_inelastic[i] && inelastic_rot_const_eV[i] <= 0.0 && bg_parts[i] && bg_parts[i]->get_name() == "CO2")
+		{
+			inelastic_rot_const_eV[i] = 0.39021 * 1.2398419843320026e-4;  // CO2 rotational constant (eV)
+		}
+
 		// Load inelastic DCS files if inelastic is enabled
 		if (enable_inelastic[i])
 		{
 			inelastic_CDFs[i].resize(num_energies);
+			inelastic_channels[i].resize(num_energies);
+			int loaded_channel_tables = 0;
 			for (int j=0; j<num_params; j++)
 			{
 				// Match energyN_inelastic_file pattern
@@ -299,15 +402,24 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 					string num_str = p.substr(6, p.length() - 21);
 					int eidx = stoi(num_str) - 1;  // 0-based
 
-					if (eidx >= 0 && eidx < num_energies)
-					{
-						inelastic_CDFs[i][eidx].resize(2);
-						vector<vector<double>> inel_PDF(2);
-						common::import_csv(values[j], inel_PDF[0], inel_PDF[1]);
-						make_new_inelastic_CDF(i, eidx, inel_PDF[0], inel_PDF[1]);
+						if (eidx >= 0 && eidx < num_energies)
+						{
+							inelastic_CDFs[i][eidx].resize(2);
+							vector<vector<double>> inel_PDF(2);
+							common::import_csv(values[j], inel_PDF[0], inel_PDF[1]);
+							make_new_inelastic_CDF(i, eidx, inel_PDF[0], inel_PDF[1]);
+
+							// Optional state-resolved inelastic channel table.
+							string channel_path = build_channel_table_path(values[j], eidx);
+							vector<InelasticChannel> channels;
+							if (load_inelastic_channel_table(channel_path, channels))
+							{
+								inelastic_channels[i][eidx] = std::move(channels);
+								loaded_channel_tables++;
+							}
+						}
 					}
 				}
-			}
 			// Verify all inelastic CDFs were loaded
 			int loaded_count = 0;
 			for (int k=0; k<num_energies; k++)
@@ -321,10 +433,16 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 				     << " but only " << loaded_count << " of " << num_energies
 				     << " inelastic DCS files were loaded. Check config for missing energyN_inelastic_file entries." << endl;
 				exit(1);
+				}
+				cout << "Inelastic collisions enabled for species " << bg_parts[i]->get_name()
+				     << " (" << loaded_count << "/" << num_energies << " inelastic CDFs loaded)" << endl;
+				if (loaded_channel_tables > 0)
+				{
+					cout << "State-resolved inelastic channel tables loaded for species "
+					     << bg_parts[i]->get_name() << " (" << loaded_channel_tables
+					     << "/" << num_energies << " energies)." << endl;
+				}
 			}
-			cout << "Inelastic collisions enabled for species " << bg_parts[i]->get_name()
-			     << " (" << loaded_count << "/" << num_energies << " inelastic CDFs loaded)" << endl;
-		}
 
 		bg_scaleheights[i].push_back(constants::k_b*ref_temp/(bg_parts[i]->get_mass()*ref_g));
 		bg_avg_v[i].push_back(sqrt(constants::k_b*ref_temp/bg_parts[i]->get_mass()));
@@ -593,25 +711,52 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 			}
 			energy[collision_target] = calc_collision_e(p, bg_parts[collision_target]);
 		}
-		last_outcome.occurred = true;
-		last_outcome.target_index = collision_target;
-		last_outcome.is_inelastic = false;
-		last_outcome.delta_E_eV = 0.0;
+			last_outcome.occurred = true;
+			last_outcome.target_index = collision_target;
+			last_outcome.is_inelastic = false;
+			last_outcome.delta_E_eV = 0.0;
+			last_outcome.ji = -1;
+			last_outcome.jf = -1;
 
-		if (enable_inelastic[collision_target] && elastic_frac_interp[collision_target])
-		{
-			double f_el = elastic_frac_interp[collision_target]->linterp(energy[collision_target]);
-			f_el = max(0.0, min(1.0, f_el));
-
-			if (common::get_rand() > f_el)
+			if (enable_inelastic[collision_target] && elastic_frac_interp[collision_target])
 			{
-				// INELASTIC
-				last_outcome.is_inelastic = true;
-				last_outcome.delta_E_eV = avg_eloss_interp[collision_target]->linterp(energy[collision_target]);
-				last_outcome.theta = find_new_theta_inelastic(collision_target, energy[collision_target]);
-				num_inelastic_collisions++;
-			}
-			else
+				double f_el = elastic_frac_interp[collision_target]->linterp(energy[collision_target]);
+				f_el = max(0.0, min(1.0, f_el));
+
+				if (common::get_rand() > f_el)
+				{
+					// INELASTIC
+					last_outcome.is_inelastic = true;
+					bool sampled = sample_inelastic_transition(
+						collision_target,
+						energy[collision_target],
+						alt,
+						last_outcome.theta,
+						last_outcome.delta_E_eV,
+						last_outcome.ji,
+						last_outcome.jf);
+
+					// Fallback to legacy averaged model if channel-resolved data is unavailable.
+					if (!sampled)
+					{
+						if (avg_eloss_interp[collision_target])
+						{
+							last_outcome.delta_E_eV = avg_eloss_interp[collision_target]->linterp(energy[collision_target]);
+						}
+						else
+						{
+							last_outcome.delta_E_eV = 0.0;
+						}
+						last_outcome.theta = find_new_theta_inelastic(collision_target, energy[collision_target]);
+					}
+
+					if (last_outcome.delta_E_eV < 0.0)
+					{
+						num_superelastic_collisions++;
+					}
+					num_inelastic_collisions++;
+				}
+				else
 			{
 				// ELASTIC
 				last_outcome.theta = find_new_theta(collision_target, energy[collision_target]);
@@ -625,13 +770,14 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 
 		collision_theta = last_outcome.theta;  // keep backwards-compatible member
 		return true;
+		}
+		else
+		{
+			collision_target = -1;
+			last_outcome = {false, false, -1, 0.0, 0.0, -1, -1};
+			return false;
+		}
 	}
-	else
-	{
-		collision_target = -1;
-		return false;
-	}
-}
 
 // scans imported differential scattering CDF for new collision theta
 double Background_Species::find_new_theta(int part_index, double energy)
@@ -722,6 +868,182 @@ double Background_Species::find_new_theta_inelastic(int part_index, double energ
 	return inelastic_CDFs[part_index][energy_index][1][k];
 }
 
+double Background_Species::get_local_neutral_temp(double alt)
+{
+	if (!use_temp_profile || !Tn_interp || Tn.empty())
+	{
+		return ref_temp;
+	}
+
+	if (alt < profile_bottom_alt)
+	{
+		return Tn.front();
+	}
+	if (alt > profile_top_alt)
+	{
+		return Tn.back();
+	}
+	return Tn_interp->loglinterp(alt);
+}
+
+bool Background_Species::sample_inelastic_transition(int part_index, double energy, double alt, double &theta, double &delta_E_eV, int &ji, int &jf)
+{
+	theta = 0.0;
+	delta_E_eV = 0.0;
+	ji = -1;
+	jf = -1;
+
+	if (part_index < 0 || part_index >= (int)diff_sigma_energies.size())
+	{
+		return false;
+	}
+
+	int num_energies = diff_sigma_energies[part_index].size();
+	if (num_energies == 0)
+	{
+		return false;
+	}
+
+	int energy_index = 0;
+	if (energy <= diff_sigma_energies[part_index][0])
+	{
+		energy_index = 0;
+	}
+	else if (energy >= diff_sigma_energies[part_index].back())
+	{
+		energy_index = num_energies - 1;
+	}
+	else
+	{
+		double difference = INFINITY;
+		for (int i=0; i<num_energies; i++)
+		{
+			double new_diff = abs(energy - diff_sigma_energies[part_index][i]);
+			if (new_diff < difference)
+			{
+				difference = new_diff;
+				energy_index = i;
+			}
+		}
+	}
+
+	if (part_index >= (int)inelastic_channels.size() ||
+	    energy_index >= (int)inelastic_channels[part_index].size())
+	{
+		return false;
+	}
+
+	const vector<InelasticChannel> &channels = inelastic_channels[part_index][energy_index];
+	if (channels.empty())
+	{
+		return false;
+	}
+
+	int max_ji = 0;
+	for (const auto &ch : channels)
+	{
+		if (ch.ji > max_ji)
+		{
+			max_ji = ch.ji;
+		}
+	}
+	if (max_ji < 0)
+	{
+		return false;
+	}
+
+	vector<double> state_pop(max_ji + 1, 0.0);
+	const double rot_B_eV = (part_index < (int)inelastic_rot_const_eV.size()) ? inelastic_rot_const_eV[part_index] : 0.0;
+	const double local_T = max(1.0, get_local_neutral_temp(alt));
+	const double k_B_eV = 8.617333262145e-5;
+
+	if (rot_B_eV > 0.0)
+	{
+		double pop_sum = 0.0;
+		for (int j=0; j<=max_ji; j++)
+		{
+			double E_j = rot_B_eV * static_cast<double>(j) * (static_cast<double>(j) + 1.0);
+			double weight = (2.0 * static_cast<double>(j) + 1.0) * exp(-E_j / (k_B_eV * local_T));
+			state_pop[j] = weight;
+			pop_sum += weight;
+		}
+
+		if (pop_sum > 0.0)
+		{
+			for (int j=0; j<=max_ji; j++)
+			{
+				state_pop[j] /= pop_sum;
+			}
+		}
+		else
+		{
+			double uniform = 1.0 / static_cast<double>(max_ji + 1);
+			for (int j=0; j<=max_ji; j++)
+			{
+				state_pop[j] = uniform;
+			}
+		}
+	}
+	else
+	{
+		double uniform = 1.0 / static_cast<double>(max_ji + 1);
+		for (int j=0; j<=max_ji; j++)
+		{
+			state_pop[j] = uniform;
+		}
+	}
+
+	vector<int> active_channel_indices;
+	vector<double> channel_cdf;
+	active_channel_indices.reserve(channels.size());
+	channel_cdf.reserve(channels.size());
+
+	double total_weight = 0.0;
+	for (int idx=0; idx<(int)channels.size(); idx++)
+	{
+		const InelasticChannel &ch = channels[idx];
+		if (ch.jf == ch.ji || ch.sigma_cm2 <= 0.0)
+		{
+			continue;
+		}
+
+		if (ch.ji < 0 || ch.ji > max_ji)
+		{
+			continue;
+		}
+
+		double weight = ch.sigma_cm2 * state_pop[ch.ji];
+		if (weight <= 0.0)
+		{
+			continue;
+		}
+
+		total_weight += weight;
+		active_channel_indices.push_back(idx);
+		channel_cdf.push_back(total_weight);
+	}
+
+	if (total_weight <= 0.0 || channel_cdf.empty())
+	{
+		return false;
+	}
+
+	double u = common::get_rand() * total_weight;
+	int picked = 0;
+	while (picked + 1 < (int)channel_cdf.size() && u > channel_cdf[picked])
+	{
+		picked++;
+	}
+
+	const InelasticChannel &chosen = channels[active_channel_indices[picked]];
+	ji = chosen.ji;
+	jf = chosen.jf;
+	delta_E_eV = chosen.delta_E_eV;
+	theta = find_new_theta_inelastic(part_index, energy);
+
+	return true;
+}
+
 // get density from imported density profile
 double Background_Species::get_density(double alt, int index)
 {
@@ -773,6 +1095,11 @@ CollisionOutcome Background_Species::get_last_outcome()
 int Background_Species::get_num_inelastic_collisions()
 {
 	return num_inelastic_collisions;
+}
+
+int Background_Species::get_num_superelastic_collisions()
+{
+	return num_superelastic_collisions;
 }
 
 // make a new differential cross section CDF and store at diff_sigma_CDFs[part_index][energy_index]

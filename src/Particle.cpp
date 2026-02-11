@@ -110,6 +110,12 @@ void Particle::do_collision(shared_ptr<Particle> target, double theta, double ti
 // perform collision with inelastic energy loss support
 void Particle::do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r, bool is_inelastic, double delta_E_eV)
 {
+	do_collision(target, theta, time, planet_r, is_inelastic, delta_E_eV, -1, -1);
+}
+
+// perform collision with inelastic energy transfer and optional internal-state labels
+void Particle::do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r, bool is_inelastic, double delta_E_eV, int ji, int jf)
+{
 	double v_before, v_after;
 	double my_mass = get_mass();
 	double targ_mass = target->get_mass();
@@ -121,14 +127,17 @@ void Particle::do_collision(shared_ptr<Particle> target, double theta, double ti
 	Matrix<double, 3, 1> v1v = velocity.array() - vcm.array();        // particle 1 c-o-m velocity
 	double v1 = sqrt(v1v[0]*v1v[0] + v1v[1]*v1v[1] + v1v[2]*v1v[2]);  // particle 1 c-o-m scalar velocity
 
-	// Apply inelastic energy loss: reduce CM-frame speed
-	if (is_inelastic && delta_E_eV > 0.0)
+	// Apply signed inelastic energy transfer in the CM frame.
+	// delta_E_eV > 0: hot particle loses translational energy (excitation).
+	// delta_E_eV < 0: hot particle gains translational energy (superelastic de-excitation).
+	if (is_inelastic && delta_E_eV != 0.0)
 	{
 		double mu = (my_mass * targ_mass) / (my_mass + targ_mass);  // reduced mass
 		double v_rel = v1 * (my_mass + targ_mass) / targ_mass;      // relative speed
 		double E_CM = 0.5 * mu * v_rel * v_rel;                     // CM kinetic energy [erg]
-		double dE = delta_E_eV * constants::ergev;                   // energy loss [erg]
-		double E_CM_new = max(0.0, E_CM - dE);                      // guard against negative
+		double dE = delta_E_eV * constants::ergev;                  // signed transfer [erg]
+		double E_CM_new = E_CM - dE;
+		E_CM_new = max(0.0, E_CM_new);                              // guard against negative CM energy
 		double v_rel_new = sqrt(2.0 * E_CM_new / mu);
 		if (v_rel > 0.0)
 			v1 = v1 * (v_rel_new / v_rel);                          // scale CM speed proportionally
@@ -177,7 +186,11 @@ void Particle::do_collision(shared_ptr<Particle> target, double theta, double ti
 		v_after = get_total_v()*1e-5;
 		double alt_in_km = 1e-5*(radius - planet_r);
 		string coll_type = is_inelastic ? "INEL" : "ELAS";
-		collision_log.push_back(to_string(time) + "\t\t" + to_string(alt_in_km) + "\t" + target->get_name() + "\t" + to_string(theta * (180.0/constants::pi)) + "\t" + to_string(v_before) + "\t" + to_string(v_after) + "\t" + coll_type);
+		collision_log.push_back(
+			to_string(time) + "\t\t" + to_string(alt_in_km) + "\t" + target->get_name() + "\t" +
+			to_string(theta * (180.0/constants::pi)) + "\t" + to_string(v_before) + "\t" +
+			to_string(v_after) + "\t" + coll_type + "\t" + to_string(delta_E_eV) +
+			"\t" + to_string(ji) + "\t" + to_string(jf));
 	}
 }
 
@@ -208,7 +221,9 @@ void Particle::dump_collision_log(string filename)
 {
 	ofstream outfile;
 	outfile.open(filename);
-	outfile << "#time(s)" << "\t\t" << "alt(km)" << "\t" << "targ" << "\t" << "angle(deg)" << "\t" << "v_bef(km/s)" << "\t" << "v_aft(km/s)" << "\t" << "type\n";
+	outfile << "#time(s)" << "\t\t" << "alt(km)" << "\t" << "targ" << "\t" << "angle(deg)" << "\t"
+	        << "v_bef(km/s)" << "\t" << "v_aft(km/s)" << "\t" << "type" << "\t"
+	        << "delta_E(eV)" << "\t" << "ji" << "\t" << "jf\n";
 	int num_lines = collision_log.size();
 	for (int i=0; i<num_lines; i++)
 	{

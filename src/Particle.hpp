@@ -41,6 +41,7 @@ public:
 	void deactivate(string fate);
 	void do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r);
 	void do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r, bool is_inelastic, double delta_E_eV);
+	void do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r, bool is_inelastic, double delta_E_eV, int ji, int jf);
 	void do_timestep(double dt, double k_g);
 	void dump_collision_log(string filename);
 	bool is_active() const;

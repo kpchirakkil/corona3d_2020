@@ -29,6 +29,15 @@ struct CollisionOutcome {
 	int target_index;       // index into bg_parts[]
 	double theta;           // scattering angle (radians)
 	double delta_E_eV;      // energy loss to internal modes (eV), 0 for elastic
+	int ji;                 // sampled initial internal state index (if inelastic)
+	int jf;                 // sampled final internal state index (if inelastic)
+};
+
+struct InelasticChannel {
+	int ji;                // initial internal state index
+	int jf;                // final internal state index
+	double sigma_cm2;      // state-to-state integral cross section (cm^2)
+	double delta_E_eV;     // mean translational energy transfer to target (eV), signed
 };
 
 class Background_Species {
@@ -42,6 +51,7 @@ public:
 	double get_collision_theta();
 	CollisionOutcome get_last_outcome();
 	int get_num_inelastic_collisions();
+	int get_num_superelastic_collisions();
 
 private:
 	bool use_temp_profile;       // flag for whether or not temperature profile is available
@@ -84,8 +94,11 @@ private:
 	vector<shared_ptr<Interpolator>> elastic_frac_interp;       // σ_elastic/σ_total ratio
 	vector<shared_ptr<Interpolator>> avg_eloss_interp;          // average ΔE(E) in eV
 	vector<vector<vector<vector<double>>>> inelastic_CDFs;      // CDFs from inelastic DCS
+	vector<vector<vector<InelasticChannel>>> inelastic_channels; // optional state-resolved inelastic channels
+	vector<double> inelastic_rot_const_eV;                      // per-species rotational constant (eV)
 	CollisionOutcome last_outcome;                              // most recent collision result
 	int num_inelastic_collisions;                               // counter
+	int num_superelastic_collisions;                            // counter
 
 	// returns collision energy in eV between particle 1 and particle 2
 	double calc_collision_e(shared_ptr<Particle> p1, shared_ptr<Particle> p2);
@@ -98,6 +111,12 @@ private:
 
 	// scans imported inelastic differential scattering CDF for new collision theta
 	double find_new_theta_inelastic(int part_index, double energy);
+
+	// sample a state-resolved inelastic transition (if channel tables are available)
+	bool sample_inelastic_transition(int part_index, double energy, double alt, double &theta, double &delta_E_eV, int &ji, int &jf);
+
+	// get neutral temperature at local altitude (K)
+	double get_local_neutral_temp(double alt);
 
 	// get density from imported density profile if available
 	double get_density(double alt, int index);

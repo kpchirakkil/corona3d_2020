@@ -338,14 +338,14 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 		  // my_vtally.update_vtally(my_parts[active_indices[j]]);
 			my_parts[active_indices[j]]->do_timestep(dt, k);
 
-			if (bg_species.check_collision(my_parts[active_indices[j]], dt))
-			{
-				CollisionOutcome outcome = bg_species.get_last_outcome();
-				my_parts[active_indices[j]]->do_collision(
-					bg_species.get_collision_target(),
-					outcome.theta, i*dt, my_planet.get_radius(),
-					outcome.is_inelastic, outcome.delta_E_eV);
-			}
+				if (bg_species.check_collision(my_parts[active_indices[j]], dt))
+				{
+					CollisionOutcome outcome = bg_species.get_last_outcome();
+					my_parts[active_indices[j]]->do_collision(
+						bg_species.get_collision_target(),
+						outcome.theta, i*dt, my_planet.get_radius(),
+						outcome.is_inelastic, outcome.delta_E_eV, outcome.ji, outcome.jf);
+				}
 
 			// escape velocity at current radius
 			v_esc_current = sqrt(2.0 * constants::G * my_planet.get_mass() / my_parts[active_indices[j]]->get_radius());
@@ -408,6 +408,7 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 
 	cout << "Number of collisions: " << bg_species.get_num_collisions() << endl;
 	cout << "Number of inelastic collisions: " << bg_species.get_num_inelastic_collisions() << endl;
+	cout << "Number of superelastic collisions: " << bg_species.get_num_superelastic_collisions() << endl;
 	cout << "Active particles remaining: " << active_parts << endl;
 	cout << "Number of day side escaped particles: " << day_escape_count << endl;
 	cout << "Number of night side escaped particles: " << night_escape_count << endl;

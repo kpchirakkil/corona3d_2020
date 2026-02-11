@@ -35,31 +35,32 @@ src/
 ├── inputs/
 │   ├── Mars/ Venus/       # Atmospheric profiles
 │   └── collisions/        # Cross-section data (from Gacesa, Kharchenko, Kumar)
-├── model_output_data/     # Simulation output
-└── plotting_scripts/      # Analysis tools
+├── output/                # Default simulation output
+└── scripts/               # Analysis + batch/HPC run tools
 ```
 
 ## Key Configuration (corona3d_2020.cfg)
 
 | Parameter | Description |
 |-----------|-------------|
-| `num_parts` | Number of test particles |
+| `num_testparts` | Number of test particles |
 | `timesteps` / `dt` | Simulation duration and timestep (seconds) |
-| `particle_type` | H, O, N2, CO, or CO2 |
-| `distribution` | Hot_H, Hot_O, MB, or Import |
-| `upper_bound` / `lower_bound` | Altitude boundaries (cm) |
-| `bg_species_*` | Background species config files |
+| `part_type` | H, O, N2, CO, or CO2 |
+| `dist_type` | Hot_H, Hot_O, MB, or Import |
+| `sim_upper_bound` / `sim_lower_bound` | Altitude boundaries (cm) |
+| `bg_part*_config` | Background species config files |
 
 ## Output Files
 
 | File | Contents |
 |------|----------|
-| `radial_density_*.out` | Density vs. altitude |
-| `column_density_*.out` | Integrated column density |
-| `edf_*.out` | Energy distribution functions at 50 altitudes |
-| `escape_stats.out` | Escape fractions (day/night) |
+| `density1d_day.out`, `density1d_night.out` | Radial density profiles |
+| `column_density_day.out` | Integrated column density |
+| `EDF_day_*km.out`, `EDF_night_*km.out` | Energy distribution functions |
+| `loss_rates.out` | Escape/loss rates summary |
 
 ## Current Status
 
-- **Implemented**: Elastic collisions with energy-dependent cross-sections, differential scattering
-- **Planned**: Inelastic collisions (rotational/vibrational energy transfer)
+- **Implemented**: Elastic collisions (energy-dependent cross-sections + DCS)
+- **Implemented**: O-CO2 inelastic collisions (energy loss + inelastic DCS branching)
+- **Implemented**: NaN/Inf profile sanitization for imported atmospheric inputs
