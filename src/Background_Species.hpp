@@ -12,6 +12,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <unordered_map>
 #include "Particle_CO.hpp"
 #include "Particle_CO2.hpp"
 #include "Particle_H.hpp"
@@ -38,6 +39,11 @@ struct InelasticChannel {
 	int jf;                // final internal state index
 	double sigma_cm2;      // state-to-state integral cross section (cm^2)
 	double delta_E_eV;     // mean translational energy transfer to target (eV), signed
+};
+
+struct InelasticChannelAngleCDF {
+	vector<double> cdf;       // normalized cumulative probability
+	vector<double> theta_rad; // scattering angle bins (radians)
 };
 
 class Background_Species {
@@ -93,8 +99,10 @@ private:
 	vector<shared_ptr<Interpolator>> sigma_total_interp;        // total σ (elastic+inelastic)
 	vector<shared_ptr<Interpolator>> elastic_frac_interp;       // σ_elastic/σ_total ratio
 	vector<shared_ptr<Interpolator>> avg_eloss_interp;          // average ΔE(E) in eV
+	vector<bool> missing_deltaE_use_avg;                        // if true, sampled ji>0 channels with ΔE=0 use avg ΔE(E)
 	vector<vector<vector<vector<double>>>> inelastic_CDFs;      // CDFs from inelastic DCS
 	vector<vector<vector<InelasticChannel>>> inelastic_channels; // optional state-resolved inelastic channels
+	vector<vector<unordered_map<int, InelasticChannelAngleCDF>>> inelastic_channel_angle_cdfs; // optional ji=0, jf-resolved angle CDFs
 	vector<double> inelastic_rot_const_eV;                      // per-species rotational constant (eV)
 	CollisionOutcome last_outcome;                              // most recent collision result
 	int num_inelastic_collisions;                               // counter
