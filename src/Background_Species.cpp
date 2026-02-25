@@ -941,9 +941,10 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 							last_outcome.ji,
 							last_outcome.jf);
 
-						// Optional hybrid energy-transfer fallback:
-						// if sampled state-resolved channel is ji>0 with delta_E=0 (missing Te data),
-						// use avg_energy_loss(E) instead of keeping zero.
+						// Legacy fallback (effectively dead code when rot_B > 0):
+						// delta_E is now computed from quantum numbers B*[jf(jf+1)-ji(ji+1)]
+						// in sample_inelastic_transition(), so delta_E_eV == 0 only when
+						// ji == jf (filtered out) or rot_B == 0 (no rotational constant).
 						if (sampled &&
 						    collision_target >= 0 && collision_target < (int)missing_deltaE_use_avg.size() &&
 						    missing_deltaE_use_avg[collision_target] &&
@@ -955,6 +956,7 @@ bool Background_Species::check_collision(shared_ptr<Particle> p, double dt)
 						}
 
 						// Fallback to legacy averaged model if channel-resolved data is unavailable.
+						// avg_energy_loss values are also legacy (will use rotational formula in future).
 						if (!sampled)
 						{
 							if (avg_eloss_interp[collision_target])
@@ -1256,18 +1258,39 @@ bool Background_Species::sample_inelastic_transition(int part_index, double ener
 	const InelasticChannel &chosen = channels[active_channel_indices[picked]];
 	ji = chosen.ji;
 	jf = chosen.jf;
-	delta_E_eV = chosen.delta_E_eV;
+	// Compute delta_E from rotational quantum numbers: B * [jf(jf+1) - ji(ji+1)]
+	// This is the correct internal energy change; the CSV delta_E_eV values are legacy.
+	if (rot_B_eV > 0.0)
+	{
+		delta_E_eV = rot_B_eV * (static_cast<double>(jf) * (static_cast<double>(jf) + 1.0)
+		                        - static_cast<double>(ji) * (static_cast<double>(ji) + 1.0));
+	}
+	else
+	{
+		delta_E_eV = chosen.delta_E_eV;  // fallback if no rotational constant
+	}
 
 	// Hybrid angle sampling:
-	// - if channel-resolved angle CDF exists for this sampled ji=0 -> jf channel, use it
-	// - otherwise, fall back to the species/energy inelastic CDF
+	// - For ji=0: use channel-resolved angle CDF keyed by jf
+	// - For ji>0: use ji=0 DCS as proxy, keyed by jf first, then |jf-ji| (same delta_j)
+	// - Fallback: species/energy aggregate inelastic DCS
 	bool sampled_channel_angle = false;
-	if (ji == 0 &&
-	    part_index >= 0 && part_index < (int)inelastic_channel_angle_cdfs.size() &&
+	if (part_index >= 0 && part_index < (int)inelastic_channel_angle_cdfs.size() &&
 	    energy_index >= 0 && energy_index < (int)inelastic_channel_angle_cdfs[part_index].size())
 	{
 		auto &energy_angle_tables = inelastic_channel_angle_cdfs[part_index][energy_index];
+
+		// Try direct lookup by jf (works for ji=0; for ji>0 may match if same jf exists)
 		auto it = energy_angle_tables.find(jf);
+
+		// For ji>0, if direct jf lookup fails, try |jf - ji| as proxy key
+		// (ji=0 channel with same magnitude of angular momentum change)
+		if (it == energy_angle_tables.end() && ji > 0)
+		{
+			int delta_j = std::abs(jf - ji);
+			it = energy_angle_tables.find(delta_j);
+		}
+
 		if (it != energy_angle_tables.end() && !it->second.cdf.empty() && !it->second.theta_rad.empty())
 		{
 			double u_theta = common::get_rand();

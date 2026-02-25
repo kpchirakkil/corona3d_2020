@@ -38,7 +38,7 @@ struct InelasticChannel {
 	int ji;                // initial internal state index
 	int jf;                // final internal state index
 	double sigma_cm2;      // state-to-state integral cross section (cm^2)
-	double delta_E_eV;     // mean translational energy transfer to target (eV), signed
+	double delta_E_eV;     // legacy CSV value (eV); runtime uses B*[jf(jf+1)-ji(ji+1)] instead
 };
 
 struct InelasticChannelAngleCDF {
