@@ -58,9 +58,3 @@ src/
 | `column_density_day.out` | Integrated column density |
 | `EDF_day_*km.out`, `EDF_night_*km.out` | Energy distribution functions |
 | `loss_rates.out` | Escape/loss rates summary |
-
-## Current Status
-
-- **Implemented**: Elastic collisions (energy-dependent cross-sections + DCS)
-- **Implemented**: O-CO2 inelastic collisions (energy loss + inelastic DCS branching)
-- **Implemented**: NaN/Inf profile sanitization for imported atmospheric inputs
