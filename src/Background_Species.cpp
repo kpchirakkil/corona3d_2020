@@ -442,6 +442,7 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 	inelastic_channels.resize(num_species);
 	inelastic_channel_angle_cdfs.resize(num_species);
 	inelastic_rot_const_eV.resize(num_species, 0.0);
+	inelastic_rot_pop_model.resize(num_species, InelasticRotPopModel::GroundStateJi0);
 	for (int i=0; i<num_species; i++)
 	{
 		int num_energies = 0;
@@ -518,6 +519,24 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 				// Optional rotational constant for target internal-state population model.
 				// Convert from cm^-1 to eV.
 				inelastic_rot_const_eV[i] = stod(values[j]) * 1.2398419843320026e-4;
+			}
+			else if (parameters[j] == "rot_population_model")
+			{
+				if (values[j] == "ji0" || values[j] == "ground_state" || values[j] == "ground_state_ji0")
+				{
+					inelastic_rot_pop_model[i] = InelasticRotPopModel::GroundStateJi0;
+				}
+				else if (values[j] == "thermal" || values[j] == "thermal_boltzmann")
+				{
+					inelastic_rot_pop_model[i] = InelasticRotPopModel::ThermalBoltzmann;
+				}
+				else
+				{
+					cout << "ERROR: Unknown rot_population_model \"" << values[j]
+					     << "\" for species config " << config_files[i]
+					     << ". Use ji0 or thermal." << endl;
+					exit(1);
+				}
 			}
 			else if (parameters[j] == "total_sigma_file_total")
 			{
@@ -647,6 +666,9 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 					cout << "WARNING: missing_deltaE_use_avg=true but avg_energy_loss_file is not loaded for species "
 					     << bg_parts[i]->get_name() << ". Missing ji>0 channel delta_E values remain 0." << endl;
 				}
+				cout << "Rotational population model for species " << bg_parts[i]->get_name() << ": "
+				     << (inelastic_rot_pop_model[i] == InelasticRotPopModel::GroundStateJi0 ?
+				         "ji=0 only" : "thermal Boltzmann") << endl;
 			}
 
 		bg_scaleheights[i].push_back(constants::k_b*ref_temp/(bg_parts[i]->get_mass()*ref_g));
@@ -1174,25 +1196,46 @@ bool Background_Species::sample_inelastic_transition(int part_index, double ener
 
 	vector<double> state_pop(max_ji + 1, 0.0);
 	const double rot_B_eV = (part_index < (int)inelastic_rot_const_eV.size()) ? inelastic_rot_const_eV[part_index] : 0.0;
-	const double local_T = max(1.0, get_local_neutral_temp(alt));
-	const double k_B_eV = 8.617333262145e-5;
-
-	if (rot_B_eV > 0.0)
+	InelasticRotPopModel pop_model = InelasticRotPopModel::GroundStateJi0;
+	if (part_index >= 0 && part_index < (int)inelastic_rot_pop_model.size())
 	{
-		double pop_sum = 0.0;
-		for (int j=0; j<=max_ji; j++)
-		{
-			double E_j = rot_B_eV * static_cast<double>(j) * (static_cast<double>(j) + 1.0);
-			double weight = (2.0 * static_cast<double>(j) + 1.0) * exp(-E_j / (k_B_eV * local_T));
-			state_pop[j] = weight;
-			pop_sum += weight;
-		}
+		pop_model = inelastic_rot_pop_model[part_index];
+	}
 
-		if (pop_sum > 0.0)
+	if (pop_model == InelasticRotPopModel::GroundStateJi0)
+	{
+		state_pop[0] = 1.0;
+	}
+	else
+	{
+		const double local_T = max(1.0, get_local_neutral_temp(alt));
+		const double k_B_eV = 8.617333262145e-5;
+
+		if (rot_B_eV > 0.0)
 		{
+			double pop_sum = 0.0;
 			for (int j=0; j<=max_ji; j++)
 			{
-				state_pop[j] /= pop_sum;
+				double E_j = rot_B_eV * static_cast<double>(j) * (static_cast<double>(j) + 1.0);
+				double weight = (2.0 * static_cast<double>(j) + 1.0) * exp(-E_j / (k_B_eV * local_T));
+				state_pop[j] = weight;
+				pop_sum += weight;
+			}
+
+			if (pop_sum > 0.0)
+			{
+				for (int j=0; j<=max_ji; j++)
+				{
+					state_pop[j] /= pop_sum;
+				}
+			}
+			else
+			{
+				double uniform = 1.0 / static_cast<double>(max_ji + 1);
+				for (int j=0; j<=max_ji; j++)
+				{
+					state_pop[j] = uniform;
+				}
 			}
 		}
 		else
@@ -1202,14 +1245,6 @@ bool Background_Species::sample_inelastic_transition(int part_index, double ener
 			{
 				state_pop[j] = uniform;
 			}
-		}
-	}
-	else
-	{
-		double uniform = 1.0 / static_cast<double>(max_ji + 1);
-		for (int j=0; j<=max_ji; j++)
-		{
-			state_pop[j] = uniform;
 		}
 	}
 

@@ -50,6 +50,13 @@ src/
 | `sim_upper_bound` / `sim_lower_bound` | Altitude boundaries (cm) |
 | `bg_part*_config` | Background species config files |
 
+## Inelastic Collision Notes
+
+Background species config files can set `rot_population_model` for state-resolved inelastic sampling:
+
+- `ji0` (default): only sample channels originating from `ji=0`
+- `thermal`: use a thermal Boltzmann population over rotational states
+
 ## Output Files
 
 | File | Contents |

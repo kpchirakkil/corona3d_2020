@@ -46,6 +46,11 @@ struct InelasticChannelAngleCDF {
 	vector<double> theta_rad; // scattering angle bins (radians)
 };
 
+enum class InelasticRotPopModel {
+	GroundStateJi0,
+	ThermalBoltzmann
+};
+
 class Background_Species {
 public:
 	Background_Species();
@@ -104,6 +109,7 @@ private:
 	vector<vector<vector<InelasticChannel>>> inelastic_channels; // optional state-resolved inelastic channels
 	vector<vector<unordered_map<int, InelasticChannelAngleCDF>>> inelastic_channel_angle_cdfs; // optional ji=0, jf-resolved angle CDFs
 	vector<double> inelastic_rot_const_eV;                      // per-species rotational constant (eV)
+	vector<InelasticRotPopModel> inelastic_rot_pop_model;       // per-species rotational-state population model
 	CollisionOutcome last_outcome;                              // most recent collision result
 	int num_inelastic_collisions;                               // counter
 	int num_superelastic_collisions;                            // counter
