@@ -251,6 +251,15 @@ namespace {
 				exit(1);
 			}
 
+			// Intentionally ignore tokens[2] ("Te") from the raw O-CO2 DCS-allj
+			// files. In the released dataset, that column is a simple kinematic
+			// target recoil/kinetic-energy-transfer quantity, not the pure
+			// internal-state energy spacing required by the runtime collision
+			// model. Corona3D already handles translational recoil via the
+			// sampled scattering angle and collision kinematics, so using raw Te
+			// as delta_E would double-count energy transfer. Runtime internal
+			// excitation/de-excitation is instead computed from the sampled
+			// rotational quantum numbers in sample_inelastic_transition().
 			angle_deg.push_back(theta);
 			dcs.push_back(sigma_val);
 		}
