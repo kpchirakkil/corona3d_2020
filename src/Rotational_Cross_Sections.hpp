@@ -27,6 +27,9 @@ public:
     std::vector<Curve> curves;
     double B = 0.0;
     int max_ji = 0;
+    // Thermal sensitivity option: Boltzmann weights only for j <= this level,
+    // renormalized over the kept levels (-1 keeps the full distribution).
+    int population_max_j = -1;
     std::vector<bool> diagonals;
 
     void load(const std::string &path, double rot_B) {
@@ -105,6 +108,8 @@ public:
         if (!thermal) { p[0]=1.0; return p; }
         if (max_ji==0) throw std::runtime_error("Thermal rotations require excited-initial-state cross sections for " + species);
         if (!(temperature>0.0)) throw std::runtime_error("Thermal rotations require positive temperature");
+        const bool capped=population_max_j>=0;
+        if (population_max_j>max_ji) throw std::runtime_error("rot_population_max_j exceeds tabulated initial states for " + species);
         double z=0,covered=0;
         for (int j=0; ; ++j) {
             double spin=1;
@@ -113,10 +118,12 @@ public:
             double w=spin*(2.0*j+1)*std::exp(-level(j)/(8.617333262145e-5*temperature));
             z+=w;
             if (j<=max_ji && diagonals[j]) { p[j]=w; covered+=w; }
+            else if (capped && w>0) throw std::runtime_error("Missing initial state below rot_population_max_j for " + species);
+            if (capped && j==population_max_j) break;
             if (j>max_ji && level(j)>40*8.617333262145e-5*temperature) break;
             if (j>100000) throw std::runtime_error("Invalid rotational temperature");
         }
-        if (covered/z<0.999) throw std::runtime_error("Rotational basis covers less than 99.9% of population for " + species);
+        if (!capped && covered/z<0.999) throw std::runtime_error("Rotational basis covers less than 99.9% of population for " + species);
         for (double &x:p) x/=covered;
         return p;
     }
@@ -128,7 +135,8 @@ public:
         for (const auto &c:curves) {
             if (p[c.ji]==0) continue;
             double s=(c.ji==0 && c.jf==0)?ground_elastic:cross_section(c,kinetic);
-            if (s>0) result.push_back({c.ji,c.jf,p[c.ji]*s,level(c.jf)-level(c.ji)});
+            // Exact zero for elastic channels: FMA contraction can leave +-1e-19 eV in E(j)-E(j).
+            if (s>0) result.push_back({c.ji,c.jf,p[c.ji]*s,c.ji==c.jf?0.0:level(c.jf)-level(c.ji)});
         }
         return result;
     }

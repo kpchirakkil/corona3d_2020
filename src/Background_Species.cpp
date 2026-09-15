@@ -7,6 +7,7 @@
 
 #include "Background_Species.hpp"
 #include <cctype>
+#include <limits>
 #include <utility>
 
 namespace {
@@ -339,6 +340,7 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
 	{
 		string rotational_file;
         string inelastic_model="state_resolved";
+        int population_max_j=-1;
 		int num_energies = 0;
 		int energies_index = 0;
 		bg_sigma_tables[i].resize(2);
@@ -438,6 +440,12 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
                     throw std::runtime_error("inelastic_model must be state_resolved or legacy_average: " + config_files[i]);
             }
             else if (parameters[j] == "rotational_cross_sections_file") rotational_file=values[j];
+            else if (parameters[j] == "rot_population_max_j") {
+                size_t used=0;
+                population_max_j=stoi(values[j],&used);
+                if (used!=values[j].size() || population_max_j<0)
+                    throw std::runtime_error("rot_population_max_j must be a non-negative integer: " + config_files[i]);
+            }
             else if (parameters[j] == "inelastic_angle_min_eV") inelastic_angle_min_eV[i]=stod(values[j]);
             else if (parameters[j] == "thermal_angular_model") {
                 if (values[j]!="ji0_proxy") throw std::runtime_error("thermal_angular_model must be ji0_proxy");
@@ -501,6 +509,15 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
                 throw std::runtime_error("Thermal rotations need excited-initial-state integral data: " + config_files[i]);
             if (!thermal_angle_proxy[i])
                 throw std::runtime_error("Only ji=0 angular data are available. Set thermal_angular_model ji0_proxy to explicitly accept this approximation.");
+        }
+        if (population_max_j>=0) {
+            if (!enable_inelastic[i] || inelastic_rot_pop_model[i]!=InelasticRotPopModel::ThermalBoltzmann)
+                throw std::runtime_error("rot_population_max_j requires rot_population_model thermal: " + config_files[i]);
+            if (population_max_j>rotational_tables[i].max_ji)
+                throw std::runtime_error("rot_population_max_j exceeds tabulated initial states: " + config_files[i]);
+            rotational_tables[i].population_max_j=population_max_j;
+            // Fail at load if a kept level lacks data; any positive temperature exercises this check.
+            rotational_tables[i].populations(1000.0,true,bg_parts[i]->get_name());
         }
         if (enable_inelastic[i] && rotational_tables[i].curves.empty())
             cout << "WARNING: legacy averaged inelastic model for " << bg_parts[i]->get_name()
@@ -577,9 +594,12 @@ Background_Species::Background_Species(int num_parts, string config_files[], Pla
                 cout << "Inelastic angular model for " << bg_parts[i]->get_name() << ": "
                      << (loaded_channel_angle_tables>0?"configured ji=0 transition angles; aggregate fallback for uncovered channels":"aggregate angles for all transitions") << endl;
                 if (inelastic_rot_pop_model[i]==InelasticRotPopModel::ThermalBoltzmann)
-                    cout << "Excited-initial-state angles: aggregate ji0_proxy (explicitly accepted)" << endl;
+                    cout << "Thermal angles: reciprocal ji0_proxy at total energy; 0<->j channel DCS when available, aggregate otherwise (explicitly accepted)" << endl;
                 cout << "Rotational population model: "
-                     << (inelastic_rot_pop_model[i]==InelasticRotPopModel::GroundStateJi0?"ji=0":"thermal") << endl;
+                     << (inelastic_rot_pop_model[i]==InelasticRotPopModel::GroundStateJi0?"ji=0":"thermal");
+                if (rotational_tables[i].population_max_j>=0)
+                    cout << " (Boltzmann truncated to j<=" << rotational_tables[i].population_max_j << " and renormalized)";
+                cout << endl;
         }
 
 		bg_scaleheights[i].push_back(constants::k_b*ref_temp/(bg_parts[i]->get_mass()*ref_g));
@@ -840,14 +860,33 @@ double Background_Species::find_new_theta_inelastic(int i, double energy)
 double Background_Species::state_scattering_angle(int i, double energy, int ji, int jf)
 {
     if (ji==jf) return find_new_theta(i,energy);
-    if (ji==0 && !inelastic_channel_angle_cdfs[i].empty()) {
+    // Legacy mean-loss events have no rotational states or total-energy grid.
+    if (ji<0 || jf<0) return find_new_theta_inelastic(i,energy);
+
+    // A reversible pair must share a normalized angular law at the same
+    // total energy K + E(ji). Scalar cross sections already supply the
+    // kinetic-energy and degeneracy factors required by detailed balance.
+    energy+=rotational_tables[i].level(ji);
+    // Reconstructing total energy in the reverse direction can differ by an
+    // ulp. Canonicalize roundoff-sized midpoint ties before either lookup so
+    // a pair cannot choose opposite sides of a discontinuous nearest bin.
+    const auto &grid=diff_sigma_energies[i];
+    const auto upper=std::lower_bound(grid.begin(),grid.end(),energy);
+    if (upper!=grid.begin() && upper!=grid.end()) {
+        const double midpoint=(*(upper-1)+*upper)/2;
+        const double tolerance=8*std::numeric_limits<double>::epsilon()*std::max(energy,*upper);
+        if (std::abs(energy-midpoint)<=tolerance) energy=midpoint;
+    }
+    const int low=std::min(ji,jf), high=std::max(ji,jf);
+    if (low==0 && !inelastic_channel_angle_cdfs[i].empty()) {
         const int k=nearest_energy(diff_sigma_energies[i],energy);
-        auto it=inelastic_channel_angle_cdfs[i][k].find(jf);
+        auto it=inelastic_channel_angle_cdfs[i][k].find(high);
         if (it!=inelastic_channel_angle_cdfs[i][k].end())
             return draw_angle(it->second.cdf,it->second.theta_rad);
     }
-    // Explicit aggregate-angle approximation for species without channel DCS
-    // and for the opt-in thermal ji0_proxy model. No jf/delta-j surrogate lookup.
+    // Missing ground-state DCS blocks and pairs with both states excited use
+    // the same aggregate proxy in either direction, also at total energy.
+    // This enforces reciprocity but cannot recover unavailable excited DCS.
     return find_new_theta_inelastic(i,energy);
 }
 
