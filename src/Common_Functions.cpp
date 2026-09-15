@@ -325,6 +325,7 @@ namespace constants {
 }
 
 namespace common {
+	void seed_rng(unsigned int value) { rand_generator.seed(value); rand_dist.reset(); }
 
 	void import_csv(string filename, vector<double> &col1, vector<double> &col2)
 	{

@@ -338,14 +338,9 @@ void Atmosphere::run_simulation(double dt, int num_steps, double lower_bound, do
 		  // my_vtally.update_vtally(my_parts[active_indices[j]]);
 			my_parts[active_indices[j]]->do_timestep(dt, k);
 
-				if (bg_species.check_collision(my_parts[active_indices[j]], dt))
-				{
-					CollisionOutcome outcome = bg_species.get_last_outcome();
-					my_parts[active_indices[j]]->do_collision(
-						bg_species.get_collision_target(),
-						outcome.theta, i*dt, my_planet.get_radius(),
-						outcome.is_inelastic, outcome.delta_E_eV, outcome.ji, outcome.jf);
-				}
+            // Collision substep at the transported position; process every
+            // accepted event and update rates after each velocity change.
+            bg_species.do_collisions(my_parts[active_indices[j]],dt,i*dt);
 
 			// escape velocity at current radius
 			v_esc_current = sqrt(2.0 * constants::G * my_planet.get_mass() / my_parts[active_indices[j]]->get_radius());

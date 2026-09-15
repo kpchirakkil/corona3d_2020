@@ -34,6 +34,8 @@ namespace constants {
 }
 
 namespace common {
+	// Explicit reseeding for reproducible experiments and regression tests.
+	void seed_rng(unsigned int value);
 	// functions for importing double type data from 2, 3, 4, 5, or 6-column csv files
 	void import_csv(string filename, vector<double> &col1, vector<double> &col2);
 	void import_csv(string filename, vector<double> &col1, vector<double> &col2, vector<double> &col3);

@@ -22,6 +22,7 @@
 #include "Planet.hpp"
 #include "Common_Functions.hpp"
 #include "Interpolator.hpp"
+#include "Rotational_Cross_Sections.hpp"
 using namespace std;
 
 struct CollisionOutcome {
@@ -32,13 +33,6 @@ struct CollisionOutcome {
 	double delta_E_eV;      // energy loss to internal modes (eV), 0 for elastic
 	int ji;                 // sampled initial internal state index (if inelastic)
 	int jf;                 // sampled final internal state index (if inelastic)
-};
-
-struct InelasticChannel {
-	int ji;                // initial internal state index
-	int jf;                // final internal state index
-	double sigma_cm2;      // state-to-state integral cross section (cm^2)
-	double delta_E_eV;     // legacy CSV value (eV); runtime uses B*[jf(jf+1)-ji(ji+1)] instead
 };
 
 struct InelasticChannelAngleCDF {
@@ -57,6 +51,8 @@ public:
 	Background_Species(int num_parts, string config_files[], Planet p, double ref_T, double ref_h, string temp_profile_filename, string dens_profile_filename, double profile_bottom, double profile_top);
 	virtual ~Background_Species();
 	bool check_collision(shared_ptr<Particle> p, double dt);
+	// Exact sequence of collisions at fixed position during this transport step.
+	void do_collisions(shared_ptr<Particle> p, double dt, double time);
 	int get_num_collisions();
 	shared_ptr<Particle> get_collision_target();
 	double get_collision_theta();
@@ -104,12 +100,16 @@ private:
 	vector<shared_ptr<Interpolator>> sigma_total_interp;        // total σ (elastic+inelastic)
 	vector<shared_ptr<Interpolator>> elastic_frac_interp;       // σ_elastic/σ_total ratio
 	vector<shared_ptr<Interpolator>> avg_eloss_interp;          // average ΔE(E) in eV
-	vector<bool> missing_deltaE_use_avg;                        // if true, sampled ji>0 channels with ΔE=0 use avg ΔE(E)
 	vector<vector<vector<vector<double>>>> inelastic_CDFs;      // CDFs from inelastic DCS
-	vector<vector<vector<InelasticChannel>>> inelastic_channels; // optional state-resolved inelastic channels
 	vector<vector<unordered_map<int, InelasticChannelAngleCDF>>> inelastic_channel_angle_cdfs; // optional ji=0, jf-resolved angle CDFs
 	vector<double> inelastic_rot_const_eV;                      // per-species rotational constant (eV)
 	vector<InelasticRotPopModel> inelastic_rot_pop_model;       // per-species rotational-state population model
+	vector<RotationalCrossSections> rotational_tables;
+	vector<double> collision_sigma_bounds;
+	vector<vector<double>> elastic_dcs_integrals;
+	vector<bool> thermal_angle_proxy;
+	vector<double> inelastic_angle_min_eV;
+	double collision_delay = 0.0;
 	CollisionOutcome last_outcome;                              // most recent collision result
 	int num_inelastic_collisions;                               // counter
 	int num_superelastic_collisions;                            // counter
@@ -126,8 +126,8 @@ private:
 	// scans imported inelastic differential scattering CDF for new collision theta
 	double find_new_theta_inelastic(int part_index, double energy);
 
-	// sample a state-resolved inelastic transition (if channel tables are available)
-	bool sample_inelastic_transition(int part_index, double energy, double alt, double &theta, double &delta_E_eV, int &ji, int &jf);
+	vector<RotationalTransition> collision_channels(int species, double energy, double alt);
+	double state_scattering_angle(int species, double energy, int ji, int jf);
 
 	// get neutral temperature at local altitude (K)
 	double get_local_neutral_temp(double alt);

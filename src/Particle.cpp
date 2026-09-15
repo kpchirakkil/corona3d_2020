@@ -12,6 +12,7 @@
 #include "Particle_N2.hpp"
 #include "Particle_O.hpp"
 #include <iostream>
+#include <stdexcept>
 
 Particle::Particle()
 {
@@ -41,157 +42,51 @@ void Particle::deactivate(string fate)
 	}
 }
 
-// perform collision on a particle and update velocity vector
+// All overloads use the same center-of-mass collision kernel.
 void Particle::do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r)
 {
-	double v_before, v_after;
-	double my_mass = get_mass();
-	double targ_mass = target->get_mass();
-	Matrix<double, 3, 1> targ_v = {target->get_vx(), target->get_vy(), target->get_vz()};
-	Matrix<double, 3, 1> vcm;
-	Matrix<double, 3, 3> Rrg;
-
-	vcm = (my_mass*velocity.array() + targ_mass*targ_v.array()) / (my_mass + targ_mass);
-	Matrix<double, 3, 1> v1v = velocity.array() - vcm.array();        // particle 1 c-o-m velocity
-	// Matrix<double, 3, 1> v2v = targ_v.array() - vcm.array();          // particle 2 c-o-m velocity
-	double v1 = sqrt(v1v[0]*v1v[0] + v1v[1]*v1v[1] + v1v[2]*v1v[2]);  // particle 1 c-o-m scalar velocity
-	// double v2 = sqrt(v2v[0]*v2v[0] + v2v[1]*v2v[1] + v2v[2]*v2v[2]);  // particle 2 c-o-m scalar velocity
-
-	// unit vector parallel to particle 1 velocity
-	Matrix<double, 3, 1> r = velocity.array() / sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1] + velocity[2]*velocity[2]); // velocity is a three-component vector: vx, vy, vz, so r is the velocity vector normalised to -1 to 1
-
-	double alpha = atan2(velocity[1], velocity[0]);
-	double phi = atan2(velocity[2], sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1]));
-	double gamma = constants::twopi*common::get_rand();  //  gamma random no. from uniform distribution between 0 and 2pi
-
-	Matrix<double, 3, 1> vp;
-	vp[0] = v1*cos(alpha)*cos(phi-theta);
-	vp[1] = v1*sin(alpha)*cos(phi-theta);
-	vp[2] = v1*sin(phi-theta);
-
-	double Cg = cos(gamma);
-	double Sg = sin(gamma);
-	double Vg = 1.0-Cg;
-
-	Rrg(0, 0) = r[0]*r[0]*Vg+Cg;
-	Rrg(0, 1) = r[0]*r[1]*Vg+r[2]*Sg;
-	Rrg(0, 2) = r[0]*r[2]*Vg-r[1]*Sg;
-
-	Rrg(1, 0) = r[0]*r[1]*Vg-r[2]*Sg;
-	Rrg(1, 1) = r[1]*r[1]*Vg+Cg;
-	Rrg(1, 2) = r[1]*r[2]*Vg+r[0]*Sg;
-
-	Rrg(2, 0) = r[0]*r[2]*Vg+r[1]*Sg;
-	Rrg(2, 1) = r[1]*r[2]*Vg-r[0]*Sg;
-	Rrg(2, 2) = r[2]*r[2]*Vg+Cg;
-
-
-	Matrix<double, 3, 1> vrel1 = Rrg * vp;
-
-	// update post-collision velocity
-	if (traced)
-	{
-	  v_before = get_total_v()*1e-5; //  sqrt(vx^2 + vy^2 + vz^2)
-	}
-	velocity = vcm.array() + vrel1.array(); // here is where velocity changes
-
-	// in case you need the updated collision partner velocity for something
-	// targ_v = vcm.array() - ((my_mass / targ_mass) * vrel1.array());
-
-	// write to collision log if traced particle
-	if (traced)
-	{
-		v_after = get_total_v()*1e-5;
-		double alt_in_km = 1e-5*(radius - planet_r);
-		collision_log.push_back(to_string(time) + "\t\t" + to_string(alt_in_km) + "\t" + target->get_name() + "\t" + to_string(theta * (180.0/constants::pi)) + "\t" + to_string(v_before) + "\t" + to_string(v_after));
-	}
+    do_collision(target, theta, time, planet_r, false, 0.0, -1, -1);
 }
 
-// perform collision with inelastic energy loss support
 void Particle::do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r, bool is_inelastic, double delta_E_eV)
 {
-	do_collision(target, theta, time, planet_r, is_inelastic, delta_E_eV, -1, -1);
+    do_collision(target, theta, time, planet_r, is_inelastic, delta_E_eV, -1, -1);
 }
 
-// perform collision with inelastic energy transfer and optional internal-state labels
 void Particle::do_collision(shared_ptr<Particle> target, double theta, double time, double planet_r, bool is_inelastic, double delta_E_eV, int ji, int jf)
 {
-	double v_before, v_after;
-	double my_mass = get_mass();
-	double targ_mass = target->get_mass();
-	Matrix<double, 3, 1> targ_v = {target->get_vx(), target->get_vy(), target->get_vz()};
-	Matrix<double, 3, 1> vcm;
-	Matrix<double, 3, 3> Rrg;
-
-	vcm = (my_mass*velocity.array() + targ_mass*targ_v.array()) / (my_mass + targ_mass);
-	Matrix<double, 3, 1> v1v = velocity.array() - vcm.array();        // particle 1 c-o-m velocity
-	double v1 = sqrt(v1v[0]*v1v[0] + v1v[1]*v1v[1] + v1v[2]*v1v[2]);  // particle 1 c-o-m scalar velocity
-
-	// Apply signed inelastic energy transfer in the CM frame.
-	// delta_E_eV > 0: hot particle loses translational energy (excitation).
-	// delta_E_eV < 0: hot particle gains translational energy (superelastic de-excitation).
-	if (is_inelastic && delta_E_eV != 0.0)
-	{
-		double mu = (my_mass * targ_mass) / (my_mass + targ_mass);  // reduced mass
-		double v_rel = v1 * (my_mass + targ_mass) / targ_mass;      // relative speed
-		double E_CM = 0.5 * mu * v_rel * v_rel;                     // CM kinetic energy [erg]
-		double dE = delta_E_eV * constants::ergev;                  // signed transfer [erg]
-		double E_CM_new = E_CM - dE;
-		E_CM_new = max(0.0, E_CM_new);                              // guard against negative CM energy
-		double v_rel_new = sqrt(2.0 * E_CM_new / mu);
-		if (v_rel > 0.0)
-			v1 = v1 * (v_rel_new / v_rel);                          // scale CM speed proportionally
-	}
-
-	// unit vector parallel to particle 1 velocity
-	Matrix<double, 3, 1> r = velocity.array() / sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1] + velocity[2]*velocity[2]);
-
-	double alpha = atan2(velocity[1], velocity[0]);
-	double phi = atan2(velocity[2], sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1]));
-	double gamma = constants::twopi*common::get_rand();
-
-	Matrix<double, 3, 1> vp;
-	vp[0] = v1*cos(alpha)*cos(phi-theta);
-	vp[1] = v1*sin(alpha)*cos(phi-theta);
-	vp[2] = v1*sin(phi-theta);
-
-	double Cg = cos(gamma);
-	double Sg = sin(gamma);
-	double Vg = 1.0-Cg;
-
-	Rrg(0, 0) = r[0]*r[0]*Vg+Cg;
-	Rrg(0, 1) = r[0]*r[1]*Vg+r[2]*Sg;
-	Rrg(0, 2) = r[0]*r[2]*Vg-r[1]*Sg;
-
-	Rrg(1, 0) = r[0]*r[1]*Vg-r[2]*Sg;
-	Rrg(1, 1) = r[1]*r[1]*Vg+Cg;
-	Rrg(1, 2) = r[1]*r[2]*Vg+r[0]*Sg;
-
-	Rrg(2, 0) = r[0]*r[2]*Vg+r[1]*Sg;
-	Rrg(2, 1) = r[1]*r[2]*Vg-r[0]*Sg;
-	Rrg(2, 2) = r[2]*r[2]*Vg+Cg;
-
-	Matrix<double, 3, 1> vrel1 = Rrg * vp;
-
-	// update post-collision velocity
-	if (traced)
-	{
-	  v_before = get_total_v()*1e-5;
-	}
-	velocity = vcm.array() + vrel1.array();
-
-	// write to collision log if traced particle
-	if (traced)
-	{
-		v_after = get_total_v()*1e-5;
-		double alt_in_km = 1e-5*(radius - planet_r);
-		string coll_type = is_inelastic ? "INEL" : "ELAS";
-		collision_log.push_back(
-			to_string(time) + "\t\t" + to_string(alt_in_km) + "\t" + target->get_name() + "\t" +
-			to_string(theta * (180.0/constants::pi)) + "\t" + to_string(v_before) + "\t" +
-			to_string(v_after) + "\t" + coll_type + "\t" + to_string(delta_E_eV) +
-			"\t" + to_string(ji) + "\t" + to_string(jf));
-	}
+    if (!std::isfinite(theta) || theta<0 || theta>constants::pi || !std::isfinite(delta_E_eV))
+        throw std::invalid_argument("Invalid collision angle or internal energy transfer");
+    const double m=get_mass(), M=target->get_mass(), mu=m*M/(m+M);
+    const Vector3d w(target->get_vx(),target->get_vy(),target->get_vz());
+    const Vector3d g=velocity-w;
+    const Vector3d cm=(m*velocity+M*w)/(m+M);
+    const double gnorm=g.norm();
+    const double energy=0.5*mu*g.squaredNorm()/constants::ergev;
+    const double de=is_inelastic?delta_E_eV:0.0;
+    // Closed channels must be removed by the sampler, never energy-clipped.
+    if (de>energy) throw std::domain_error("Energetically closed inelastic transition");
+    const double new_speed=std::sqrt(2.0*(energy-de)*constants::ergev/mu);
+    Vector3d axis;
+    if (gnorm>0) axis=g/gnorm;
+    else {
+        if (new_speed==0) return;
+        // Exothermic zero-relative-speed limit has no preferred axis.
+        const double z=2*common::get_rand()-1, phi=constants::twopi*common::get_rand();
+        axis=Vector3d(std::sqrt(1-z*z)*std::cos(phi),std::sqrt(1-z*z)*std::sin(phi),z);
+    }
+    Vector3d seed=(std::abs(axis[2])<0.9)?Vector3d(0,0,1):Vector3d(1,0,0);
+    Vector3d e1=(seed-axis*axis.dot(seed)).normalized();
+    Vector3d e2(axis[1]*e1[2]-axis[2]*e1[1],axis[2]*e1[0]-axis[0]*e1[2],axis[0]*e1[1]-axis[1]*e1[0]);
+    const double azimuth=constants::twopi*common::get_rand();
+    const Vector3d direction=std::cos(theta)*axis+std::sin(theta)*(std::cos(azimuth)*e1+std::sin(azimuth)*e2);
+    const double before=get_total_v()*1e-5;
+    velocity=cm+(M/(m+M))*new_speed*direction;
+    if (traced) {
+        collision_log.push_back(to_string(time)+"\t\t"+to_string((radius-planet_r)*1e-5)+"\t"+target->get_name()+"\t"+
+            to_string(theta*180/constants::pi)+"\t"+to_string(before)+"\t"+to_string(get_total_v()*1e-5)+"\t"+
+            (is_inelastic?"INEL":"ELAS")+"\t"+to_string(de)+"\t"+to_string(ji)+"\t"+to_string(jf));
+    }
 }
 
 void Particle::do_timestep(double dt, double k_g)

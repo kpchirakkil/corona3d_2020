@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <cmath>
+#include <algorithm>
 using namespace std;
 
 class Interpolator {
@@ -20,6 +21,7 @@ public:
 	// return linearly interpolated y value for given x value
 	// if x outside boundaries returns either highest or lowest stored y value
 	double linterp(double x);
+	double max_value() const { return *std::max_element(y_data.begin(), y_data.end()); }
 
 	// return log-linearly interpolated y value for given x (use if y is on a logarithmic scale in input file)
 	// if x outside boundaries returns either highest or lowest stored y value
