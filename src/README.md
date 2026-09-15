@@ -55,7 +55,7 @@ src/
 Background species config files can set `rot_population_model` for state-resolved inelastic sampling:
 
 - `ji0` (default): only sample channels originating from `ji=0`
-- `thermal`: use Boltzmann populations with nuclear-spin weights. Requires excited-initial-state integral data; currently available for CO2 only. Also requires `thermal_angular_model ji0_proxy` to explicitly accept aggregate/ground-state angular distributions for excited initial states.
+- `thermal`: use Boltzmann populations with nuclear-spin weights. Requires excited-initial-state integral data; currently available for CO2 only. Also requires `thermal_angular_model ji0_proxy` to explicitly accept that only ji=0 angular data exist. Each reversible pair shares one angular distribution, looked up at total energy K + E(ji) in both directions: the 0→j channel distribution for pairs containing j=0 (when available), the aggregate inelastic distribution otherwise. Optional `rot_population_max_j N` truncates the Boltzmann populations to j<=N and renormalizes (sensitivity option).
 
 The Mars O–CO2, O–CO and O–N2 configs now use `rotational_cross_sections_file` with columns `total_energy_eV,ji,jf,sigma_cm2`, including elastic diagonals. Rates and event selection use the same open state-to-state channels. The energy argument is relative kinetic energy plus the initial rotational energy. Ground-state elastic rates retain the independent `total_sigma_file` reference. CO2 populations exclude odd j; missing thermal data cause an error instead of silently falling back to ji=0.
 
