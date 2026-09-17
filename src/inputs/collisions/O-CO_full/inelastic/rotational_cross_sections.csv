@@ -1,5 +1,5 @@
 # Total energy eV; state-to-state integral cross sections in cm^2.
-# Chhabra et al. (2023), doi:10.1093/mnras/stac3057, Table 2. 16O, equal PES weights.
+# Kumar et al. (2022), doi:10.1093/mnras/stac3057, Table 2. 16O, equal PES weights.
 # TRUNCATED: only j_final <= 30 supplied; published calculation used j_max=70.
 total_energy_eV,ji,jf,sigma_cm2
 0.7,0,0,2.928610000000e-14

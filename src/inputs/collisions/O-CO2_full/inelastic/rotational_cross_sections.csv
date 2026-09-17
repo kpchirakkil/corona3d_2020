@@ -1,4 +1,4 @@
-# Gacesa et al., doi:10.5281/zenodo.3256699. Raw CSs_3pes, even j for 12C16O2 v=0.
+# Gacesa et al. (2020), https://github.com/mgacesa66. Raw CSs_3pes, even j for 12C16O2 v=0.
 # Includes elastic diagonals; independent variable is MOLSCAT total energy.
 total_energy_eV,ji,jf,sigma_cm2
 0.0297562073744,0,0,3.571600000000e-14
