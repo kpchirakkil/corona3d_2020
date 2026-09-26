@@ -167,27 +167,8 @@ void Distribution_Hot_O::init_O2plus_DR_particle(shared_ptr<Particle> p)
 		x = -x;
 	}
 
-	// Select Hot O Electronic Channel ###
-	// Probabilities and energies
-	// Particles are activated per channel to allow testing the contribution of each population in the simulation
-	double Ei = 0.0;
-	double randnum = common::get_rand();
-	if (randnum < 0.22)
-	{
-		Ei = 6.99*constants::ergev;
-	}
-	else if (randnum < (0.22+0.42))
-	{
-		Ei = 5.02*constants::ergev;
-	}
-	else if (randnum < (0.22+0.42+0.31))
-	{
-		Ei = 3.06*constants::ergev;
-	}
-	else
-	{
-		Ei = 0.84*constants::ergev;
-	}
+	// Select Hot O Electronic Channel
+	double Ei = sample_O2plus_DR_channel_energy();
 
 	// Thermal Rotational Energy of O2+
 	Ei = Ei + E_rot(3.35967e-16, temp_ion);
@@ -244,27 +225,8 @@ void Distribution_Hot_O::init_old_way(shared_ptr<Particle> p)
 		x = -x;
 	}
 
-	// Select Hot O Electronic Channel ###
-	// Probabilities and energies
-	// Particles are activated per channel to allow testing the contribution of each population in the simulation
-	double Ei = 0.0;
-	double randnum = common::get_rand();
-	if (randnum < 0.22)
-	{
-		Ei = 6.99*constants::ergev;
-	}
-	else if (randnum < (0.22+0.42))
-	{
-		Ei = 5.02*constants::ergev;
-	}
-	else if (randnum < (0.22+0.42+0.31))
-	{
-		Ei = 3.06*constants::ergev;
-	}
-	else
-	{
-		Ei = 0.84*constants::ergev;
-	}
+	// Select Hot O Electronic Channel
+	double Ei = sample_O2plus_DR_channel_energy();
 
 	// Thermal Rotational Energy of O2+
 	Ei = Ei + E_rot(3.35967e-16, T_ion);
@@ -293,6 +255,31 @@ void Distribution_Hot_O::init_old_way(shared_ptr<Particle> p)
     vz = vz + (m_O2plus*v_ion[2] + constants::m_e*v_e[2]) / (m_O2plus+constants::m_e);
 
     p->init_particle(x, y, z, vx, vy, vz);
+}
+
+// Sample the kinetic energy release of one O2+ DR event from the four non-negligible channels.
+// Branching fractions for O2+(X, v=0) at 0 eV collision energy from Petrignani et al. (2005),
+// J. Chem. Phys. 122, 014302, Table III; the same values as Lillis et al. (2017) Table 1.
+// Energies are the exothermicities for v=0 ions (O(1D) at 1.967 eV, O(1S) at 4.190 eV).
+double Distribution_Hot_O::sample_O2plus_DR_channel_energy()
+{
+	double randnum = common::get_rand();
+	if (randnum < 0.265)
+	{
+		return 6.99*constants::ergev;  // O(3P) + O(3P)
+	}
+	else if (randnum < (0.265+0.473))
+	{
+		return 5.02*constants::ergev;  // O(3P) + O(1D)
+	}
+	else if (randnum < (0.265+0.473+0.204))
+	{
+		return 3.06*constants::ergev;  // O(1D) + O(1D)
+	}
+	else
+	{
+		return 0.83*constants::ergev;  // O(1D) + O(1S), branching fraction 0.058
+	}
 }
 
 // scans O2plus_DR_CDF for new particle radius

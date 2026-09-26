@@ -49,6 +49,9 @@ private:
 	// generate O2plus_DR_CDF for given altitude range using imported density/temp profiles
 	void make_O2plus_DR_CDF(double lower_alt, double upper_alt);
 
+	// sample the DR channel and return its kinetic energy release [erg]
+	double sample_O2plus_DR_channel_energy();
+
 	// calculate rotational energy of O2plus ion
 	double E_rot(double B, double T);
 };
