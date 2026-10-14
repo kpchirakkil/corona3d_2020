@@ -32,6 +32,9 @@ private:
 	double global_rate;    // [s^-1] set by chosen production method; calling function needs to divide this by 2 to get hemispherical rate
 	string source;         // which source to use when initializing particles (currently 'O2plus_DR' is only option)
 	double fixed_altitude; // [cm] if > 0, all particles start at this fixed altitude (for escape probability calculations)
+	string DR_branching;   // O2+ DR channel branching: 'petrignani2005' (default) or 'kella1997'
+	double DR_prob[4];     // DR channel branching fractions
+	double DR_energy[4];   // [eV] DR channel kinetic energy releases
 	vector<vector<double>> O2plus_profile;  // stores the imported O2plus density profile
 	vector<vector<double>> electron_profile; // stores the imported electron density profile
 	vector<vector<double>> temp_profile;  // stores the imported temperature profiles (4-column csv expected: altitude(cm), neutral_temp(K), ion_temp(K), electron_temp(K))
@@ -48,6 +51,9 @@ private:
 
 	// generate O2plus_DR_CDF for given altitude range using imported density/temp profiles
 	void make_O2plus_DR_CDF(double lower_alt, double upper_alt);
+
+	// set DR_prob and DR_energy for the named branching data set
+	void set_DR_branching(const string &name);
 
 	// sample the DR channel and return its kinetic energy release [erg]
 	double sample_O2plus_DR_channel_energy();

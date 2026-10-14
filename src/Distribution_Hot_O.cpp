@@ -22,6 +22,7 @@ Distribution_Hot_O::Distribution_Hot_O(Planet my_p, double ref_h, double ref_T)
 	O2plus_DR_rate_coeff = 0.0;
 	global_rate = 0.0;
 	fixed_altitude = 0.0;  // disabled by default; set > 0 to fix all particles at this altitude
+	DR_branching = "petrignani2005";  // default O2+ DR channel branching (see set_DR_branching)
 
 	temp_profile.resize(4);
 	O2plus_profile.resize(2);
@@ -105,7 +106,13 @@ Distribution_Hot_O::Distribution_Hot_O(Planet my_p, double ref_h, double ref_T)
 				cout << "Fixed altitude mode enabled: all particles will start at " << fixed_altitude*1e-5 << " km\n";
 			}
 		}
+		else if (parameters[i] == "DR_branching")
+		{
+			DR_branching = values[i];
+		}
 	}
+
+	set_DR_branching(DR_branching);
 
 	common::import_csv(temp_prof_filename, temp_profile[0], temp_profile[1], temp_profile[2], temp_profile[3]);
 	common::import_csv(O2plus_prof_filename, O2plus_profile[0], O2plus_profile[1]);
@@ -257,28 +264,55 @@ void Distribution_Hot_O::init_old_way(shared_ptr<Particle> p)
     p->init_particle(x, y, z, vx, vy, vz);
 }
 
-// Sample the kinetic energy release of one O2+ DR event from the four non-negligible channels.
-// Branching fractions for O2+(X, v=0) at 0 eV collision energy from Petrignani et al. (2005),
-// J. Chem. Phys. 122, 014302, Table III; the same values as Lillis et al. (2017) Table 1.
-// Energies are the exothermicities for v=0 ions (O(1D) at 1.967 eV, O(1S) at 4.190 eV).
-double Distribution_Hot_O::sample_O2plus_DR_channel_energy()
+// Set the O2+ DR channel branching fractions and kinetic energy releases (O2+(X, v=0) ions).
+// Channels: O(3P)+O(3P), O(3P)+O(1D), O(1D)+O(1D), O(1D)+O(1S).
+//   petrignani2005: Petrignani et al. (2005), J. Chem. Phys. 122, 014302, Table III, v=0 at 0 eV;
+//                   the same values as Lillis et al. (2017) Table 1. Energies for O(1D) at 1.967 eV, O(1S) at 4.190 eV.
+//   kella1997:      Kella et al. (1997), Science 276, 1530, v=0 (used in this model until Sep 2026).
+void Distribution_Hot_O::set_DR_branching(const string &name)
 {
-	double randnum = common::get_rand();
-	if (randnum < 0.265)
+	if (name == "petrignani2005")
 	{
-		return 6.99*constants::ergev;  // O(3P) + O(3P)
+		const double p[4] = {0.265, 0.473, 0.204, 0.058};
+		const double e[4] = {6.99, 5.02, 3.06, 0.83};
+		for (int k=0; k<4; k++) { DR_prob[k] = p[k]; DR_energy[k] = e[k]; }
 	}
-	else if (randnum < (0.265+0.473))
+	else if (name == "kella1997")
 	{
-		return 5.02*constants::ergev;  // O(3P) + O(1D)
-	}
-	else if (randnum < (0.265+0.473+0.204))
-	{
-		return 3.06*constants::ergev;  // O(1D) + O(1D)
+		const double p[4] = {0.22, 0.42, 0.31, 0.05};
+		const double e[4] = {6.99, 5.02, 3.06, 0.84};
+		for (int k=0; k<4; k++) { DR_prob[k] = p[k]; DR_energy[k] = e[k]; }
 	}
 	else
 	{
-		return 0.83*constants::ergev;  // O(1D) + O(1S), branching fraction 0.058
+		cout << "ERROR: Unknown DR_branching \"" << name << "\" in Hot_O.cfg (use petrignani2005 or kella1997)\n";
+		exit(1);
+	}
+	cout << "O2+ DR branching: " << name << " (" << DR_prob[0] << ", " << DR_prob[1] << ", " << DR_prob[2] << ", "
+	     << DR_prob[3] << " at " << DR_energy[0] << ", " << DR_energy[1] << ", " << DR_energy[2] << ", "
+	     << DR_energy[3] << " eV)\n";
+}
+
+// Sample the kinetic energy release of one O2+ DR event from the four non-negligible channels.
+// The last channel takes the remainder, so the fractions need not sum exactly to 1.
+double Distribution_Hot_O::sample_O2plus_DR_channel_energy()
+{
+	double randnum = common::get_rand();
+	if (randnum < DR_prob[0])
+	{
+		return DR_energy[0]*constants::ergev;  // O(3P) + O(3P)
+	}
+	else if (randnum < (DR_prob[0]+DR_prob[1]))
+	{
+		return DR_energy[1]*constants::ergev;  // O(3P) + O(1D)
+	}
+	else if (randnum < (DR_prob[0]+DR_prob[1]+DR_prob[2]))
+	{
+		return DR_energy[2]*constants::ergev;  // O(1D) + O(1D)
+	}
+	else
+	{
+		return DR_energy[3]*constants::ergev;  // O(1D) + O(1S)
 	}
 }
 
